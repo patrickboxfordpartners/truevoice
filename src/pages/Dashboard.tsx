@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { CreateInterviewDialog } from "@/components/CreateInterviewDialog";
 import { EmailTemplateDialog } from "@/components/EmailTemplateDialog";
+import { InterviewCalendar } from "@/components/InterviewCalendar";
 
 const DarkModeToggle = () => {
   const { theme, setTheme } = useTheme();
