@@ -63,12 +63,10 @@ const Dashboard = () => {
         i.position.toLowerCase().includes(search.toLowerCase())
     );
 
-    // Score filter
     if (scoreFilter === "high") items = items.filter(i => i.score >= 80);
     else if (scoreFilter === "medium") items = items.filter(i => i.score >= 50 && i.score < 80);
     else if (scoreFilter === "low") items = items.filter(i => i.score < 50);
 
-    // Sort
     items.sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
@@ -83,6 +81,13 @@ const Dashboard = () => {
 
     return items;
   }, [search, scoreFilter, sortKey, sortDir]);
+
+  // Reset page when filters change
+  useMemo(() => { setPage(1); }, [search, scoreFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const safePage = Math.min(page, totalPages);
+  const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-background">
