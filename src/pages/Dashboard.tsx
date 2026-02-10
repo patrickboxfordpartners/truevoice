@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, Search, TrendingUp, Calendar, Users, Shield, LogOut, Settings, ChevronDown, Clock, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, GitCompareArrows, Download, Moon, Sun, Mail } from "lucide-react";
+import { Plus, Search, TrendingUp, Calendar, Users, Shield, LogOut, Settings, ChevronDown, Clock, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, GitCompareArrows, Download, Moon, Sun, Mail, Table2, CalendarDays } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { CreateInterviewDialog } from "@/components/CreateInterviewDialog";
 import { EmailTemplateDialog } from "@/components/EmailTemplateDialog";
+import { InterviewCalendar } from "@/components/InterviewCalendar";
 
 const DarkModeToggle = () => {
   const { theme, setTheme } = useTheme();
@@ -60,6 +61,7 @@ const Dashboard = () => {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [scoreFilter, setScoreFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [page, setPage] = useState(1);
 
   const toggleSort = (key: SortKey) => {
@@ -171,7 +173,29 @@ const Dashboard = () => {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl overflow-hidden">
             <div className="p-6 border-b border-border">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Recent Interviews</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-semibold">Recent Interviews</h2>
+                  <div className="flex items-center rounded-lg border border-border p-0.5">
+                    <Button
+                      variant={viewMode === "table" ? "default" : "ghost"}
+                      size="sm"
+                      className="h-7 px-2.5 gap-1.5 text-xs"
+                      onClick={() => setViewMode("table")}
+                    >
+                      <Table2 className="h-3.5 w-3.5" />
+                      Table
+                    </Button>
+                    <Button
+                      variant={viewMode === "calendar" ? "default" : "ghost"}
+                      size="sm"
+                      className="h-7 px-2.5 gap-1.5 text-xs"
+                      onClick={() => setViewMode("calendar")}
+                    >
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      Calendar
+                    </Button>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
                     const headers = ["Candidate", "Position", "Date", "Duration", "Score"];
@@ -206,7 +230,11 @@ const Dashboard = () => {
                   </Link>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+            </div>
+            {viewMode === "table" ? (
+              <>
+              <div className="p-6 pt-0 pb-0">
+              <div className="flex items-center gap-3 pb-6">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -234,7 +262,7 @@ const Dashboard = () => {
                   </Button>
                 )}
               </div>
-            </div>
+              </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -309,6 +337,12 @@ const Dashboard = () => {
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+            )}
+              </>
+            ) : (
+              <div className="p-6">
+                <InterviewCalendar interviews={mockInterviews} />
               </div>
             )}
           </motion.div>
