@@ -33,7 +33,7 @@ type SortDir = "asc" | "desc";
 
 const ITEMS_PER_PAGE = 8;
 
-const mockInterviews = [
+const INITIAL_INTERVIEWS = [
   { id: "1", candidate: "Sarah Chen", position: "Senior Frontend Engineer", date: "2026-02-10T14:00:00", duration: "42:15", score: 87 },
   { id: "2", candidate: "James Wilson", position: "Product Manager", date: "2026-02-10T10:30:00", duration: "38:20", score: 62 },
   { id: "3", candidate: "Emily Rodriguez", position: "UX Designer", date: "2026-02-09T15:00:00", duration: "45:10", score: 91 },
