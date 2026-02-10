@@ -110,7 +110,36 @@ export const InterviewCalendar = ({ interviews, onReschedule }: InterviewCalenda
       ? format(currentMonth, "MMMM yyyy")
       : `${format(currentWeekStart, "MMM d")} – ${format(addDays(currentWeekStart, 6), "MMM d, yyyy")}`;
 
-  return (
+  const handleDragStart = useCallback((e: React.DragEvent, interviewId: string) => {
+    e.dataTransfer.setData("interviewId", interviewId);
+    e.dataTransfer.effectAllowed = "move";
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, slotKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverSlot(slotKey);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverSlot(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, day: Date, hour: number) => {
+    e.preventDefault();
+    setDragOverSlot(null);
+    const interviewId = e.dataTransfer.getData("interviewId");
+    if (!interviewId || !onReschedule) return;
+
+    // Preserve original minutes from the interview
+    const interview = interviews.find((iv) => iv.id === interviewId);
+    const originalMins = interview ? getMinutes(new Date(interview.date)) : 0;
+
+    const newDate = new Date(day);
+    newDate.setHours(hour, originalMins, 0, 0);
+    onReschedule(interviewId, newDate.toISOString().slice(0, 19));
+  }, [onReschedule, interviews]);
+
     <div className="space-y-4">
       {/* Navigation */}
       <div className="flex items-center justify-between">
