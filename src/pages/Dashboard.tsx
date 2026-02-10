@@ -105,6 +105,7 @@ const Dashboard = () => {
             <span className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors">Settings</span>
           </nav>
           <div className="flex items-center gap-3">
+            <DarkModeToggle />
             <Button onClick={() => setShowCreate(true)} className="gap-2">
               <Plus className="h-4 w-4" />
               New Interview
