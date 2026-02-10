@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Mic, MicOff, Video, VideoOff, Settings, Maximize, PhoneOff,
-  Shield, AlertTriangle, Clock, PanelRight,
+  Shield, AlertTriangle, Clock, PanelRight, Monitor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
