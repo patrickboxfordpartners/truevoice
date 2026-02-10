@@ -13,9 +13,36 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 
+type Role = "owner" | "admin" | "editor" | "viewer";
+
+interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  initials: string;
+}
+
+const INITIAL_MEMBERS: TeamMember[] = [
+  { id: "1", name: "John Doe", email: "john@acme.com", role: "owner", initials: "JD" },
+  { id: "2", name: "Sarah Miller", email: "sarah@acme.com", role: "admin", initials: "SM" },
+  { id: "3", name: "Alex Rivera", email: "alex@acme.com", role: "editor", initials: "AR" },
+  { id: "4", name: "Kim Nguyen", email: "kim@acme.com", role: "viewer", initials: "KN" },
+];
+
+const ROLE_CONFIG: Record<Role, { label: string; color: string; icon: React.ReactNode }> = {
+  owner: { label: "Owner", color: "bg-primary/10 text-primary border-primary/20", icon: <Crown className="h-3 w-3" /> },
+  admin: { label: "Admin", color: "bg-warning/10 text-warning border-warning/20", icon: <Shield className="h-3 w-3" /> },
+  editor: { label: "Editor", color: "bg-success/10 text-success border-success/20", icon: <Pencil className="h-3 w-3" /> },
+  viewer: { label: "Viewer", color: "bg-muted text-muted-foreground border-border", icon: <Eye className="h-3 w-3" /> },
+};
+
 const Settings = () => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(INITIAL_MEMBERS);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<Role>("viewer");
 
   // Company profile state
   const [companyName, setCompanyName] = useState("Acme Corp");
