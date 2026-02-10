@@ -348,9 +348,17 @@ const Dashboard = () => {
                 <InterviewCalendar
                   interviews={interviews}
                   onReschedule={(id, newDate) => {
+                    const iv = interviews.find((i) => i.id === id);
                     setInterviews((prev) =>
-                      prev.map((iv) => (iv.id === id ? { ...iv, date: newDate } : iv))
+                      prev.map((i) => (i.id === id ? { ...i, date: newDate } : i))
                     );
+                    if (iv) {
+                      const d = new Date(newDate);
+                      toast({
+                        title: "Interview rescheduled",
+                        description: `${iv.candidate} moved to ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })} at ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`,
+                      });
+                    }
                   }}
                 />
               </div>
