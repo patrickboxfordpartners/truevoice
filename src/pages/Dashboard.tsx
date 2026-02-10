@@ -173,7 +173,29 @@ const Dashboard = () => {
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl overflow-hidden">
             <div className="p-6 border-b border-border">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold">Recent Interviews</h2>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-semibold">Recent Interviews</h2>
+                  <div className="flex items-center rounded-lg border border-border p-0.5">
+                    <Button
+                      variant={viewMode === "table" ? "default" : "ghost"}
+                      size="sm"
+                      className="h-7 px-2.5 gap-1.5 text-xs"
+                      onClick={() => setViewMode("table")}
+                    >
+                      <Table2 className="h-3.5 w-3.5" />
+                      Table
+                    </Button>
+                    <Button
+                      variant={viewMode === "calendar" ? "default" : "ghost"}
+                      size="sm"
+                      className="h-7 px-2.5 gap-1.5 text-xs"
+                      onClick={() => setViewMode("calendar")}
+                    >
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      Calendar
+                    </Button>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
                     const headers = ["Candidate", "Position", "Date", "Duration", "Score"];
