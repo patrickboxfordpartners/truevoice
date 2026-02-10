@@ -25,6 +25,8 @@ const DarkModeToggle = () => {
   );
 };
 
+type SortKey = "candidate" | "position" | "date" | "duration" | "score";
+
 type SortDir = "asc" | "desc";
 
 const ITEMS_PER_PAGE = 8;
