@@ -56,6 +56,7 @@ const INITIAL_INTERVIEWS = [
 ];
 
 const Dashboard = () => {
+  const { toast } = useToast();
   const [interviews, setInterviews] = useState(INITIAL_INTERVIEWS);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
