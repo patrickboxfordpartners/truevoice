@@ -80,7 +80,7 @@ const Dashboard = () => {
   };
 
   const filtered = useMemo(() => {
-    let items = mockInterviews.filter(
+    let items = interviews.filter(
       (i) =>
         i.candidate.toLowerCase().includes(search.toLowerCase()) ||
         i.position.toLowerCase().includes(search.toLowerCase())
