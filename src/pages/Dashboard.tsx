@@ -55,6 +55,7 @@ const INITIAL_INTERVIEWS = [
 ];
 
 const Dashboard = () => {
+  const [interviews, setInterviews] = useState(INITIAL_INTERVIEWS);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [showEmailTemplates, setShowEmailTemplates] = useState(false);
