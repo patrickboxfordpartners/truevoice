@@ -339,6 +339,12 @@ const Dashboard = () => {
                 </div>
               </div>
             )}
+              </>
+            ) : (
+              <div className="p-6">
+                <InterviewCalendar interviews={mockInterviews} />
+              </div>
+            )}
           </motion.div>
 
           {/* Sidebar */}
