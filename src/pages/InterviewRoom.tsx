@@ -17,9 +17,11 @@ import {
 } from "@/components/ui/dialog";
 
 // ─── Mock data helpers ──────────────────────────────────────────────
-const initialFlags = [
-  { time: "3:45", text: "Reading cadence detected", severity: "medium" as const },
-  { time: "7:22", text: "Unusually fast response (<1s)", severity: "high" as const },
+type Flag = { time: string; text: string; severity: "low" | "medium" | "high" };
+
+const initialFlags: Flag[] = [
+  { time: "3:45", text: "Reading cadence detected", severity: "medium" },
+  { time: "7:22", text: "Unusually fast response (<1s)", severity: "high" },
 ];
 
 const possibleFlags = [
