@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Mic, MicOff, Video, VideoOff, Settings, Maximize, PhoneOff,
-  Shield, AlertTriangle, Clock,
+  Shield, AlertTriangle, Clock, PanelRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 // ─── Mock data helpers ──────────────────────────────────────────────
 type Flag = { time: string; text: string; severity: "low" | "medium" | "high" };
@@ -53,14 +54,78 @@ const SubScore = ({ label, score, max }: { label: string; score: number; max: nu
 const severityIcon = (s: string) =>
   s === "high" ? "🔴" : s === "medium" ? "⚠️" : "ℹ️";
 
+// ─── Extracted sidebar content ──────────────────────────────────────
+const SidebarContent = ({ overall, scores, flags, notes, setNotes }: {
+  overall: number;
+  scores: { speech: number; timing: number; flow: number; linguistic: number };
+  flags: Flag[];
+  notes: string;
+  setNotes: (v: string) => void;
+}) => (
+  <>
+    <div className="p-5 border-b border-border">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+        Authenticity Score (Live)
+      </h3>
+      <div className="flex justify-center mb-5">
+        <ScoreGauge score={overall} size={110} strokeWidth={8} animated={false} />
+      </div>
+      <p className="text-[11px] text-center text-muted-foreground mb-5">Updates every 30 s</p>
+      <div className="space-y-3">
+        <SubScore label="Speech Patterns" score={scores.speech} max={25} />
+        <SubScore label="Response Timing" score={scores.timing} max={25} />
+        <SubScore label="Conversational Flow" score={scores.flow} max={25} />
+        <SubScore label="Linguistic Authenticity" score={scores.linguistic} max={25} />
+      </div>
+    </div>
+    <div className="p-5 border-b border-border flex-1 overflow-hidden flex flex-col">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+        <AlertTriangle className="h-3.5 w-3.5" />
+        Detected Patterns
+      </h3>
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1 -mr-1">
+        {flags.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No concerning patterns detected</p>
+        ) : (
+          flags.map((f, i) => (
+            <motion.div
+              key={`${f.time}-${i}`}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-start gap-2 rounded-lg bg-muted/40 px-3 py-2"
+            >
+              <span className="text-[11px] font-mono text-muted-foreground shrink-0 mt-px">{f.time}</span>
+              <span className="text-xs leading-none mt-0.5">{severityIcon(f.severity)}</span>
+              <span className="text-xs leading-snug">{f.text}</span>
+            </motion.div>
+          ))
+        )}
+      </div>
+    </div>
+    <div className="p-5">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+        Interview Notes
+      </h3>
+      <Textarea
+        placeholder="Type notes here..."
+        className="resize-none text-sm h-24"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+      />
+      <p className="text-[11px] text-muted-foreground mt-1 text-right">{notes.length} chars</p>
+    </div>
+  </>
+);
+
 // ─── Main component ─────────────────────────────────────────────────
 const InterviewRoom = () => {
-  const [elapsed, setElapsed] = useState(465); // start at ~7:45
+  const [elapsed, setElapsed] = useState(465);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [notes, setNotes] = useState("");
   const [showEnd, setShowEnd] = useState(false);
   const [flags, setFlags] = useState(initialFlags);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // live scores that drift over time
   const [scores, setScores] = useState({ speech: 20, timing: 18, flow: 21, linguistic: 22 });
@@ -168,75 +233,45 @@ const InterviewRoom = () => {
             <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
               <Maximize className="h-4 w-4" />
             </Button>
+            {/* Drawer toggle — visible only below lg */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-full lg:hidden"
+              onClick={() => setDrawerOpen(true)}
+            >
+              <PanelRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
 
-        {/* ─── Right Sidebar (interviewer only) ───────────────────── */}
+        {/* ─── Right Sidebar (desktop) ────────────────────────────── */}
         <aside className="hidden lg:flex w-[320px] border-l border-border bg-card flex-col shrink-0">
-          {/* Live Score */}
-          <div className="p-5 border-b border-border">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-              Authenticity Score (Live)
-            </h3>
-            <div className="flex justify-center mb-5">
-              <ScoreGauge score={overall} size={110} strokeWidth={8} animated={false} />
-            </div>
-            <p className="text-[11px] text-center text-muted-foreground mb-5">
-              Updates every 30 s
-            </p>
-            <div className="space-y-3">
-              <SubScore label="Speech Patterns" score={scores.speech} max={25} />
-              <SubScore label="Response Timing" score={scores.timing} max={25} />
-              <SubScore label="Conversational Flow" score={scores.flow} max={25} />
-              <SubScore label="Linguistic Authenticity" score={scores.linguistic} max={25} />
-            </div>
-          </div>
-
-          {/* Flags */}
-          <div className="p-5 border-b border-border flex-1 overflow-hidden flex flex-col">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-              <AlertTriangle className="h-3.5 w-3.5" />
-              Detected Patterns
-            </h3>
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 -mr-1">
-              {flags.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No concerning patterns detected</p>
-              ) : (
-                flags.map((f, i) => (
-                  <motion.div
-                    key={`${f.time}-${i}`}
-                    initial={{ opacity: 0, x: 10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex items-start gap-2 rounded-lg bg-muted/40 px-3 py-2"
-                  >
-                    <span className="text-[11px] font-mono text-muted-foreground shrink-0 mt-px">
-                      {f.time}
-                    </span>
-                    <span className="text-xs leading-none mt-0.5">{severityIcon(f.severity)}</span>
-                    <span className="text-xs leading-snug">{f.text}</span>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Notes */}
-          <div className="p-5">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-              Interview Notes
-            </h3>
-            <Textarea
-              placeholder="Type notes here..."
-              className="resize-none text-sm h-24"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-            <p className="text-[11px] text-muted-foreground mt-1 text-right">
-              {notes.length} chars
-            </p>
-          </div>
+          <SidebarContent
+            overall={overall}
+            scores={scores}
+            flags={flags}
+            notes={notes}
+            setNotes={setNotes}
+          />
         </aside>
       </div>
+
+      {/* ─── Drawer Sidebar (tablet / mobile) ─────────────────────── */}
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <SheetContent side="right" className="w-[340px] sm:w-[360px] p-0 overflow-y-auto">
+          <SheetHeader className="px-5 pt-5 pb-0">
+            <SheetTitle className="text-sm">Live Analysis</SheetTitle>
+          </SheetHeader>
+          <SidebarContent
+            overall={overall}
+            scores={scores}
+            flags={flags}
+            notes={notes}
+            setNotes={setNotes}
+          />
+        </SheetContent>
+      </Sheet>
 
       {/* ─── End Interview Confirmation ───────────────────────────── */}
       <Dialog open={showEnd} onOpenChange={setShowEnd}>
