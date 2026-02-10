@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import Report from "./pages/Report";
+import Settings from "./pages/Settings";
 import CandidateInterview from "./pages/CandidateInterview";
 import Compare from "./pages/Compare";
 import InterviewRoom from "./pages/InterviewRoom";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/report/:id" element={<Report />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="/compare" element={<Compare />} />
             <Route path="/interview/:token" element={<CandidateInterview />} />
             <Route path="/pricing" element={<Pricing />} />

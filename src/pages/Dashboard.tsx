@@ -119,9 +119,9 @@ const Dashboard = () => {
             <span className="font-bold text-lg">AuthentiView</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm">
-            <span className="font-medium text-foreground">Dashboard</span>
-            <span className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors">Interviews</span>
-            <span className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors">Settings</span>
+            <Link to="/dashboard" className="font-medium text-foreground">Dashboard</Link>
+              <span className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors">Interviews</span>
+              <Link to="/settings" className="text-muted-foreground hover:text-foreground transition-colors">Settings</Link>
           </nav>
           <div className="flex items-center gap-3">
             <DarkModeToggle />
