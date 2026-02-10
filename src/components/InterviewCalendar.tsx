@@ -17,7 +17,7 @@ import {
   getMinutes,
 } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { cn } from "@/lib/utils";
