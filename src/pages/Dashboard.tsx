@@ -23,12 +23,51 @@ const mockInterviews = [
 const Dashboard = () => {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [scoreFilter, setScoreFilter] = useState<string>("all");
 
-  const filtered = mockInterviews.filter(
-    (i) =>
-      i.candidate.toLowerCase().includes(search.toLowerCase()) ||
-      i.position.toLowerCase().includes(search.toLowerCase())
-  );
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir(key === "date" ? "desc" : "asc");
+    }
+  };
+
+  const SortIcon = ({ col }: { col: SortKey }) => {
+    if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
+  };
+
+  const filtered = useMemo(() => {
+    let items = mockInterviews.filter(
+      (i) =>
+        i.candidate.toLowerCase().includes(search.toLowerCase()) ||
+        i.position.toLowerCase().includes(search.toLowerCase())
+    );
+
+    // Score filter
+    if (scoreFilter === "high") items = items.filter(i => i.score >= 80);
+    else if (scoreFilter === "medium") items = items.filter(i => i.score >= 50 && i.score < 80);
+    else if (scoreFilter === "low") items = items.filter(i => i.score < 50);
+
+    // Sort
+    items.sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case "candidate": cmp = a.candidate.localeCompare(b.candidate); break;
+        case "position": cmp = a.position.localeCompare(b.position); break;
+        case "date": cmp = new Date(a.date).getTime() - new Date(b.date).getTime(); break;
+        case "duration": cmp = a.duration.localeCompare(b.duration); break;
+        case "score": cmp = a.score - b.score; break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return items;
+  }, [search, scoreFilter, sortKey, sortDir]);
 
   return (
     <div className="min-h-screen bg-background">
