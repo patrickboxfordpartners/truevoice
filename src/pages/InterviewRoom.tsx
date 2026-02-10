@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Mic, MicOff, Video, VideoOff, Settings, Maximize, PhoneOff,
-  Shield, AlertTriangle, Clock,
+  Shield, AlertTriangle, Clock, PanelRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 // ─── Mock data helpers ──────────────────────────────────────────────
 type Flag = { time: string; text: string; severity: "low" | "medium" | "high" };
