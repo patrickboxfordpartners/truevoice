@@ -56,6 +56,7 @@ const mockInterviews = [
 const Dashboard = () => {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [showEmailTemplates, setShowEmailTemplates] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [scoreFilter, setScoreFilter] = useState<string>("all");
