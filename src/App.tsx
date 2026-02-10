@@ -8,6 +8,7 @@ import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import Report from "./pages/Report";
 import CandidateInterview from "./pages/CandidateInterview";
+import InterviewRoom from "./pages/InterviewRoom";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
