@@ -68,6 +68,33 @@ const Settings = () => {
     });
   };
 
+  const handleInvite = () => {
+    if (!inviteEmail.trim()) return;
+    const initials = inviteEmail.slice(0, 2).toUpperCase();
+    const newMember: TeamMember = {
+      id: Date.now().toString(),
+      name: inviteEmail.split("@")[0],
+      email: inviteEmail,
+      role: inviteRole,
+      initials,
+    };
+    setTeamMembers((prev) => [...prev, newMember]);
+    setInviteEmail("");
+    toast({ title: "Invitation sent", description: `Invited ${inviteEmail} as ${ROLE_CONFIG[inviteRole].label}.` });
+  };
+
+  const handleChangeRole = (memberId: string, newRole: string) => {
+    setTeamMembers((prev) =>
+      prev.map((m) => (m.id === memberId ? { ...m, role: newRole as Role } : m))
+    );
+    toast({ title: "Role updated" });
+  };
+
+  const handleRemove = (memberId: string) => {
+    setTeamMembers((prev) => prev.filter((m) => m.id !== memberId));
+    toast({ title: "Member removed" });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Top Nav */}
