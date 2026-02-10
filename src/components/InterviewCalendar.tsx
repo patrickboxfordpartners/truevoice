@@ -33,6 +33,7 @@ interface Interview {
 
 interface InterviewCalendarProps {
   interviews: Interview[];
+  onReschedule?: (interviewId: string, newDate: string) => void;
 }
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
