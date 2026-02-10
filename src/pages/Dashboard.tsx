@@ -347,6 +347,7 @@ const Dashboard = () => {
       </main>
 
       <CreateInterviewDialog open={showCreate} onOpenChange={setShowCreate} />
+      <EmailTemplateDialog open={showEmailTemplates} onOpenChange={setShowEmailTemplates} />
     </div>
   );
 };
