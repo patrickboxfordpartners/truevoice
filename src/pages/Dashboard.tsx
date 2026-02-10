@@ -151,6 +151,12 @@ const Dashboard = () => {
             <div className="p-6 border-b border-border">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Recent Interviews</h2>
+                <Link to="/compare">
+                  <Button variant="outline" size="sm" className="gap-1.5">
+                    <GitCompareArrows className="h-3.5 w-3.5" />
+                    Compare
+                  </Button>
+                </Link>
               </div>
               <div className="flex items-center gap-3">
                 <div className="relative flex-1">
