@@ -343,7 +343,14 @@ const Dashboard = () => {
               </>
             ) : (
               <div className="p-6">
-                <InterviewCalendar interviews={mockInterviews} />
+                <InterviewCalendar
+                  interviews={interviews}
+                  onReschedule={(id, newDate) => {
+                    setInterviews((prev) =>
+                      prev.map((iv) => (iv.id === id ? { ...iv, date: newDate } : iv))
+                    );
+                  }}
+                />
               </div>
             )}
           </motion.div>
