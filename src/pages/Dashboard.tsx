@@ -132,25 +132,54 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Recent Interviews</h2>
               </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by candidate name or position..."
-                  className="pl-10"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by candidate or position..."
+                    className="pl-10"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+                <Select value={scoreFilter} onValueChange={setScoreFilter}>
+                  <SelectTrigger className="w-[160px] gap-2">
+                    <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                    <SelectValue placeholder="Score filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Scores</SelectItem>
+                    <SelectItem value="high">High (80+)</SelectItem>
+                    <SelectItem value="medium">Medium (50–79)</SelectItem>
+                    <SelectItem value="low">Low (&lt;50)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {(search || scoreFilter !== "all") && (
+                  <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setScoreFilter("all"); }} className="gap-1 text-muted-foreground">
+                    <X className="h-3.5 w-3.5" /> Clear
+                  </Button>
+                )}
               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="text-left text-sm text-muted-foreground border-b border-border">
-                    <th className="px-6 py-3 font-medium">Candidate</th>
-                    <th className="px-6 py-3 font-medium">Position</th>
-                    <th className="px-6 py-3 font-medium">Date</th>
-                    <th className="px-6 py-3 font-medium">Duration</th>
-                    <th className="px-6 py-3 font-medium">Score</th>
+                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("candidate")}>
+                      <span className="inline-flex items-center gap-1.5">Candidate <SortIcon col="candidate" /></span>
+                    </th>
+                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("position")}>
+                      <span className="inline-flex items-center gap-1.5">Position <SortIcon col="position" /></span>
+                    </th>
+                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("date")}>
+                      <span className="inline-flex items-center gap-1.5">Date <SortIcon col="date" /></span>
+                    </th>
+                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("duration")}>
+                      <span className="inline-flex items-center gap-1.5">Duration <SortIcon col="duration" /></span>
+                    </th>
+                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("score")}>
+                      <span className="inline-flex items-center gap-1.5">Score <SortIcon col="score" /></span>
+                    </th>
                     <th className="px-6 py-3 font-medium"></th>
                   </tr>
                 </thead>
