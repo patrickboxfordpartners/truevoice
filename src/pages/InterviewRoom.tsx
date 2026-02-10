@@ -159,7 +159,24 @@ const InterviewRoom = () => {
   }, [elapsed]);
 
   return (
-    <div className="h-screen flex flex-col bg-foreground/[0.03]">
+    <>
+      {/* Mobile blocker */}
+      <div className="md:hidden fixed inset-0 z-50 bg-background flex items-center justify-center p-6">
+        <div className="glass-card rounded-2xl p-8 max-w-sm w-full text-center">
+          <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <Monitor className="h-7 w-7 text-primary" />
+          </div>
+          <h1 className="text-xl font-bold mb-2">Desktop Required</h1>
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
+            The interview room requires a desktop or laptop for the best experience. Please switch to a larger screen to join.
+          </p>
+          <a href="/dashboard">
+            <Button variant="outline" className="w-full">Back to Dashboard</Button>
+          </a>
+        </div>
+      </div>
+
+    <div className="h-screen hidden md:flex flex-col bg-foreground/[0.03]">
       {/* ─── Top Bar ──────────────────────────────────────────────── */}
       <header className="flex items-center justify-between px-5 h-14 border-b border-border bg-card shrink-0">
         <div className="flex items-center gap-2">
