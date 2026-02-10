@@ -11,6 +11,8 @@ import { CreateInterviewDialog } from "@/components/CreateInterviewDialog";
 type SortKey = "candidate" | "position" | "date" | "duration" | "score";
 type SortDir = "asc" | "desc";
 
+const ITEMS_PER_PAGE = 8;
+
 const mockInterviews = [
   { id: "1", candidate: "Sarah Chen", position: "Senior Frontend Engineer", date: "2026-02-10T14:00:00", duration: "42:15", score: 87 },
   { id: "2", candidate: "James Wilson", position: "Product Manager", date: "2026-02-10T10:30:00", duration: "38:20", score: 62 },
@@ -18,6 +20,18 @@ const mockInterviews = [
   { id: "4", candidate: "Michael Park", position: "Backend Developer", date: "2026-02-09T11:00:00", duration: "35:45", score: 34 },
   { id: "5", candidate: "Lisa Thompson", position: "Data Analyst", date: "2026-02-08T09:00:00", duration: "40:00", score: 78 },
   { id: "6", candidate: "David Kim", position: "DevOps Engineer", date: "2026-02-07T16:00:00", duration: "37:30", score: 55 },
+  { id: "7", candidate: "Rachel Adams", position: "QA Engineer", date: "2026-02-06T13:00:00", duration: "33:50", score: 73 },
+  { id: "8", candidate: "Tom Harris", position: "Full Stack Developer", date: "2026-02-06T10:00:00", duration: "41:20", score: 88 },
+  { id: "9", candidate: "Nina Patel", position: "Product Designer", date: "2026-02-05T14:30:00", duration: "39:10", score: 45 },
+  { id: "10", candidate: "Carlos Mendez", position: "iOS Developer", date: "2026-02-05T09:00:00", duration: "36:40", score: 82 },
+  { id: "11", candidate: "Sophie Turner", position: "Marketing Analyst", date: "2026-02-04T15:00:00", duration: "44:05", score: 67 },
+  { id: "12", candidate: "Alex Novak", position: "Security Engineer", date: "2026-02-04T11:00:00", duration: "38:55", score: 94 },
+  { id: "13", candidate: "Jordan Lee", position: "ML Engineer", date: "2026-02-03T14:00:00", duration: "47:30", score: 29 },
+  { id: "14", candidate: "Priya Sharma", position: "Technical Writer", date: "2026-02-03T10:00:00", duration: "32:15", score: 71 },
+  { id: "15", candidate: "Marcus Brown", position: "SRE", date: "2026-02-02T16:00:00", duration: "35:00", score: 58 },
+  { id: "16", candidate: "Olivia Zhang", position: "Data Engineer", date: "2026-02-02T09:00:00", duration: "43:20", score: 85 },
+  { id: "17", candidate: "Ethan Wright", position: "Android Developer", date: "2026-02-01T13:00:00", duration: "37:45", score: 41 },
+  { id: "18", candidate: "Mia Johansson", position: "Scrum Master", date: "2026-02-01T10:00:00", duration: "30:10", score: 76 },
 ];
 
 const Dashboard = () => {
