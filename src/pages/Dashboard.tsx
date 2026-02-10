@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, Search, TrendingUp, Calendar, Users, Shield, LogOut, Settings, ChevronDown, Clock, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, GitCompareArrows } from "lucide-react";
+import { Plus, Search, TrendingUp, Calendar, Users, Shield, LogOut, Settings, ChevronDown, Clock, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, GitCompareArrows, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -151,12 +151,35 @@ const Dashboard = () => {
             <div className="p-6 border-b border-border">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Recent Interviews</h2>
-                <Link to="/compare">
-                  <Button variant="outline" size="sm" className="gap-1.5">
-                    <GitCompareArrows className="h-3.5 w-3.5" />
-                    Compare
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+                    const headers = ["Candidate", "Position", "Date", "Duration", "Score"];
+                    const rows = filtered.map(i => [
+                      `"${i.candidate}"`,
+                      `"${i.position}"`,
+                      new Date(i.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+                      i.duration,
+                      i.score,
+                    ].join(","));
+                    const csv = [headers.join(","), ...rows].join("\n");
+                    const blob = new Blob([csv], { type: "text/csv" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = "interviews.csv";
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}>
+                    <Download className="h-3.5 w-3.5" />
+                    Export CSV
                   </Button>
-                </Link>
+                  <Link to="/compare">
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      <GitCompareArrows className="h-3.5 w-3.5" />
+                      Compare
+                    </Button>
+                  </Link>
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <div className="relative flex-1">
