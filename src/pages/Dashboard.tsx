@@ -1,13 +1,14 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, Search, TrendingUp, Calendar, Users, Shield, LogOut, Settings, ChevronDown, Clock, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, GitCompareArrows, Download, Moon, Sun } from "lucide-react";
+import { Plus, Search, TrendingUp, Calendar, Users, Shield, LogOut, Settings, ChevronDown, Clock, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, GitCompareArrows, Download, Moon, Sun, Mail } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { CreateInterviewDialog } from "@/components/CreateInterviewDialog";
+import { EmailTemplateDialog } from "@/components/EmailTemplateDialog";
 
 const DarkModeToggle = () => {
   const { theme, setTheme } = useTheme();
@@ -55,6 +56,7 @@ const mockInterviews = [
 const Dashboard = () => {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [showEmailTemplates, setShowEmailTemplates] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [scoreFilter, setScoreFilter] = useState<string>("all");
@@ -191,6 +193,10 @@ const Dashboard = () => {
                   }}>
                     <Download className="h-3.5 w-3.5" />
                     Export CSV
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowEmailTemplates(true)}>
+                    <Mail className="h-3.5 w-3.5" />
+                    Email Templates
                   </Button>
                   <Link to="/compare">
                     <Button variant="outline" size="sm" className="gap-1.5">
@@ -341,6 +347,7 @@ const Dashboard = () => {
       </main>
 
       <CreateInterviewDialog open={showCreate} onOpenChange={setShowCreate} />
+      <EmailTemplateDialog open={showEmailTemplates} onOpenChange={setShowEmailTemplates} />
     </div>
   );
 };
