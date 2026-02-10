@@ -140,6 +140,7 @@ export const InterviewCalendar = ({ interviews, onReschedule }: InterviewCalenda
     onReschedule(interviewId, newDate.toISOString().slice(0, 19));
   }, [onReschedule, interviews]);
 
+  return (
     <div className="space-y-4">
       {/* Navigation */}
       <div className="flex items-center justify-between">
