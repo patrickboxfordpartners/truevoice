@@ -8,6 +8,7 @@ import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import Report from "./pages/Report";
 import CandidateInterview from "./pages/CandidateInterview";
+import Compare from "./pages/Compare";
 import InterviewRoom from "./pages/InterviewRoom";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/report/:id" element={<Report />} />
+          <Route path="/compare" element={<Compare />} />
           <Route path="/interview/:token" element={<CandidateInterview />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/room/:id" element={<InterviewRoom />} />
