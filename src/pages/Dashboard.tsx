@@ -103,7 +103,7 @@ const Dashboard = () => {
     });
 
     return items;
-  }, [search, scoreFilter, sortKey, sortDir]);
+  }, [search, scoreFilter, sortKey, sortDir, interviews]);
 
   // Reset page when filters change
   useMemo(() => { setPage(1); }, [search, scoreFilter]);
