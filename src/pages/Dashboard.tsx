@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { CreateInterviewDialog } from "@/components/CreateInterviewDialog";
+import { EmailTemplateDialog } from "@/components/EmailTemplateDialog";
 
 const DarkModeToggle = () => {
   const { theme, setTheme } = useTheme();
