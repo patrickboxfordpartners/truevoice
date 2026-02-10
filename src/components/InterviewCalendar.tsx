@@ -321,17 +321,25 @@ export const InterviewCalendar = ({ interviews, onReschedule }: InterviewCalenda
                 </div>
                 {/* Day cells */}
                 {weekDays.map((day, di) => {
-                  const key = format(day, "yyyy-MM-dd");
-                  const dayInterviews = interviewsByDate.get(key) || [];
+                  const dateKey = format(day, "yyyy-MM-dd");
+                  const slotKey = `${dateKey}-${hour}`;
+                  const dayInterviews = interviewsByDate.get(dateKey) || [];
                   const slotInterviews = dayInterviews.filter((iv) => {
                     const d = new Date(iv.date);
                     return getHours(d) === hour;
                   });
+                  const isDropTarget = dragOverSlot === slotKey;
 
                   return (
                     <div
                       key={di}
-                      className="h-16 border-l border-b border-border bg-card relative hover:bg-muted/30 transition-colors"
+                      className={cn(
+                        "h-16 border-l border-b border-border bg-card relative transition-colors",
+                        isDropTarget ? "bg-primary/10 ring-1 ring-primary ring-inset" : "hover:bg-muted/30"
+                      )}
+                      onDragOver={(e) => handleDragOver(e, slotKey)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, day, hour)}
                     >
                       {slotInterviews.map((iv) => {
                         const d = new Date(iv.date);
@@ -341,10 +349,14 @@ export const InterviewCalendar = ({ interviews, onReschedule }: InterviewCalenda
                         const heightPx = Math.max(24, (durationMins / 60) * 64);
 
                         return (
-                          <Link
+                          <div
                             key={iv.id}
-                            to={`/report/${iv.id}`}
-                            className="absolute left-0.5 right-0.5 z-10 group"
+                            draggable
+                            onDragStart={(e) => {
+                              e.stopPropagation();
+                              handleDragStart(e, iv.id);
+                            }}
+                            className="absolute left-0.5 right-0.5 z-10 group cursor-grab active:cursor-grabbing"
                             style={{
                               top: `${topOffset}%`,
                               height: `${heightPx}px`,
@@ -352,7 +364,7 @@ export const InterviewCalendar = ({ interviews, onReschedule }: InterviewCalenda
                           >
                             <div
                               className={cn(
-                                "h-full rounded px-1.5 py-0.5 overflow-hidden text-[10px] leading-tight border-l-2 transition-shadow group-hover:shadow-md",
+                                "h-full rounded px-1.5 py-0.5 overflow-hidden text-[10px] leading-tight border-l-2 transition-shadow group-hover:shadow-md flex items-start gap-0.5",
                                 iv.score >= 80
                                   ? "bg-success/10 border-success text-success"
                                   : iv.score >= 50
@@ -360,12 +372,15 @@ export const InterviewCalendar = ({ interviews, onReschedule }: InterviewCalenda
                                   : "bg-destructive/10 border-destructive text-destructive"
                               )}
                             >
-                              <p className="font-medium truncate">{iv.candidate}</p>
-                              <p className="opacity-70 truncate">
-                                {format(d, "h:mm a")} · {iv.duration}
-                              </p>
+                              <GripVertical className="h-3 w-3 shrink-0 opacity-40 mt-0.5" />
+                              <div className="min-w-0">
+                                <p className="font-medium truncate">{iv.candidate}</p>
+                                <p className="opacity-70 truncate">
+                                  {format(d, "h:mm a")} · {iv.duration}
+                                </p>
+                              </div>
                             </div>
-                          </Link>
+                          </div>
                         );
                       })}
                     </div>
