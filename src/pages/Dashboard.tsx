@@ -204,7 +204,7 @@ const Dashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((interview) => (
+                  {paginated.map((interview) => (
                     <tr key={interview.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                       <td className="px-6 py-4 font-medium">{interview.candidate}</td>
                       <td className="px-6 py-4 text-muted-foreground">{interview.position}</td>
@@ -220,9 +220,43 @@ const Dashboard = () => {
                       </td>
                     </tr>
                   ))}
+                  {paginated.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
+                        No interviews found matching your filters.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-border">
+                <p className="text-sm text-muted-foreground">
+                  Showing {(safePage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safePage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button variant="outline" size="sm" disabled={safePage <= 1} onClick={() => setPage(p => p - 1)}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                    <Button
+                      key={p}
+                      variant={p === safePage ? "default" : "outline"}
+                      size="sm"
+                      className="w-8"
+                      onClick={() => setPage(p)}
+                    >
+                      {p}
+                    </Button>
+                  ))}
+                  <Button variant="outline" size="sm" disabled={safePage >= totalPages} onClick={() => setPage(p => p + 1)}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </motion.div>
 
           {/* Sidebar */}
