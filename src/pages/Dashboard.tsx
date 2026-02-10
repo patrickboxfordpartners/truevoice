@@ -194,6 +194,10 @@ const Dashboard = () => {
                     <Download className="h-3.5 w-3.5" />
                     Export CSV
                   </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowEmailTemplates(true)}>
+                    <Mail className="h-3.5 w-3.5" />
+                    Email Templates
+                  </Button>
                   <Link to="/compare">
                     <Button variant="outline" size="sm" className="gap-1.5">
                       <GitCompareArrows className="h-3.5 w-3.5" />
