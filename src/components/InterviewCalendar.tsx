@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
 import {
   format,
@@ -17,7 +17,7 @@ import {
   getMinutes,
 } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,7 @@ interface Interview {
 
 interface InterviewCalendarProps {
   interviews: Interview[];
+  onReschedule?: (interviewId: string, newDate: string) => void;
 }
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -46,11 +47,12 @@ const parseDurationMinutes = (dur: string): number => {
   return m + (s > 0 ? 1 : 0);
 };
 
-export const InterviewCalendar = ({ interviews }: InterviewCalendarProps) => {
+export const InterviewCalendar = ({ interviews, onReschedule }: InterviewCalendarProps) => {
   const [calView, setCalView] = useState<"month" | "week">("month");
   const [currentMonth, setCurrentMonth] = useState(new Date(2026, 1, 1));
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(MOCK_TODAY));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -107,6 +109,36 @@ export const InterviewCalendar = ({ interviews }: InterviewCalendarProps) => {
     calView === "month"
       ? format(currentMonth, "MMMM yyyy")
       : `${format(currentWeekStart, "MMM d")} – ${format(addDays(currentWeekStart, 6), "MMM d, yyyy")}`;
+
+  const handleDragStart = useCallback((e: React.DragEvent, interviewId: string) => {
+    e.dataTransfer.setData("interviewId", interviewId);
+    e.dataTransfer.effectAllowed = "move";
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent, slotKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverSlot(slotKey);
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverSlot(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, day: Date, hour: number) => {
+    e.preventDefault();
+    setDragOverSlot(null);
+    const interviewId = e.dataTransfer.getData("interviewId");
+    if (!interviewId || !onReschedule) return;
+
+    // Preserve original minutes from the interview
+    const interview = interviews.find((iv) => iv.id === interviewId);
+    const originalMins = interview ? getMinutes(new Date(interview.date)) : 0;
+
+    const newDate = new Date(day);
+    newDate.setHours(hour, originalMins, 0, 0);
+    onReschedule(interviewId, newDate.toISOString().slice(0, 19));
+  }, [onReschedule, interviews]);
 
   return (
     <div className="space-y-4">
@@ -289,17 +321,25 @@ export const InterviewCalendar = ({ interviews }: InterviewCalendarProps) => {
                 </div>
                 {/* Day cells */}
                 {weekDays.map((day, di) => {
-                  const key = format(day, "yyyy-MM-dd");
-                  const dayInterviews = interviewsByDate.get(key) || [];
+                  const dateKey = format(day, "yyyy-MM-dd");
+                  const slotKey = `${dateKey}-${hour}`;
+                  const dayInterviews = interviewsByDate.get(dateKey) || [];
                   const slotInterviews = dayInterviews.filter((iv) => {
                     const d = new Date(iv.date);
                     return getHours(d) === hour;
                   });
+                  const isDropTarget = dragOverSlot === slotKey;
 
                   return (
                     <div
                       key={di}
-                      className="h-16 border-l border-b border-border bg-card relative hover:bg-muted/30 transition-colors"
+                      className={cn(
+                        "h-16 border-l border-b border-border bg-card relative transition-colors",
+                        isDropTarget ? "bg-primary/10 ring-1 ring-primary ring-inset" : "hover:bg-muted/30"
+                      )}
+                      onDragOver={(e) => handleDragOver(e, slotKey)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, day, hour)}
                     >
                       {slotInterviews.map((iv) => {
                         const d = new Date(iv.date);
@@ -309,10 +349,14 @@ export const InterviewCalendar = ({ interviews }: InterviewCalendarProps) => {
                         const heightPx = Math.max(24, (durationMins / 60) * 64);
 
                         return (
-                          <Link
+                          <div
                             key={iv.id}
-                            to={`/report/${iv.id}`}
-                            className="absolute left-0.5 right-0.5 z-10 group"
+                            draggable
+                            onDragStart={(e) => {
+                              e.stopPropagation();
+                              handleDragStart(e, iv.id);
+                            }}
+                            className="absolute left-0.5 right-0.5 z-10 group cursor-grab active:cursor-grabbing"
                             style={{
                               top: `${topOffset}%`,
                               height: `${heightPx}px`,
@@ -320,7 +364,7 @@ export const InterviewCalendar = ({ interviews }: InterviewCalendarProps) => {
                           >
                             <div
                               className={cn(
-                                "h-full rounded px-1.5 py-0.5 overflow-hidden text-[10px] leading-tight border-l-2 transition-shadow group-hover:shadow-md",
+                                "h-full rounded px-1.5 py-0.5 overflow-hidden text-[10px] leading-tight border-l-2 transition-shadow group-hover:shadow-md flex items-start gap-0.5",
                                 iv.score >= 80
                                   ? "bg-success/10 border-success text-success"
                                   : iv.score >= 50
@@ -328,12 +372,15 @@ export const InterviewCalendar = ({ interviews }: InterviewCalendarProps) => {
                                   : "bg-destructive/10 border-destructive text-destructive"
                               )}
                             >
-                              <p className="font-medium truncate">{iv.candidate}</p>
-                              <p className="opacity-70 truncate">
-                                {format(d, "h:mm a")} · {iv.duration}
-                              </p>
+                              <GripVertical className="h-3 w-3 shrink-0 opacity-40 mt-0.5" />
+                              <div className="min-w-0">
+                                <p className="font-medium truncate">{iv.candidate}</p>
+                                <p className="opacity-70 truncate">
+                                  {format(d, "h:mm a")} · {iv.duration}
+                                </p>
+                              </div>
                             </div>
-                          </Link>
+                          </div>
                         );
                       })}
                     </div>

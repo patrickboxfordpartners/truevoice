@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Plus, Search, TrendingUp, Calendar, Users, Shield, LogOut, Settings, ChevronDown, Clock, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, GitCompareArrows, Download, Moon, Sun, Mail, Table2, CalendarDays } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -33,7 +34,7 @@ type SortDir = "asc" | "desc";
 
 const ITEMS_PER_PAGE = 8;
 
-const mockInterviews = [
+const INITIAL_INTERVIEWS = [
   { id: "1", candidate: "Sarah Chen", position: "Senior Frontend Engineer", date: "2026-02-10T14:00:00", duration: "42:15", score: 87 },
   { id: "2", candidate: "James Wilson", position: "Product Manager", date: "2026-02-10T10:30:00", duration: "38:20", score: 62 },
   { id: "3", candidate: "Emily Rodriguez", position: "UX Designer", date: "2026-02-09T15:00:00", duration: "45:10", score: 91 },
@@ -55,6 +56,8 @@ const mockInterviews = [
 ];
 
 const Dashboard = () => {
+  const { toast } = useToast();
+  const [interviews, setInterviews] = useState(INITIAL_INTERVIEWS);
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [showEmailTemplates, setShowEmailTemplates] = useState(false);
@@ -79,7 +82,7 @@ const Dashboard = () => {
   };
 
   const filtered = useMemo(() => {
-    let items = mockInterviews.filter(
+    let items = interviews.filter(
       (i) =>
         i.candidate.toLowerCase().includes(search.toLowerCase()) ||
         i.position.toLowerCase().includes(search.toLowerCase())
@@ -102,7 +105,7 @@ const Dashboard = () => {
     });
 
     return items;
-  }, [search, scoreFilter, sortKey, sortDir]);
+  }, [search, scoreFilter, sortKey, sortDir, interviews]);
 
   // Reset page when filters change
   useMemo(() => { setPage(1); }, [search, scoreFilter]);
@@ -342,7 +345,22 @@ const Dashboard = () => {
               </>
             ) : (
               <div className="p-6">
-                <InterviewCalendar interviews={mockInterviews} />
+                <InterviewCalendar
+                  interviews={interviews}
+                  onReschedule={(id, newDate) => {
+                    const iv = interviews.find((i) => i.id === id);
+                    setInterviews((prev) =>
+                      prev.map((i) => (i.id === id ? { ...i, date: newDate } : i))
+                    );
+                    if (iv) {
+                      const d = new Date(newDate);
+                      toast({
+                        title: "Interview rescheduled",
+                        description: `${iv.candidate} moved to ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })} at ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`,
+                      });
+                    }
+                  }}
+                />
               </div>
             )}
           </motion.div>
