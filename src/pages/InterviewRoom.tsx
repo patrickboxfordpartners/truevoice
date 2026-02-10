@@ -24,12 +24,12 @@ const initialFlags: Flag[] = [
   { time: "7:22", text: "Unusually fast response (<1s)", severity: "high" },
 ];
 
-const possibleFlags = [
-  { text: "Monotone delivery pattern", severity: "medium" as const },
-  { text: "Zero filler words (5 min segment)", severity: "medium" as const },
-  { text: "Overly formal language detected", severity: "low" as const },
-  { text: "Perfect grammar throughout segment", severity: "low" as const },
-  { text: "Instant response to complex question", severity: "high" as const },
+const possibleFlags: Flag[] = [
+  { text: "Monotone delivery pattern", severity: "medium", time: "" },
+  { text: "Zero filler words (5 min segment)", severity: "medium", time: "" },
+  { text: "Overly formal language detected", severity: "low", time: "" },
+  { text: "Perfect grammar throughout segment", severity: "low", time: "" },
+  { text: "Instant response to complex question", severity: "high", time: "" },
 ];
 
 function formatElapsed(s: number) {
