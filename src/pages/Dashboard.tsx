@@ -61,6 +61,7 @@ const Dashboard = () => {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [scoreFilter, setScoreFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [page, setPage] = useState(1);
 
   const toggleSort = (key: SortKey) => {
