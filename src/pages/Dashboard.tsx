@@ -230,7 +230,11 @@ const Dashboard = () => {
                   </Link>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+            </div>
+            {viewMode === "table" ? (
+              <>
+              <div className="p-6 pt-0 pb-0">
+              <div className="flex items-center gap-3 pb-6">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -258,7 +262,7 @@ const Dashboard = () => {
                   </Button>
                 )}
               </div>
-            </div>
+              </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
