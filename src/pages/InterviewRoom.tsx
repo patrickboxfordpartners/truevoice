@@ -54,6 +54,69 @@ const SubScore = ({ label, score, max }: { label: string; score: number; max: nu
 const severityIcon = (s: string) =>
   s === "high" ? "🔴" : s === "medium" ? "⚠️" : "ℹ️";
 
+// ─── Extracted sidebar content ──────────────────────────────────────
+const SidebarContent = ({ overall, scores, flags, notes, setNotes }: {
+  overall: number;
+  scores: { speech: number; timing: number; flow: number; linguistic: number };
+  flags: Flag[];
+  notes: string;
+  setNotes: (v: string) => void;
+}) => (
+  <>
+    <div className="p-5 border-b border-border">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+        Authenticity Score (Live)
+      </h3>
+      <div className="flex justify-center mb-5">
+        <ScoreGauge score={overall} size={110} strokeWidth={8} animated={false} />
+      </div>
+      <p className="text-[11px] text-center text-muted-foreground mb-5">Updates every 30 s</p>
+      <div className="space-y-3">
+        <SubScore label="Speech Patterns" score={scores.speech} max={25} />
+        <SubScore label="Response Timing" score={scores.timing} max={25} />
+        <SubScore label="Conversational Flow" score={scores.flow} max={25} />
+        <SubScore label="Linguistic Authenticity" score={scores.linguistic} max={25} />
+      </div>
+    </div>
+    <div className="p-5 border-b border-border flex-1 overflow-hidden flex flex-col">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+        <AlertTriangle className="h-3.5 w-3.5" />
+        Detected Patterns
+      </h3>
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1 -mr-1">
+        {flags.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No concerning patterns detected</p>
+        ) : (
+          flags.map((f, i) => (
+            <motion.div
+              key={`${f.time}-${i}`}
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="flex items-start gap-2 rounded-lg bg-muted/40 px-3 py-2"
+            >
+              <span className="text-[11px] font-mono text-muted-foreground shrink-0 mt-px">{f.time}</span>
+              <span className="text-xs leading-none mt-0.5">{severityIcon(f.severity)}</span>
+              <span className="text-xs leading-snug">{f.text}</span>
+            </motion.div>
+          ))
+        )}
+      </div>
+    </div>
+    <div className="p-5">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+        Interview Notes
+      </h3>
+      <Textarea
+        placeholder="Type notes here..."
+        className="resize-none text-sm h-24"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+      />
+      <p className="text-[11px] text-muted-foreground mt-1 text-right">{notes.length} chars</p>
+    </div>
+  </>
+);
+
 // ─── Main component ─────────────────────────────────────────────────
 const InterviewRoom = () => {
   const [elapsed, setElapsed] = useState(465);
