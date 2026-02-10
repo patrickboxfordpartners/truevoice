@@ -56,12 +56,13 @@ const severityIcon = (s: string) =>
 
 // ─── Main component ─────────────────────────────────────────────────
 const InterviewRoom = () => {
-  const [elapsed, setElapsed] = useState(465); // start at ~7:45
+  const [elapsed, setElapsed] = useState(465);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(true);
   const [notes, setNotes] = useState("");
   const [showEnd, setShowEnd] = useState(false);
   const [flags, setFlags] = useState(initialFlags);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   // live scores that drift over time
   const [scores, setScores] = useState({ speech: 20, timing: 18, flow: 21, linguistic: 22 });
