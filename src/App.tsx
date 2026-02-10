@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import Report from "./pages/Report";
+import Settings from "./pages/Settings";
 import CandidateInterview from "./pages/CandidateInterview";
 import Compare from "./pages/Compare";
 import InterviewRoom from "./pages/InterviewRoom";
