@@ -299,6 +299,107 @@ const Settings = () => {
             </div>
           </motion.section>
 
+          {/* Team Members */}
+          <motion.section
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="glass-card rounded-xl p-6"
+          >
+            <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+              <Users className="h-5 w-5 text-primary" />
+              Team Members
+            </h2>
+
+            {/* Invite */}
+            <div className="flex items-end gap-3 mb-6">
+              <div className="flex-1">
+                <Label htmlFor="inviteEmail">Invite by email</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="inviteEmail"
+                    type="email"
+                    placeholder="colleague@company.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    className="pl-10"
+                    onKeyDown={(e) => e.key === "Enter" && handleInvite()}
+                  />
+                </div>
+              </div>
+              <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as Role)}>
+                <SelectTrigger className="w-[130px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="editor">Editor</SelectItem>
+                  <SelectItem value="viewer">Viewer</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={handleInvite} className="gap-1.5 shrink-0">
+                <UserPlus className="h-4 w-4" />
+                Invite
+              </Button>
+            </div>
+
+            <Separator className="mb-4" />
+
+            {/* Members list */}
+            <div className="space-y-3">
+              {teamMembers.map((member) => (
+                <div key={member.id} className="flex items-center justify-between gap-3 py-2">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs shrink-0">
+                      {member.initials}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{member.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {member.role === "owner" ? (
+                      <Badge variant="outline" className={`gap-1 ${ROLE_CONFIG.owner.color}`}>
+                        {ROLE_CONFIG.owner.icon}
+                        Owner
+                      </Badge>
+                    ) : (
+                      <>
+                        <Select value={member.role} onValueChange={(v) => handleChangeRole(member.id, v)}>
+                          <SelectTrigger className="w-[120px] h-8 text-xs">
+                            <div className="flex items-center gap-1.5">
+                              {ROLE_CONFIG[member.role].icon}
+                              <SelectValue />
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="editor">Editor</SelectItem>
+                            <SelectItem value="viewer">Viewer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => handleRemove(member.id)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-4">
+              <strong>Admin</strong> — full access &amp; settings · <strong>Editor</strong> — create &amp; manage interviews · <strong>Viewer</strong> — read-only access
+            </p>
+          </motion.section>
+
           {/* Save */}
           <div className="flex justify-end">
             <Button onClick={handleSave} className="gap-2">
