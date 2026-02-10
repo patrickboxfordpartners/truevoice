@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, Search, TrendingUp, Calendar, Users, Shield, LogOut, Settings, ChevronDown, Clock } from "lucide-react";
+import { Plus, Search, TrendingUp, Calendar, Users, Shield, LogOut, Settings, ChevronDown, Clock, ArrowUp, ArrowDown, ArrowUpDown, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { CreateInterviewDialog } from "@/components/CreateInterviewDialog";
+
+type SortKey = "candidate" | "position" | "date" | "duration" | "score";
+type SortDir = "asc" | "desc";
 
 const mockInterviews = [
   { id: "1", candidate: "Sarah Chen", position: "Senior Frontend Engineer", date: "2026-02-10T14:00:00", duration: "42:15", score: 87 },
@@ -19,12 +23,51 @@ const mockInterviews = [
 const Dashboard = () => {
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
+  const [sortKey, setSortKey] = useState<SortKey>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [scoreFilter, setScoreFilter] = useState<string>("all");
 
-  const filtered = mockInterviews.filter(
-    (i) =>
-      i.candidate.toLowerCase().includes(search.toLowerCase()) ||
-      i.position.toLowerCase().includes(search.toLowerCase())
-  );
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir(key === "date" ? "desc" : "asc");
+    }
+  };
+
+  const SortIcon = ({ col }: { col: SortKey }) => {
+    if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
+  };
+
+  const filtered = useMemo(() => {
+    let items = mockInterviews.filter(
+      (i) =>
+        i.candidate.toLowerCase().includes(search.toLowerCase()) ||
+        i.position.toLowerCase().includes(search.toLowerCase())
+    );
+
+    // Score filter
+    if (scoreFilter === "high") items = items.filter(i => i.score >= 80);
+    else if (scoreFilter === "medium") items = items.filter(i => i.score >= 50 && i.score < 80);
+    else if (scoreFilter === "low") items = items.filter(i => i.score < 50);
+
+    // Sort
+    items.sort((a, b) => {
+      let cmp = 0;
+      switch (sortKey) {
+        case "candidate": cmp = a.candidate.localeCompare(b.candidate); break;
+        case "position": cmp = a.position.localeCompare(b.position); break;
+        case "date": cmp = new Date(a.date).getTime() - new Date(b.date).getTime(); break;
+        case "duration": cmp = a.duration.localeCompare(b.duration); break;
+        case "score": cmp = a.score - b.score; break;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return items;
+  }, [search, scoreFilter, sortKey, sortDir]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,25 +132,54 @@ const Dashboard = () => {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Recent Interviews</h2>
               </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by candidate name or position..."
-                  className="pl-10"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+              <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by candidate or position..."
+                    className="pl-10"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+                <Select value={scoreFilter} onValueChange={setScoreFilter}>
+                  <SelectTrigger className="w-[160px] gap-2">
+                    <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+                    <SelectValue placeholder="Score filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Scores</SelectItem>
+                    <SelectItem value="high">High (80+)</SelectItem>
+                    <SelectItem value="medium">Medium (50–79)</SelectItem>
+                    <SelectItem value="low">Low (&lt;50)</SelectItem>
+                  </SelectContent>
+                </Select>
+                {(search || scoreFilter !== "all") && (
+                  <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setScoreFilter("all"); }} className="gap-1 text-muted-foreground">
+                    <X className="h-3.5 w-3.5" /> Clear
+                  </Button>
+                )}
               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="text-left text-sm text-muted-foreground border-b border-border">
-                    <th className="px-6 py-3 font-medium">Candidate</th>
-                    <th className="px-6 py-3 font-medium">Position</th>
-                    <th className="px-6 py-3 font-medium">Date</th>
-                    <th className="px-6 py-3 font-medium">Duration</th>
-                    <th className="px-6 py-3 font-medium">Score</th>
+                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("candidate")}>
+                      <span className="inline-flex items-center gap-1.5">Candidate <SortIcon col="candidate" /></span>
+                    </th>
+                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("position")}>
+                      <span className="inline-flex items-center gap-1.5">Position <SortIcon col="position" /></span>
+                    </th>
+                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("date")}>
+                      <span className="inline-flex items-center gap-1.5">Date <SortIcon col="date" /></span>
+                    </th>
+                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("duration")}>
+                      <span className="inline-flex items-center gap-1.5">Duration <SortIcon col="duration" /></span>
+                    </th>
+                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("score")}>
+                      <span className="inline-flex items-center gap-1.5">Score <SortIcon col="score" /></span>
+                    </th>
                     <th className="px-6 py-3 font-medium"></th>
                   </tr>
                 </thead>
