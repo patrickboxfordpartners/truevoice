@@ -47,11 +47,12 @@ const parseDurationMinutes = (dur: string): number => {
   return m + (s > 0 ? 1 : 0);
 };
 
-export const InterviewCalendar = ({ interviews }: InterviewCalendarProps) => {
+export const InterviewCalendar = ({ interviews, onReschedule }: InterviewCalendarProps) => {
   const [calView, setCalView] = useState<"month" | "week">("month");
   const [currentMonth, setCurrentMonth] = useState(new Date(2026, 1, 1));
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(MOCK_TODAY));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<string | null>(null);
 
   const calendarDays = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
