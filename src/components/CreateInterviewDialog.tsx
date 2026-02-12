@@ -84,7 +84,7 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg overflow-hidden">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         {step === "form" ? (
           <>
             <DialogHeader>
