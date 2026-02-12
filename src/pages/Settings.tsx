@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, ArrowLeft, Building2, Clock, Save, Globe, Users, Briefcase, Moon, Sun, UserPlus, Trash2, Mail, Crown, Pencil, Eye } from "lucide-react";
+import { Shield, ArrowLeft, Building2, Clock, Save, Globe, Users, Briefcase, Moon, Sun, UserPlus, Trash2, Mail, Crown, Pencil, Eye, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -12,23 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-
-type Role = "owner" | "admin" | "editor" | "viewer";
-
-interface TeamMember {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  initials: string;
-}
-
-const INITIAL_MEMBERS: TeamMember[] = [
-  { id: "1", name: "John Doe", email: "john@acme.com", role: "owner", initials: "JD" },
-  { id: "2", name: "Sarah Miller", email: "sarah@acme.com", role: "admin", initials: "SM" },
-  { id: "3", name: "Alex Rivera", email: "alex@acme.com", role: "editor", initials: "AR" },
-  { id: "4", name: "Kim Nguyen", email: "kim@acme.com", role: "viewer", initials: "KN" },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { useCompany, useUpdateCompany } from "@/hooks/useCompany";
+import { useTeam, useUpdateMemberRole, useRemoveMember, useInviteTeamMember } from "@/hooks/useTeam";
+import type { Role } from "@/types";
 
 const ROLE_CONFIG: Record<Role, { label: string; color: string; icon: React.ReactNode }> = {
   owner: { label: "Owner", color: "bg-primary/10 text-primary border-primary/20", icon: <Crown className="h-3 w-3" /> },
@@ -40,16 +27,21 @@ const ROLE_CONFIG: Record<Role, { label: string; color: string; icon: React.Reac
 const Settings = () => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(INITIAL_MEMBERS);
+  const { profile } = useAuth();
+  const { data: company, isLoading: companyLoading } = useCompany();
+  const { data: teamMembers, isLoading: teamLoading } = useTeam();
+  const updateCompany = useUpdateCompany();
+  const updateRole = useUpdateMemberRole();
+  const removeMember = useRemoveMember();
+  const inviteMember = useInviteTeamMember();
+
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<Role>("viewer");
 
-  // Company profile state
-  const [companyName, setCompanyName] = useState("Acme Corp");
-  const [companyWebsite, setCompanyWebsite] = useState("https://acme.com");
-  const [companyDescription, setCompanyDescription] = useState(
-    "We build innovative solutions for modern teams."
-  );
+  // Company profile state — initialized from fetched data
+  const [companyName, setCompanyName] = useState("");
+  const [companyWebsite, setCompanyWebsite] = useState("");
+  const [companyDescription, setCompanyDescription] = useState("");
   const [industry, setIndustry] = useState("technology");
   const [companySize, setCompanySize] = useState("51-200");
 
@@ -61,39 +53,91 @@ const Settings = () => {
   const [feedbackDeadline, setFeedbackDeadline] = useState("3");
   const [timezone, setTimezone] = useState("America/New_York");
 
+  // Populate form when company data loads
+  useEffect(() => {
+    if (company) {
+      setCompanyName(company.name || "");
+      setCompanyWebsite(company.website || "");
+      setCompanyDescription(company.description || "");
+      setIndustry(company.industry || "technology");
+      setCompanySize(company.company_size || "51-200");
+      setDefaultDuration(String(company.default_duration));
+      setAutoRecord(company.auto_record);
+      setAuthenticityDetection(company.authenticity_detection);
+      setCandidateCamera(company.require_candidate_camera);
+      setFeedbackDeadline(String(company.feedback_deadline));
+      setTimezone(company.timezone);
+    }
+  }, [company]);
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "?";
+
   const handleSave = () => {
-    toast({
-      title: "Settings saved",
-      description: "Your company profile and preferences have been updated.",
-    });
+    updateCompany.mutate(
+      {
+        name: companyName,
+        website: companyWebsite || null,
+        description: companyDescription || null,
+        industry,
+        company_size: companySize,
+        default_duration: parseInt(defaultDuration),
+        feedback_deadline: parseInt(feedbackDeadline),
+        timezone,
+        auto_record: autoRecord,
+        authenticity_detection: authenticityDetection,
+        require_candidate_camera: candidateCamera,
+      },
+      {
+        onSuccess: () => {
+          toast({ title: "Settings saved", description: "Your company profile and preferences have been updated." });
+        },
+        onError: (err: any) => {
+          toast({ title: "Error", description: err.message, variant: "destructive" });
+        },
+      }
+    );
   };
 
   const handleInvite = () => {
     if (!inviteEmail.trim()) return;
-    const initials = inviteEmail.slice(0, 2).toUpperCase();
-    const newMember: TeamMember = {
-      id: Date.now().toString(),
-      name: inviteEmail.split("@")[0],
-      email: inviteEmail,
-      role: inviteRole,
-      initials,
-    };
-    setTeamMembers((prev) => [...prev, newMember]);
-    setInviteEmail("");
-    toast({ title: "Invitation sent", description: `Invited ${inviteEmail} as ${ROLE_CONFIG[inviteRole].label}.` });
+    inviteMember.mutate(
+      { email: inviteEmail, role: inviteRole },
+      {
+        onSuccess: () => {
+          toast({ title: "Member added", description: `Added ${inviteEmail} as ${ROLE_CONFIG[inviteRole].label}.` });
+          setInviteEmail("");
+        },
+        onError: (err: any) => {
+          toast({ title: "Error", description: err.message, variant: "destructive" });
+        },
+      }
+    );
   };
 
   const handleChangeRole = (memberId: string, newRole: string) => {
-    setTeamMembers((prev) =>
-      prev.map((m) => (m.id === memberId ? { ...m, role: newRole as Role } : m))
+    updateRole.mutate(
+      { memberId, role: newRole as Role },
+      {
+        onSuccess: () => toast({ title: "Role updated" }),
+      }
     );
-    toast({ title: "Role updated" });
   };
 
   const handleRemove = (memberId: string) => {
-    setTeamMembers((prev) => prev.filter((m) => m.id !== memberId));
-    toast({ title: "Member removed" });
+    removeMember.mutate(memberId, {
+      onSuccess: () => toast({ title: "Member removed" }),
+    });
   };
+
+  if (companyLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -119,7 +163,7 @@ const Settings = () => {
               <Sun className="h-4 w-4 rotate-0 scale-100 transition-transform dark:-rotate-90 dark:scale-0" />
               <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-transform dark:rotate-0 dark:scale-100" />
             </Button>
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">JD</div>
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">{initials}</div>
           </div>
         </div>
       </header>
@@ -135,16 +179,11 @@ const Settings = () => {
 
         <div className="space-y-8">
           {/* Company Profile */}
-          <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass-card rounded-xl p-6"
-          >
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-6">
             <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
               <Building2 className="h-5 w-5 text-primary" />
               Company Profile
             </h2>
-
             <div className="grid gap-4">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
@@ -159,19 +198,11 @@ const Settings = () => {
                   </div>
                 </div>
               </div>
-
               <div>
                 <Label htmlFor="companyDescription">Description</Label>
-                <Textarea
-                  id="companyDescription"
-                  value={companyDescription}
-                  onChange={(e) => setCompanyDescription(e.target.value)}
-                  className="min-h-[80px]"
-                  maxLength={500}
-                />
+                <Textarea id="companyDescription" value={companyDescription} onChange={(e) => setCompanyDescription(e.target.value)} className="min-h-[80px]" maxLength={500} />
                 <p className="text-xs text-muted-foreground mt-1">{companyDescription.length}/500 characters</p>
               </div>
-
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Industry</Label>
@@ -196,10 +227,10 @@ const Settings = () => {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1-10">1–10 employees</SelectItem>
-                      <SelectItem value="11-50">11–50 employees</SelectItem>
-                      <SelectItem value="51-200">51–200 employees</SelectItem>
-                      <SelectItem value="201-1000">201–1,000 employees</SelectItem>
+                      <SelectItem value="1-10">1-10 employees</SelectItem>
+                      <SelectItem value="11-50">11-50 employees</SelectItem>
+                      <SelectItem value="51-200">51-200 employees</SelectItem>
+                      <SelectItem value="201-1000">201-1,000 employees</SelectItem>
                       <SelectItem value="1000+">1,000+ employees</SelectItem>
                     </SelectContent>
                   </Select>
@@ -209,17 +240,11 @@ const Settings = () => {
           </motion.section>
 
           {/* Interview Preferences */}
-          <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="glass-card rounded-xl p-6"
-          >
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card rounded-xl p-6">
             <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
               <Briefcase className="h-5 w-5 text-primary" />
               Interview Preferences
             </h2>
-
             <div className="space-y-5">
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
@@ -251,7 +276,6 @@ const Settings = () => {
                   </Select>
                 </div>
               </div>
-
               <div>
                 <Label>Timezone</Label>
                 <Select value={timezone} onValueChange={setTimezone}>
@@ -268,9 +292,7 @@ const Settings = () => {
                   </SelectContent>
                 </Select>
               </div>
-
               <Separator />
-
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -279,7 +301,6 @@ const Settings = () => {
                   </div>
                   <Switch checked={autoRecord} onCheckedChange={setAutoRecord} />
                 </div>
-
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">Authenticity detection</p>
@@ -287,7 +308,6 @@ const Settings = () => {
                   </div>
                   <Switch checked={authenticityDetection} onCheckedChange={setAuthenticityDetection} />
                 </div>
-
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">Require candidate camera</p>
@@ -300,17 +320,11 @@ const Settings = () => {
           </motion.section>
 
           {/* Team Members */}
-          <motion.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="glass-card rounded-xl p-6"
-          >
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card rounded-xl p-6">
             <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
               <Users className="h-5 w-5 text-primary" />
               Team Members
             </h2>
-
             {/* Invite */}
             <div className="flex items-end gap-3 mb-6">
               <div className="flex-1">
@@ -329,72 +343,79 @@ const Settings = () => {
                 </div>
               </div>
               <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as Role)}>
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="editor">Editor</SelectItem>
                   <SelectItem value="viewer">Viewer</SelectItem>
                 </SelectContent>
               </Select>
-              <Button onClick={handleInvite} className="gap-1.5 shrink-0">
+              <Button onClick={handleInvite} className="gap-1.5 shrink-0" disabled={inviteMember.isPending}>
                 <UserPlus className="h-4 w-4" />
                 Invite
               </Button>
             </div>
-
             <Separator className="mb-4" />
-
             {/* Members list */}
-            <div className="space-y-3">
-              {teamMembers.map((member) => (
-                <div key={member.id} className="flex items-center justify-between gap-3 py-2">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs shrink-0">
-                      {member.initials}
+            {teamLoading ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {(teamMembers ?? []).map((member) => {
+                  const memberInitials = member.full_name
+                    ? member.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+                    : member.email.slice(0, 2).toUpperCase();
+                  const memberRole = member.role as Role;
+                  return (
+                    <div key={member.id} className="flex items-center justify-between gap-3 py-2">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs shrink-0">
+                          {memberInitials}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">{member.full_name || member.email}</p>
+                          <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {memberRole === "owner" ? (
+                          <Badge variant="outline" className={`gap-1 ${ROLE_CONFIG.owner.color}`}>
+                            {ROLE_CONFIG.owner.icon}
+                            Owner
+                          </Badge>
+                        ) : (
+                          <>
+                            <Select value={memberRole} onValueChange={(v) => handleChangeRole(member.id, v)}>
+                              <SelectTrigger className="w-[120px] h-8 text-xs">
+                                <div className="flex items-center gap-1.5">
+                                  {ROLE_CONFIG[memberRole].icon}
+                                  <SelectValue />
+                                </div>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="admin">Admin</SelectItem>
+                                <SelectItem value="editor">Editor</SelectItem>
+                                <SelectItem value="viewer">Viewer</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => handleRemove(member.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{member.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{member.email}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {member.role === "owner" ? (
-                      <Badge variant="outline" className={`gap-1 ${ROLE_CONFIG.owner.color}`}>
-                        {ROLE_CONFIG.owner.icon}
-                        Owner
-                      </Badge>
-                    ) : (
-                      <>
-                        <Select value={member.role} onValueChange={(v) => handleChangeRole(member.id, v)}>
-                          <SelectTrigger className="w-[120px] h-8 text-xs">
-                            <div className="flex items-center gap-1.5">
-                              {ROLE_CONFIG[member.role].icon}
-                              <SelectValue />
-                            </div>
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="editor">Editor</SelectItem>
-                            <SelectItem value="viewer">Viewer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => handleRemove(member.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-
+                  );
+                })}
+              </div>
+            )}
             <p className="text-xs text-muted-foreground mt-4">
               <strong>Admin</strong> — full access &amp; settings · <strong>Editor</strong> — create &amp; manage interviews · <strong>Viewer</strong> — read-only access
             </p>
@@ -402,7 +423,8 @@ const Settings = () => {
 
           {/* Save */}
           <div className="flex justify-end">
-            <Button onClick={handleSave} className="gap-2">
+            <Button onClick={handleSave} className="gap-2" disabled={updateCompany.isPending}>
+              {updateCompany.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
               <Save className="h-4 w-4" />
               Save Settings
             </Button>

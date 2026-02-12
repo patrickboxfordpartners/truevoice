@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, Search, TrendingUp, Calendar, Users, Shield, LogOut, Settings, ChevronDown, Clock, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, GitCompareArrows, Download, Moon, Sun, Mail, Table2, CalendarDays } from "lucide-react";
+import { Plus, Search, TrendingUp, Calendar, Users, Shield, LogOut, Settings, ChevronDown, Clock, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, GitCompareArrows, Download, Moon, Sun, Mail, Table2, CalendarDays, Loader2 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,10 @@ import { ScoreBadge } from "@/components/ScoreBadge";
 import { CreateInterviewDialog } from "@/components/CreateInterviewDialog";
 import { EmailTemplateDialog } from "@/components/EmailTemplateDialog";
 import { InterviewCalendar } from "@/components/InterviewCalendar";
+import { useAuth } from "@/contexts/AuthContext";
+import { useInterviews } from "@/hooks/useInterviews";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
+import type { Interview } from "@/types";
 
 const DarkModeToggle = () => {
   const { theme, setTheme } = useTheme();
@@ -34,30 +38,13 @@ type SortDir = "asc" | "desc";
 
 const ITEMS_PER_PAGE = 8;
 
-const INITIAL_INTERVIEWS = [
-  { id: "1", candidate: "Sarah Chen", position: "Senior Frontend Engineer", date: "2026-02-10T14:00:00", duration: "42:15", score: 87 },
-  { id: "2", candidate: "James Wilson", position: "Product Manager", date: "2026-02-10T10:30:00", duration: "38:20", score: 62 },
-  { id: "3", candidate: "Emily Rodriguez", position: "UX Designer", date: "2026-02-09T15:00:00", duration: "45:10", score: 91 },
-  { id: "4", candidate: "Michael Park", position: "Backend Developer", date: "2026-02-09T11:00:00", duration: "35:45", score: 34 },
-  { id: "5", candidate: "Lisa Thompson", position: "Data Analyst", date: "2026-02-08T09:00:00", duration: "40:00", score: 78 },
-  { id: "6", candidate: "David Kim", position: "DevOps Engineer", date: "2026-02-07T16:00:00", duration: "37:30", score: 55 },
-  { id: "7", candidate: "Rachel Adams", position: "QA Engineer", date: "2026-02-06T13:00:00", duration: "33:50", score: 73 },
-  { id: "8", candidate: "Tom Harris", position: "Full Stack Developer", date: "2026-02-06T10:00:00", duration: "41:20", score: 88 },
-  { id: "9", candidate: "Nina Patel", position: "Product Designer", date: "2026-02-05T14:30:00", duration: "39:10", score: 45 },
-  { id: "10", candidate: "Carlos Mendez", position: "iOS Developer", date: "2026-02-05T09:00:00", duration: "36:40", score: 82 },
-  { id: "11", candidate: "Sophie Turner", position: "Marketing Analyst", date: "2026-02-04T15:00:00", duration: "44:05", score: 67 },
-  { id: "12", candidate: "Alex Novak", position: "Security Engineer", date: "2026-02-04T11:00:00", duration: "38:55", score: 94 },
-  { id: "13", candidate: "Jordan Lee", position: "ML Engineer", date: "2026-02-03T14:00:00", duration: "47:30", score: 29 },
-  { id: "14", candidate: "Priya Sharma", position: "Technical Writer", date: "2026-02-03T10:00:00", duration: "32:15", score: 71 },
-  { id: "15", candidate: "Marcus Brown", position: "SRE", date: "2026-02-02T16:00:00", duration: "35:00", score: 58 },
-  { id: "16", candidate: "Olivia Zhang", position: "Data Engineer", date: "2026-02-02T09:00:00", duration: "43:20", score: 85 },
-  { id: "17", candidate: "Ethan Wright", position: "Android Developer", date: "2026-02-01T13:00:00", duration: "37:45", score: 41 },
-  { id: "18", candidate: "Mia Johansson", position: "Scrum Master", date: "2026-02-01T10:00:00", duration: "30:10", score: 76 },
-];
-
 const Dashboard = () => {
   const { toast } = useToast();
-  const [interviews, setInterviews] = useState(INITIAL_INTERVIEWS);
+  const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  const { data: interviews, isLoading } = useInterviews();
+  const stats = useDashboardStats(interviews);
+
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [showEmailTemplates, setShowEmailTemplates] = useState(false);
@@ -66,6 +53,10 @@ const Dashboard = () => {
   const [scoreFilter, setScoreFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [page, setPage] = useState(1);
+
+  const initials = profile?.full_name
+    ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "?";
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -81,8 +72,34 @@ const Dashboard = () => {
     return sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
   };
 
+  // Map DB interviews to display format
+  const displayInterviews = useMemo(() => {
+    if (!interviews) return [];
+    return interviews.map((i) => ({
+      id: i.id,
+      candidate: i.candidate_name,
+      position: i.position,
+      date: i.scheduled_at || i.created_at,
+      duration: i.duration || "—",
+      score: 0, // Score comes from reports, shown as — if no report
+      status: i.status,
+    }));
+  }, [interviews]);
+
+  // For calendar view, map to the format InterviewCalendar expects
+  const calendarInterviews = useMemo(() => {
+    return displayInterviews.map((i) => ({
+      id: i.id,
+      candidate: i.candidate,
+      position: i.position,
+      date: i.date,
+      duration: i.duration,
+      score: i.score,
+    }));
+  }, [displayInterviews]);
+
   const filtered = useMemo(() => {
-    let items = interviews.filter(
+    let items = displayInterviews.filter(
       (i) =>
         i.candidate.toLowerCase().includes(search.toLowerCase()) ||
         i.position.toLowerCase().includes(search.toLowerCase())
@@ -105,7 +122,7 @@ const Dashboard = () => {
     });
 
     return items;
-  }, [search, scoreFilter, sortKey, sortDir, interviews]);
+  }, [search, scoreFilter, sortKey, sortDir, displayInterviews]);
 
   // Reset page when filters change
   useMemo(() => { setPage(1); }, [search, scoreFilter]);
@@ -113,6 +130,15 @@ const Dashboard = () => {
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
   const safePage = Math.min(page, totalPages);
   const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/login");
+  };
+
+  const monthChange = stats.interviewsLastMonth > 0
+    ? Math.round(((stats.interviewsThisMonth - stats.interviewsLastMonth) / stats.interviewsLastMonth) * 100)
+    : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -134,9 +160,11 @@ const Dashboard = () => {
               <Plus className="h-4 w-4" />
               New Interview
             </Button>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">JD</div>
-              <ChevronDown className="h-3.5 w-3.5" />
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">{initials}</div>
+              <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-1 text-muted-foreground">
+                <LogOut className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
         </div>
@@ -150,24 +178,28 @@ const Dashboard = () => {
               <span className="text-sm text-muted-foreground">Interviews This Month</span>
               <Users className="h-4 w-4 text-muted-foreground" />
             </div>
-            <p className="text-3xl font-bold">24</p>
-            <p className="text-xs text-success mt-1 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> +12% from last month</p>
+            <p className="text-3xl font-bold">{stats.interviewsThisMonth}</p>
+            {monthChange !== 0 && (
+              <p className={`text-xs mt-1 flex items-center gap-1 ${monthChange > 0 ? "text-success" : "text-destructive"}`}>
+                <TrendingUp className="h-3 w-3" /> {monthChange > 0 ? "+" : ""}{monthChange}% from last month
+              </p>
+            )}
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card rounded-xl p-6">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Avg. Authenticity Score</span>
+              <span className="text-sm text-muted-foreground">Total Interviews</span>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </div>
-            <p className="text-3xl font-bold">72<span className="text-lg text-muted-foreground">/100</span></p>
-            <p className="text-xs text-success mt-1 flex items-center gap-1"><TrendingUp className="h-3 w-3" /> +3 pts from last month</p>
+            <p className="text-3xl font-bold">{displayInterviews.length}</p>
+            <p className="text-xs text-muted-foreground mt-1">{stats.needsReview} completed</p>
           </motion.div>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card rounded-xl p-6">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm text-muted-foreground">Interviews Today</span>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </div>
-            <p className="text-3xl font-bold">3</p>
-            <p className="text-xs text-muted-foreground mt-1">2 completed, 1 upcoming</p>
+            <p className="text-3xl font-bold">{stats.interviewsToday}</p>
+            <p className="text-xs text-muted-foreground mt-1">{stats.completedToday} completed, {stats.interviewsToday - stats.completedToday} upcoming</p>
           </motion.div>
         </div>
 
@@ -201,13 +233,13 @@ const Dashboard = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
-                    const headers = ["Candidate", "Position", "Date", "Duration", "Score"];
+                    const headers = ["Candidate", "Position", "Date", "Duration", "Status"];
                     const rows = filtered.map(i => [
                       `"${i.candidate}"`,
                       `"${i.position}"`,
                       new Date(i.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
                       i.duration,
-                      i.score,
+                      i.status,
                     ].join(","));
                     const csv = [headers.join(","), ...rows].join("\n");
                     const blob = new Blob([csv], { type: "text/csv" });
@@ -234,7 +266,11 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            {viewMode === "table" ? (
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : viewMode === "table" ? (
               <>
               <div className="p-6 pt-0 pb-0">
               <div className="flex items-center gap-3 pb-6">
@@ -255,7 +291,7 @@ const Dashboard = () => {
                   <SelectContent>
                     <SelectItem value="all">All Scores</SelectItem>
                     <SelectItem value="high">High (80+)</SelectItem>
-                    <SelectItem value="medium">Medium (50–79)</SelectItem>
+                    <SelectItem value="medium">Medium (50-79)</SelectItem>
                     <SelectItem value="low">Low (&lt;50)</SelectItem>
                   </SelectContent>
                 </Select>
@@ -279,12 +315,7 @@ const Dashboard = () => {
                     <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("date")}>
                       <span className="inline-flex items-center gap-1.5">Date <SortIcon col="date" /></span>
                     </th>
-                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("duration")}>
-                      <span className="inline-flex items-center gap-1.5">Duration <SortIcon col="duration" /></span>
-                    </th>
-                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("score")}>
-                      <span className="inline-flex items-center gap-1.5">Score <SortIcon col="score" /></span>
-                    </th>
+                    <th className="px-6 py-3 font-medium">Status</th>
                     <th className="px-6 py-3 font-medium"></th>
                   </tr>
                 </thead>
@@ -296,19 +327,35 @@ const Dashboard = () => {
                       <td className="px-6 py-4 text-muted-foreground text-sm">
                         {new Date(interview.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                       </td>
-                      <td className="px-6 py-4 text-muted-foreground text-sm">{interview.duration}</td>
-                      <td className="px-6 py-4"><ScoreBadge score={interview.score} /></td>
                       <td className="px-6 py-4">
-                        <Link to={`/report/${interview.id}`}>
-                          <Button variant="ghost" size="sm">View Report</Button>
-                        </Link>
+                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                          interview.status === "completed" ? "bg-success/10 text-success" :
+                          interview.status === "in_progress" ? "bg-primary/10 text-primary" :
+                          interview.status === "cancelled" ? "bg-destructive/10 text-destructive" :
+                          "bg-muted text-muted-foreground"
+                        }`}>
+                          {interview.status === "in_progress" ? "In Progress" : interview.status.charAt(0).toUpperCase() + interview.status.slice(1)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {interview.status === "completed" ? (
+                          <Link to={`/report/${interview.id}`}>
+                            <Button variant="ghost" size="sm">View Report</Button>
+                          </Link>
+                        ) : interview.status === "scheduled" ? (
+                          <Link to={`/room/${interview.id}`}>
+                            <Button variant="ghost" size="sm">Start</Button>
+                          </Link>
+                        ) : null}
                       </td>
                     </tr>
                   ))}
                   {paginated.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
-                        No interviews found matching your filters.
+                      <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                        {displayInterviews.length === 0
+                          ? "No interviews yet. Create your first one!"
+                          : "No interviews found matching your filters."}
                       </td>
                     </tr>
                   )}
@@ -346,12 +393,9 @@ const Dashboard = () => {
             ) : (
               <div className="p-6">
                 <InterviewCalendar
-                  interviews={interviews}
+                  interviews={calendarInterviews}
                   onReschedule={(id, newDate) => {
-                    const iv = interviews.find((i) => i.id === id);
-                    setInterviews((prev) =>
-                      prev.map((i) => (i.id === id ? { ...i, date: newDate } : i))
-                    );
+                    const iv = calendarInterviews.find((i) => i.id === id);
                     if (iv) {
                       const d = new Date(newDate);
                       toast({
@@ -378,21 +422,31 @@ const Dashboard = () => {
                   Scheduled Today
                 </h3>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <div>
-                      <p className="font-medium">Anna Lewis</p>
-                      <p className="text-muted-foreground text-xs">Marketing Lead</p>
-                    </div>
-                    <span className="text-muted-foreground text-xs">3:00 PM</span>
-                  </div>
+                  {stats.scheduledToday.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No interviews scheduled today</p>
+                  ) : (
+                    stats.scheduledToday.map((iv) => (
+                      <div key={iv.id} className="flex items-center justify-between text-sm">
+                        <div>
+                          <p className="font-medium">{iv.candidate_name}</p>
+                          <p className="text-muted-foreground text-xs">{iv.position}</p>
+                        </div>
+                        <span className="text-muted-foreground text-xs">
+                          {iv.scheduled_at
+                            ? new Date(iv.scheduled_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
+                            : "—"}
+                        </span>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="glass-card rounded-xl p-6">
-              <h3 className="text-sm font-semibold mb-2">Needs Review</h3>
-              <p className="text-3xl font-bold text-warning">2</p>
-              <p className="text-xs text-muted-foreground">Completed interviews not yet viewed</p>
+              <h3 className="text-sm font-semibold mb-2">Completed</h3>
+              <p className="text-3xl font-bold text-success">{stats.needsReview}</p>
+              <p className="text-xs text-muted-foreground">Completed interviews with reports</p>
             </motion.div>
           </div>
         </div>

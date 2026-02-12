@@ -1,322 +1,275 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  Mic, MicOff, Video, VideoOff, Settings, Maximize, PhoneOff,
-  Shield, AlertTriangle, Clock, PanelRight, Monitor,
+  Shield, Mic, MicOff, Settings2, AlertTriangle, Clock,
+  ChevronLeft, MessageSquare, StopCircle, Monitor,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { ScoreGauge } from "@/components/ScoreGauge";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useLiveInterview } from "@/hooks/useLiveInterview";
 
-// ─── Mock data helpers ──────────────────────────────────────────────
-type Flag = { time: string; text: string; severity: "low" | "medium" | "high" };
+const formatTime = (seconds: number) => {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+};
 
-const initialFlags: Flag[] = [
-  { time: "3:45", text: "Reading cadence detected", severity: "medium" },
-  { time: "7:22", text: "Unusually fast response (<1s)", severity: "high" },
-];
-
-const possibleFlags: Flag[] = [
-  { text: "Monotone delivery pattern", severity: "medium", time: "" },
-  { text: "Zero filler words (5 min segment)", severity: "medium", time: "" },
-  { text: "Overly formal language detected", severity: "low", time: "" },
-  { text: "Perfect grammar throughout segment", severity: "low", time: "" },
-  { text: "Instant response to complex question", severity: "high", time: "" },
-];
-
-function formatElapsed(s: number) {
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
-}
-
-// ─── Sub-score card ─────────────────────────────────────────────────
-const SubScore = ({ label, score, max }: { label: string; score: number; max: number }) => (
-  <div>
-    <div className="flex items-center justify-between text-xs mb-1">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-semibold">{score}/{max}</span>
-    </div>
-    <Progress value={(score / max) * 100} className="h-1.5" />
-  </div>
-);
-
-// ─── Severity colors ────────────────────────────────────────────────
-const severityIcon = (s: string) =>
-  s === "high" ? "🔴" : s === "medium" ? "⚠️" : "ℹ️";
-
-// ─── Extracted sidebar content ──────────────────────────────────────
-const SidebarContent = ({ overall, scores, flags, notes, setNotes }: {
-  overall: number;
-  scores: { speech: number; timing: number; flow: number; linguistic: number };
-  flags: Flag[];
-  notes: string;
-  setNotes: (v: string) => void;
-}) => (
-  <>
-    <div className="p-5 border-b border-border">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
-        Authenticity Score (Live)
-      </h3>
-      <div className="flex justify-center mb-5">
-        <ScoreGauge score={overall} size={110} strokeWidth={8} animated={false} />
-      </div>
-      <p className="text-[11px] text-center text-muted-foreground mb-5">Updates every 30 s</p>
-      <div className="space-y-3">
-        <SubScore label="Speech Patterns" score={scores.speech} max={25} />
-        <SubScore label="Response Timing" score={scores.timing} max={25} />
-        <SubScore label="Conversational Flow" score={scores.flow} max={25} />
-        <SubScore label="Linguistic Authenticity" score={scores.linguistic} max={25} />
-      </div>
-    </div>
-    <div className="p-5 border-b border-border flex-1 overflow-hidden flex flex-col">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
-        <AlertTriangle className="h-3.5 w-3.5" />
-        Detected Patterns
-      </h3>
-      <div className="flex-1 overflow-y-auto space-y-2 pr-1 -mr-1">
-        {flags.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No concerning patterns detected</p>
-        ) : (
-          flags.map((f, i) => (
-            <motion.div
-              key={`${f.time}-${i}`}
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-start gap-2 rounded-lg bg-muted/40 px-3 py-2"
-            >
-              <span className="text-[11px] font-mono text-muted-foreground shrink-0 mt-px">{f.time}</span>
-              <span className="text-xs leading-none mt-0.5">{severityIcon(f.severity)}</span>
-              <span className="text-xs leading-snug">{f.text}</span>
-            </motion.div>
-          ))
-        )}
-      </div>
-    </div>
-    <div className="p-5">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-        Interview Notes
-      </h3>
-      <Textarea
-        placeholder="Type notes here..."
-        className="resize-none text-sm h-24"
-        value={notes}
-        onChange={(e) => setNotes(e.target.value)}
-      />
-      <p className="text-[11px] text-muted-foreground mt-1 text-right">{notes.length} chars</p>
-    </div>
-  </>
-);
-
-// ─── Main component ─────────────────────────────────────────────────
 const InterviewRoom = () => {
-  const [elapsed, setElapsed] = useState(465);
-  const [micOn, setMicOn] = useState(true);
-  const [camOn, setCamOn] = useState(true);
-  const [notes, setNotes] = useState("");
-  const [showEnd, setShowEnd] = useState(false);
-  const [flags, setFlags] = useState(initialFlags);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [micMuted, setMicMuted] = useState(false);
 
-  // live scores that drift over time
-  const [scores, setScores] = useState({ speech: 20, timing: 18, flow: 21, linguistic: 22 });
-  const overall = scores.speech + scores.timing + scores.flow + scores.linguistic;
+  const interview = useLiveInterview(id || "");
 
-  // Timer
-  useEffect(() => {
-    const t = setInterval(() => setElapsed((e) => e + 1), 1000);
-    return () => clearInterval(t);
-  }, []);
+  const handleStart = async () => {
+    await interview.start();
+  };
 
-  // Simulate score drift + new flags every ~20s
-  useEffect(() => {
-    const t = setInterval(() => {
-      setScores((prev) => ({
-        speech: Math.min(25, Math.max(0, prev.speech + Math.round((Math.random() - 0.45) * 2))),
-        timing: Math.min(25, Math.max(0, prev.timing + Math.round((Math.random() - 0.45) * 2))),
-        flow: Math.min(25, Math.max(0, prev.flow + Math.round((Math.random() - 0.45) * 2))),
-        linguistic: Math.min(25, Math.max(0, prev.linguistic + Math.round((Math.random() - 0.45) * 2))),
-      }));
+  const handleEnd = async () => {
+    try {
+      await interview.stop();
+    } catch {
+      // Stop may fail if edge functions aren't deployed yet
+    }
+    navigate("/dashboard");
+  };
 
-      if (Math.random() > 0.6) {
-        const newFlag = possibleFlags[Math.floor(Math.random() * possibleFlags.length)];
-        setFlags((f) => [
-          { time: formatElapsed(elapsed), text: newFlag.text, severity: newFlag.severity },
-          ...f,
-        ]);
-      }
-    }, 8000);
-    return () => clearInterval(t);
-  }, [elapsed]);
-
-  return (
-    <>
-      {/* Mobile blocker */}
-      <div className="md:hidden fixed inset-0 z-50 bg-background flex items-center justify-center p-6">
+  // Mobile blocker
+  if (isMobile) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-background">
         <div className="glass-card rounded-2xl p-8 max-w-sm w-full text-center">
           <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
             <Monitor className="h-7 w-7 text-primary" />
           </div>
           <h1 className="text-xl font-bold mb-2">Desktop Required</h1>
           <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-            The interview room requires a desktop or laptop for the best experience. Please switch to a larger screen to join.
+            The interview room requires a desktop or laptop for the best experience.
+            Please switch to a larger screen to join.
           </p>
           <a href="/dashboard">
             <Button variant="outline" className="w-full">Back to Dashboard</Button>
           </a>
         </div>
       </div>
+    );
+  }
 
-    <div className="h-screen hidden md:flex flex-col bg-foreground/[0.03]">
-      {/* ─── Top Bar ──────────────────────────────────────────────── */}
-      <header className="flex items-center justify-between px-5 h-14 border-b border-border bg-card shrink-0">
-        <div className="flex items-center gap-2">
-          <Shield className="h-4 w-4 text-primary" />
-          <span className="font-semibold text-sm">AuthentiView</span>
+  const scoreCategories = [
+    { label: "Speech Patterns", score: interview.scores.speech, max: 25 },
+    { label: "Response Timing", score: interview.scores.timing, max: 25 },
+    { label: "Conversational Flow", score: interview.scores.flow, max: 25 },
+    { label: "Linguistic Auth.", score: interview.scores.linguistic, max: 25 },
+  ];
+
+  return (
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      {/* Top bar */}
+      <header className="h-14 border-b border-border bg-card/80 backdrop-blur-xl flex items-center justify-between px-4 shrink-0">
+        <div className="flex items-center gap-3">
+          <Shield className="h-5 w-5 text-primary" />
+          <span className="font-bold">AuthentiView</span>
+          <span className="text-muted-foreground text-sm hidden sm:inline">— Live Analysis</span>
         </div>
-        <span className="text-sm text-muted-foreground hidden sm:block">
-          Acme Corp Interview — Senior Frontend Engineer
-        </span>
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1.5 text-sm font-mono tabular-nums text-muted-foreground">
-            <Clock className="h-3.5 w-3.5" />
-            {formatElapsed(elapsed)}
-          </span>
-          <Button
-            variant="destructive"
-            size="sm"
-            className="gap-1.5"
-            onClick={() => setShowEnd(true)}
-          >
-            <PhoneOff className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">End</span>
-          </Button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted text-sm font-mono">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            {formatTime(interview.elapsedSeconds)}
+          </div>
+          {interview.isTranscribing && (
+            <div className="flex items-center gap-1.5 text-xs text-success">
+              <span className="h-2 w-2 rounded-full bg-success animate-pulse" />
+              Transcribing
+            </div>
+          )}
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" className="gap-1.5" disabled={!interview.isActive}>
+                <StopCircle className="h-3.5 w-3.5" />
+                End Interview
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>End Interview?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will stop the recording, save the transcript, and generate the final authenticity report.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Continue</AlertDialogCancel>
+                <AlertDialogAction onClick={handleEnd}>End & Generate Report</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </header>
 
-      {/* ─── Body ─────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: video feeds + controls */}
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-[1.5fr_1fr] gap-3 p-4">
-            {/* Interviewer Video */}
-            <div className="relative rounded-xl bg-foreground/5 flex items-center justify-center overflow-hidden">
-              <div className="text-muted-foreground text-sm">Interviewer Camera</div>
-              <span className="absolute bottom-3 left-3 bg-card/80 backdrop-blur text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-success" />
-                John Doe
-              </span>
+        {/* Main area */}
+        <div className="flex-1 flex flex-col p-6 overflow-hidden">
+          {/* Pre-start state */}
+          {!interview.isActive && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-6">
+              <div className="glass-card rounded-xl p-8 max-w-md text-center">
+                <Mic className="h-12 w-12 text-primary mx-auto mb-4" />
+                <h2 className="text-xl font-bold mb-2">Audio Overlay Mode</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  AuthentiView captures your microphone audio to analyze speech patterns in real-time.
+                  Run this alongside your Zoom/Meet call.
+                </p>
+                {interview.audioError && (
+                  <p className="text-sm text-destructive mb-4">{interview.audioError}</p>
+                )}
+                <Button onClick={handleStart} size="lg" className="gap-2">
+                  <Mic className="h-5 w-5" />
+                  Start Analysis
+                </Button>
+              </div>
             </div>
-            {/* Candidate Video */}
-            <div className="relative rounded-xl bg-foreground/5 flex items-center justify-center overflow-hidden">
-              <div className="text-muted-foreground text-sm">Candidate Camera</div>
-              <span className="absolute bottom-3 left-3 bg-card/80 backdrop-blur text-xs font-medium px-2.5 py-1 rounded-md flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-success" />
-                Sarah Chen
-              </span>
-            </div>
-          </div>
+          )}
 
-          {/* Controls */}
-          <div className="flex items-center justify-center gap-3 py-3 border-t border-border bg-card shrink-0">
-            <Button
-              variant={micOn ? "outline" : "destructive"}
-              size="icon"
-              className="h-10 w-10 rounded-full"
-              onClick={() => setMicOn(!micOn)}
-            >
-              {micOn ? <Mic className="h-4 w-4" /> : <MicOff className="h-4 w-4" />}
-            </Button>
-            <Button
-              variant={camOn ? "outline" : "destructive"}
-              size="icon"
-              className="h-10 w-10 rounded-full"
-              onClick={() => setCamOn(!camOn)}
-            >
-              {camOn ? <Video className="h-4 w-4" /> : <VideoOff className="h-4 w-4" />}
-            </Button>
-            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
-              <Settings className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
-              <Maximize className="h-4 w-4" />
-            </Button>
-            {/* Drawer toggle — visible only below lg */}
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-10 w-10 rounded-full lg:hidden"
-              onClick={() => setDrawerOpen(true)}
-            >
-              <PanelRight className="h-4 w-4" />
-            </Button>
-          </div>
+          {/* Active state — live transcript */}
+          {interview.isActive && (
+            <>
+              {/* Controls */}
+              <div className="flex items-center gap-3 mb-4">
+                <Button
+                  variant={micMuted ? "destructive" : "outline"}
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setMicMuted(!micMuted)}
+                >
+                  {micMuted ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+                  {micMuted ? "Muted" : "Mic On"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                >
+                  <Settings2 className="h-3.5 w-3.5" />
+                  {sidebarOpen ? "Hide" : "Show"} Analysis
+                </Button>
+              </div>
+
+              {/* Transcript panel */}
+              <div className="flex-1 glass-card rounded-xl p-6 overflow-y-auto">
+                <div className="flex items-center gap-2 mb-4">
+                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="text-sm font-semibold">Live Transcript</h3>
+                </div>
+                <div className="space-y-2 text-sm leading-relaxed">
+                  {interview.transcript ? (
+                    <p>{interview.transcript}</p>
+                  ) : (
+                    <p className="text-muted-foreground italic">
+                      Listening for speech... Start your interview in Zoom/Meet.
+                    </p>
+                  )}
+                  {interview.interimText && (
+                    <p className="text-muted-foreground italic">{interview.interimText}</p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
-        {/* ─── Right Sidebar (desktop) ────────────────────────────── */}
-        <aside className="hidden lg:flex w-[320px] border-l border-border bg-card flex-col shrink-0">
-          <SidebarContent
-            overall={overall}
-            scores={scores}
-            flags={flags}
-            notes={notes}
-            setNotes={setNotes}
-          />
-        </aside>
+        {/* Sidebar — Analysis panel */}
+        {interview.isActive && sidebarOpen && (
+          <motion.aside
+            initial={{ x: 40, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            className="w-[340px] border-l border-border bg-card/50 overflow-y-auto p-5 shrink-0"
+          >
+            {/* Score Gauge */}
+            <div className="flex flex-col items-center mb-6">
+              <ScoreGauge score={interview.overallScore} size={120} strokeWidth={8} />
+              <p className="text-xs text-muted-foreground mt-2">
+                Updated every ~20 seconds
+              </p>
+            </div>
+
+            {/* Sub-scores */}
+            <div className="space-y-3 mb-6">
+              {scoreCategories.map((cat) => (
+                <div key={cat.label}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs text-muted-foreground">{cat.label}</span>
+                    <span className="text-xs font-bold">{cat.score}/{cat.max}</span>
+                  </div>
+                  <Progress value={(cat.score / cat.max) * 100} className="h-1.5" />
+                </div>
+              ))}
+            </div>
+
+            {/* Flags */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+                Detected Patterns ({interview.flags.length})
+              </h3>
+              {interview.flags.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No flags detected yet</p>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {interview.flags.map((flag, i) => (
+                    <motion.div
+                      key={flag.id || i}
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="text-xs p-2 rounded-lg bg-muted/50"
+                    >
+                      <span className="font-mono text-muted-foreground mr-2">{flag.time}</span>
+                      <span className={
+                        flag.severity === "high" ? "text-destructive" :
+                        flag.severity === "medium" ? "text-warning" : ""
+                      }>
+                        {flag.pattern}
+                      </span>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Notes */}
+            <div>
+              <h3 className="text-sm font-semibold mb-2">Interview Notes</h3>
+              <Textarea
+                placeholder="Add notes during the interview..."
+                value={interview.notes}
+                onChange={(e) => interview.setNotes(e.target.value)}
+                className="min-h-[100px] text-sm"
+              />
+            </div>
+          </motion.aside>
+        )}
+
+        {/* Sidebar toggle */}
+        {interview.isActive && !sidebarOpen && (
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="w-8 border-l border-border bg-card/50 flex items-center justify-center hover:bg-muted transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+          </button>
+        )}
       </div>
-
-      {/* ─── Drawer Sidebar (tablet / mobile) ─────────────────────── */}
-      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <SheetContent side="right" className="w-[340px] sm:w-[360px] p-0 overflow-y-auto">
-          <SheetHeader className="px-5 pt-5 pb-0">
-            <SheetTitle className="text-sm">Live Analysis</SheetTitle>
-          </SheetHeader>
-          <SidebarContent
-            overall={overall}
-            scores={scores}
-            flags={flags}
-            notes={notes}
-            setNotes={setNotes}
-          />
-        </SheetContent>
-      </Sheet>
-
-      {/* ─── End Interview Confirmation ───────────────────────────── */}
-      <Dialog open={showEnd} onOpenChange={setShowEnd}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>End Interview?</DialogTitle>
-            <DialogDescription>
-              This will end the session and generate the authenticity report.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex gap-3 justify-end mt-2">
-            <Button variant="outline" onClick={() => setShowEnd(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                setShowEnd(false);
-                window.location.href = "/report/1";
-              }}
-            >
-              End Interview
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
-    </>
   );
 };
 

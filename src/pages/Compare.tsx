@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, GitCompareArrows, ChevronDown, AlertTriangle, TrendingUp, Activity } from "lucide-react";
+import { ArrowLeft, GitCompareArrows, AlertTriangle, TrendingUp, Activity, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { Progress } from "@/components/ui/progress";
-import { ScoreBadge } from "@/components/ScoreBadge";
+import { useCompletedReports } from "@/hooks/useReport";
 import { candidateReports, candidateList, type CandidateReport } from "@/data/mockCandidates";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
@@ -23,19 +23,14 @@ const CompareColumn = ({ report, color }: { report: CandidateReport; color: stri
 
   return (
     <div className="flex-1 min-w-0">
-      {/* Header */}
       <div className="glass-card rounded-xl p-5 mb-4">
         <h3 className="font-bold text-lg truncate">{report.candidate}</h3>
         <p className="text-sm text-muted-foreground truncate">{report.position}</p>
         <p className="text-xs text-muted-foreground mt-1">{report.date}</p>
       </div>
-
-      {/* Score */}
       <div className="glass-card rounded-xl p-6 mb-4 flex flex-col items-center">
         <ScoreGauge score={report.overall} size={120} strokeWidth={8} />
       </div>
-
-      {/* Breakdown */}
       <div className="glass-card rounded-xl p-5 mb-4 space-y-4">
         {categories.map(cat => (
           <div key={cat.label}>
@@ -47,8 +42,6 @@ const CompareColumn = ({ report, color }: { report: CandidateReport; color: stri
           </div>
         ))}
       </div>
-
-      {/* Flags */}
       <div className="glass-card rounded-xl p-5">
         <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
           <AlertTriangle className="h-3.5 w-3.5 text-warning" />
@@ -72,11 +65,48 @@ const CompareColumn = ({ report, color }: { report: CandidateReport; color: stri
 };
 
 const Compare = () => {
-  const [leftId, setLeftId] = useState<string>("1");
-  const [rightId, setRightId] = useState<string>("2");
+  const { data: dbReports, isLoading } = useCompletedReports();
 
-  const left = candidateReports[leftId];
-  const right = candidateReports[rightId];
+  // Build lookup from DB reports or fall back to mock data
+  const { reportMap, reportList } = useMemo(() => {
+    if (dbReports && dbReports.length > 0) {
+      const map: Record<string, CandidateReport> = {};
+      const list: { id: string; candidate: string; position: string; overall: number }[] = [];
+      dbReports.forEach((r: any) => {
+        if (!r) return;
+        map[r.id] = {
+          id: r.id,
+          candidate: r.candidate,
+          position: r.position,
+          date: r.date,
+          duration: r.duration,
+          interviewer: "",
+          overall: r.overall,
+          speech: r.speech,
+          timing: r.timing,
+          flow: r.flow,
+          linguistic: r.linguistic,
+          engagement: r.engagement ?? 0,
+          confidence: r.confidence ?? 0,
+          flags: r.flags ?? [],
+          notes: "",
+          timeline: r.timeline ?? [],
+          responseDelays: r.responseDelays ?? [],
+        };
+        list.push({ id: r.id, candidate: r.candidate, position: r.position, overall: r.overall });
+      });
+      return { reportMap: map, reportList: list };
+    }
+    // Fallback to mock data
+    return { reportMap: candidateReports, reportList: candidateList };
+  }, [dbReports]);
+
+  const ids = Object.keys(reportMap);
+  const [leftId, setLeftId] = useState<string>(ids[0] || "1");
+  const [rightId, setRightId] = useState<string>(ids[1] || "2");
+
+  const left = reportMap[leftId];
+  const right = reportMap[rightId];
 
   const radarData = left && right ? [
     { subject: "Speech", A: (left.speech / 25) * 100, B: (right.speech / 25) * 100 },
@@ -93,6 +123,14 @@ const Compare = () => {
     { category: "Flow", [left.candidate]: left.flow, [right.candidate]: right.flow },
     { category: "Linguistic", [left.candidate]: left.linguistic, [right.candidate]: right.linguistic },
   ] : [];
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -116,11 +154,9 @@ const Compare = () => {
           <div className="flex-1 w-full">
             <label className="text-xs text-muted-foreground mb-1 block">Candidate A</label>
             <Select value={leftId} onValueChange={setLeftId}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {candidateList.map(c => (
+                {reportList.map(c => (
                   <SelectItem key={c.id} value={c.id} disabled={c.id === rightId}>
                     {c.candidate} — {c.position} ({c.overall}/100)
                   </SelectItem>
@@ -132,11 +168,9 @@ const Compare = () => {
           <div className="flex-1 w-full">
             <label className="text-xs text-muted-foreground mb-1 block">Candidate B</label>
             <Select value={rightId} onValueChange={setRightId}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {candidateList.map(c => (
+                {reportList.map(c => (
                   <SelectItem key={c.id} value={c.id} disabled={c.id === leftId}>
                     {c.candidate} — {c.position} ({c.overall}/100)
                   </SelectItem>
@@ -148,14 +182,12 @@ const Compare = () => {
 
         {left && right && (
           <>
-            {/* Side-by-side columns */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               className="grid md:grid-cols-2 gap-6 mb-8">
               <CompareColumn report={left} color="hsl(var(--primary))" />
               <CompareColumn report={right} color="hsl(160, 84%, 39%)" />
             </motion.div>
 
-            {/* Overlaid Radar */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
               className="glass-card rounded-xl p-6 mb-8">
               <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
@@ -174,7 +206,6 @@ const Compare = () => {
               </ResponsiveContainer>
             </motion.div>
 
-            {/* Score comparison bar chart */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
               className="glass-card rounded-xl p-6 mb-8">
               <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
@@ -186,9 +217,7 @@ const Compare = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <XAxis dataKey="category" tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} axisLine={false} tickLine={false} />
                   <YAxis domain={[0, 25]} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }}
-                  />
+                  <Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 8, fontSize: 12 }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
                   <Bar dataKey={left.candidate} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   <Bar dataKey={right.candidate} fill="hsl(160, 84%, 39%)" radius={[4, 4, 0, 0]} />
@@ -196,7 +225,6 @@ const Compare = () => {
               </ResponsiveContainer>
             </motion.div>
 
-            {/* Quick verdict */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
               className="glass-card rounded-xl p-6 mb-8">
               <h3 className="text-sm font-semibold mb-4">Quick Comparison</h3>
