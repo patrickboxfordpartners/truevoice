@@ -29,7 +29,9 @@ Please use the link below to join your interview session:
 Date & Time: {{interview_date}}
 Duration: Approximately {{duration}} minutes
 
-If you have any questions, feel free to reply to this email.
+IMPORTANT: This interview uses AI-powered speech analysis to evaluate response authenticity. During the interview, your microphone audio will be transcribed and analyzed in real-time to assess speech patterns, response timing, and conversational flow. No audio recordings are stored. You will be asked to provide consent before the interview begins.
+
+If you have any questions about this process, feel free to reply to this email.
 
 Best regards,
 {{sender_name}}
@@ -45,6 +47,8 @@ This is a friendly reminder that your interview for {{position}} is scheduled fo
 Join here: {{interview_link}}
 
 Please make sure your camera and microphone are working before the session.
+
+Reminder: This interview includes AI-powered speech authenticity analysis. You will be asked to consent before the session begins. No audio recordings are stored.
 
 See you soon!
 {{sender_name}}`,

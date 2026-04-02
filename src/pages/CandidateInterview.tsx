@@ -198,18 +198,23 @@ const CandidateInterview = () => {
 
               <div className="text-left bg-muted/30 rounded-lg p-4 mb-6 space-y-3">
                 <p className="text-sm font-medium text-foreground">What to expect:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
+                  This interview uses AI-powered speech analysis to evaluate response authenticity.
+                  Your speech patterns, response timing, and conversational flow will be analyzed in real-time
+                  to produce an authenticity score shared with {companyName}.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground mt-2">
                   <div className="flex items-start gap-2">
                     <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                       <Eye className="h-3 w-3 text-primary" />
                     </div>
-                    <span>Audio analysis alongside your call</span>
+                    <span>AI analyzes speech patterns in real-time</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                       <Volume2 className="h-3 w-3 text-primary" />
                     </div>
-                    <span>Speech patterns analyzed in real-time</span>
+                    <span>Authenticity score shared with interviewer</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
@@ -221,7 +226,7 @@ const CandidateInterview = () => {
                     <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                       <Check className="h-3 w-3 text-primary" />
                     </div>
-                    <span>Fair evaluation for all candidates</span>
+                    <span>Same process applied to all candidates</span>
                   </div>
                 </div>
               </div>
@@ -239,27 +244,38 @@ const CandidateInterview = () => {
             <div className="glass-card rounded-2xl p-8">
               <h2 className="text-xl font-bold mb-4">Consent to Speech Analysis</h2>
               <div className="bg-muted/30 rounded-lg p-4 mb-6 text-sm space-y-3">
+                <p className="text-muted-foreground">
+                  This interview uses AI-powered authenticity analysis. By proceeding, you acknowledge
+                  that your microphone audio will be transcribed and analyzed by AI during the interview
+                  to evaluate speech patterns, response timing, conversational flow, and linguistic authenticity.
+                </p>
                 <p className="font-medium text-foreground">What we analyze:</p>
                 <ul className="space-y-1 text-muted-foreground">
                   <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-success" /> Speech patterns and natural flow</li>
                   <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-success" /> Response timing and pauses</li>
                   <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-success" /> Conversational authenticity markers</li>
+                  <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-success" /> Linguistic patterns (spoken vs. scripted language)</li>
                 </ul>
                 <p className="font-medium text-foreground mt-3">What we DON'T do:</p>
                 <ul className="space-y-1 text-muted-foreground">
                   <li className="flex items-center gap-2"><span className="text-destructive">✗</span> Record or store your audio</li>
-                  <li className="flex items-center gap-2"><span className="text-destructive">✗</span> Share recordings with third parties</li>
+                  <li className="flex items-center gap-2"><span className="text-destructive">✗</span> Share raw transcripts with third parties</li>
                   <li className="flex items-center gap-2"><span className="text-destructive">✗</span> Use voice prints for identification</li>
+                  <li className="flex items-center gap-2"><span className="text-destructive">✗</span> Make hiring decisions based solely on the score</li>
                 </ul>
+                <p className="text-xs text-muted-foreground mt-2">
+                  The authenticity score is one factor among many in the evaluation process. It is designed
+                  to ensure fairness by applying the same objective criteria to every candidate.
+                </p>
               </div>
               <div className="space-y-3 mb-6">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <Checkbox checked={consent1} onCheckedChange={(v) => setConsent1(v === true)} className="mt-0.5" />
-                  <span className="text-sm">I consent to real-time speech analysis during this interview</span>
+                  <span className="text-sm">I consent to real-time AI speech analysis and transcription during this interview</span>
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <Checkbox checked={consent2} onCheckedChange={(v) => setConsent2(v === true)} className="mt-0.5" />
-                  <span className="text-sm">I understand that an authenticity score will be shared with {companyName}</span>
+                  <span className="text-sm">I understand that an authenticity score and analysis summary will be shared with {companyName}</span>
                 </label>
               </div>
               <Button className="w-full" disabled={!consent1 || !consent2} onClick={handleConsent}>
@@ -361,6 +377,10 @@ const CandidateInterview = () => {
                 <p>It's perfectly fine to pause before answering</p>
                 <p>Look at the camera when speaking</p>
                 <p>Your authenticity is your strength</p>
+              </div>
+              <div className="mt-4 text-xs text-muted-foreground text-center bg-muted/20 rounded-lg px-4 py-3 flex items-center justify-center gap-2">
+                <Shield className="h-3.5 w-3.5 shrink-0" />
+                <span>AI speech analysis is active during this interview. No audio is recorded or stored.</span>
               </div>
             </div>
           </motion.div>
