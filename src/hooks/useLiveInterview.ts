@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useAudioCapture } from "./useAudioCapture";
 import { useDeepgramTranscription } from "./useDeepgramTranscription";
 import { supabase } from "@/lib/supabase";
 import type { InterviewFlag, InterviewTimeline } from "@/types";
 import type { LiveScores } from "@/types";
 
 const CHUNK_INTERVAL_MS = 20_000;
-const MIN_WORDS_PER_CHUNK = 15;
+const MIN_WORDS_PER_CHUNK = 10;
 
 interface UseLiveInterviewReturn {
   isActive: boolean;
@@ -23,6 +22,7 @@ interface UseLiveInterviewReturn {
   stop: () => Promise<void>;
   notes: string;
   setNotes: (notes: string) => void;
+  triggerAnalysis: () => Promise<void>;
 }
 
 export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
@@ -32,16 +32,27 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
   const [flags, setFlags] = useState<InterviewFlag[]>([]);
   const [timeline, setTimeline] = useState<InterviewTimeline[]>([]);
   const [notes, setNotes] = useState("");
+  const [audioError, setAudioError] = useState<string | null>(null);
 
-  const audio = useAudioCapture();
   const deepgram = useDeepgramTranscription();
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chunkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chunkIndexRef = useRef(0);
   const lastChunkEndRef = useRef(0);
+  const transcriptRef = useRef("");
+  const scoresRef = useRef<LiveScores>(scores);
 
   const overallScore = scores.speech + scores.timing + scores.flow + scores.linguistic;
+
+  // Keep refs in sync with state for interval callbacks
+  useEffect(() => {
+    transcriptRef.current = deepgram.transcript;
+  }, [deepgram.transcript]);
+
+  useEffect(() => {
+    scoresRef.current = scores;
+  }, [scores]);
 
   // Timer
   useEffect(() => {
@@ -89,7 +100,9 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
 
   // Send transcript chunks for analysis periodically
   const sendChunkForAnalysis = useCallback(async () => {
-    const fullTranscript = deepgram.transcript;
+    const fullTranscript = transcriptRef.current;
+    const currentScores = scoresRef.current;
+
     const newText = fullTranscript.slice(lastChunkEndRef.current);
     const wordCount = newText.trim().split(/\s+/).filter(Boolean).length;
 
@@ -105,71 +118,58 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
           chunk_text: newText,
           chunk_index: currentChunk,
           elapsed_seconds: elapsedSeconds,
-          previous_scores: scores,
+          previous_scores: currentScores,
         },
       });
 
-      if (!error && data?.scores) {
+      if (error) {
+        console.error("[analysis] Edge function error:", error);
+      } else if (data?.scores) {
         setScores(data.scores);
       }
     } catch (err) {
-      console.error("Chunk analysis error:", err);
+      console.error("[analysis] Exception:", err);
     }
-  }, [deepgram.transcript, interviewId, elapsedSeconds, scores]);
+  }, [interviewId, elapsedSeconds]);
 
   const start = useCallback(async () => {
-    // Update interview status
-    await supabase
-      .from("interviews")
-      .update({ status: "in_progress", updated_at: new Date().toISOString() })
-      .eq("id", interviewId);
+    try {
+      setAudioError(null);
 
-    // Start audio capture first to determine the actual sample rate
-    // Buffer audio until Deepgram is connected
-    const audioBuffer: ArrayBuffer[] = [];
-    let dgReady = false;
+      await supabase
+        .from("interviews")
+        .update({ status: "in_progress", updated_at: new Date().toISOString() })
+        .eq("id", interviewId);
 
-    await audio.startCapture((pcm16) => {
-      if (dgReady) {
-        deepgram.sendAudio(pcm16);
-      } else {
-        audioBuffer.push(pcm16);
-      }
-    });
+      await deepgram.connect();
+      setIsActive(true);
 
-    // Connect to Deepgram with the actual sample rate from the AudioContext
-    await deepgram.connect(audio.sampleRate);
-    dgReady = true;
+      chunkTimerRef.current = setInterval(() => {
+        sendChunkForAnalysis();
+      }, CHUNK_INTERVAL_MS);
 
-    // Flush buffered audio
-    for (const chunk of audioBuffer) {
-      deepgram.sendAudio(chunk);
+      // Run initial analysis after 5 seconds
+      setTimeout(() => {
+        sendChunkForAnalysis();
+      }, 5000);
+    } catch (error: any) {
+      const errorMessage = error.message || "Failed to start interview";
+      console.error("[useLiveInterview] Start error:", errorMessage);
+      setAudioError(errorMessage);
+      throw error;
     }
-    audioBuffer.length = 0;
-
-    setIsActive(true);
-
-    // Start chunk analysis timer
-    chunkTimerRef.current = setInterval(() => {
-      sendChunkForAnalysis();
-    }, CHUNK_INTERVAL_MS);
-  }, [interviewId, deepgram, audio, sendChunkForAnalysis]);
+  }, [interviewId, deepgram, sendChunkForAnalysis]);
 
   const stop = useCallback(async () => {
     setIsActive(false);
 
-    // Stop timers
     if (timerRef.current) clearInterval(timerRef.current);
     if (chunkTimerRef.current) clearInterval(chunkTimerRef.current);
 
-    // Stop capture
-    audio.stopCapture();
     deepgram.disconnect();
 
-    // Send final chunk
     await sendChunkForAnalysis();
 
-    // Save full transcript and mark as completed
     const fullTranscript = deepgram.transcript;
     await supabase
       .from("interviews")
@@ -181,7 +181,6 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
       })
       .eq("id", interviewId);
 
-    // Generate final report (fails gracefully if edge functions aren't deployed)
     try {
       await supabase.functions.invoke("generate-final-report", {
         body: { interview_id: interviewId },
@@ -189,7 +188,7 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
     } catch {
       // Edge function not deployed yet — report generation skipped
     }
-  }, [audio, deepgram, interviewId, notes, sendChunkForAnalysis]);
+  }, [deepgram, interviewId, notes, sendChunkForAnalysis]);
 
   return {
     isActive,
@@ -200,11 +199,12 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
     overallScore,
     flags,
     timeline,
-    audioError: audio.error,
+    audioError,
     isTranscribing: deepgram.isConnected,
     start,
     stop,
     notes,
     setNotes,
+    triggerAnalysis: sendChunkForAnalysis,
   };
 }

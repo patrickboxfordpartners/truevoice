@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Check, Copy, Mail, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useCreateInterview } from "@/hooks/useInterviews";
+import { getSiteUrl } from "@/lib/config";
 
 const schema = z.object({
   candidateName: z.string().min(1, "Candidate name is required"),
@@ -40,7 +41,7 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const generatedLink = generatedToken
-    ? `${window.location.origin}/interview/${generatedToken}`
+    ? `${getSiteUrl()}/interview/${generatedToken}`
     : "";
 
   const onSubmit = async (data: FormData) => {
@@ -135,7 +136,7 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
               <div className="rounded-lg border border-border p-4 bg-muted/30">
                 <p className="text-xs text-muted-foreground mb-2">Interview Link</p>
                 <div className="flex items-center gap-2 min-w-0">
-                  <code className="text-sm flex-1 min-w-0 break-all select-all bg-muted/50 rounded px-2 py-1.5 block">{generatedLink}</code>
+                  <code className="text-sm flex-1 min-w-0 break-all select-all bg-muted/50 rounded px-2 py-1.5">{generatedLink}</code>
                   <Button size="sm" variant="outline" onClick={handleCopy} className="gap-1.5 shrink-0">
                     {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                     {copied ? "Copied" : "Copy"}

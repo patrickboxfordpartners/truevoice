@@ -57,7 +57,8 @@ serve(async (req) => {
     }
 
     // Variable substitution
-    const interviewLink = `${req.headers.get("origin") || "https://authentiview.com"}/interview/${interview.candidate_token}`;
+    const siteUrl = Deno.env.get("SITE_URL") || req.headers.get("origin") || "https://true-voice-insights.vercel.app";
+    const interviewLink = `${siteUrl}/interview/${interview.candidate_token}`;
     const scheduledDate = interview.scheduled_at
       ? new Date(interview.scheduled_at).toLocaleDateString("en-US", {
           month: "short",
@@ -85,17 +86,57 @@ serve(async (req) => {
       body = body.replace(regex, value);
     }
 
-    // For MVP, log the email. Production would use a service like Resend/SendGrid/Mailgun.
-    console.log("Email to send:", {
-      to: interview.candidate_email,
-      subject,
-      body,
+    const resendKey = Deno.env.get("RESEND_API_KEY");
+
+    if (!resendKey) {
+      console.log("[send-email] RESEND_API_KEY not set, returning preview only");
+      return new Response(
+        JSON.stringify({
+          success: false,
+          message: "Email service not configured (RESEND_API_KEY missing)",
+          preview: { to: interview.candidate_email, subject, body },
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Send via Resend
+    const fromEmail = Deno.env.get("EMAIL_FROM") || "noreply@true-voice-insights.com";
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${resendKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fromEmail,
+        to: [interview.candidate_email],
+        subject,
+        html: body,
+      }),
     });
+
+    const emailResult = await emailResponse.json();
+
+    if (!emailResponse.ok) {
+      console.error("[send-email] Resend error:", emailResponse.status, JSON.stringify(emailResult));
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Email send failed: ${emailResult.message || emailResponse.status}`,
+          preview: { to: interview.candidate_email, subject, body },
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("[send-email] Sent to:", interview.candidate_email, "Resend ID:", emailResult.id);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Email prepared for ${interview.candidate_email}`,
+        message: `Email sent to ${interview.candidate_email}`,
+        emailId: emailResult.id,
         preview: { to: interview.candidate_email, subject, body },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

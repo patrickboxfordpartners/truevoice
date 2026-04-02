@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Shield, Mic, MicOff, Settings2, AlertTriangle, Clock,
-  ChevronLeft, MessageSquare, StopCircle, Monitor,
+  ChevronLeft, MessageSquare, StopCircle, Monitor
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,7 +33,11 @@ const InterviewRoom = () => {
   const interview = useLiveInterview(id || "");
 
   const handleStart = async () => {
-    await interview.start();
+    try {
+      await interview.start();
+    } catch {
+      // Error is already set in useLiveInterview hook
+    }
   };
 
   const handleEnd = async () => {

@@ -65,7 +65,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "grok-3-mini-fast",
+        model: "grok-3-mini",
         messages: [
           {
             role: "system",
@@ -122,6 +122,12 @@ Full transcript: "${fullTranscript.slice(0, 8000)}"`,
     });
 
     const grokData = await grokResponse.json();
+    console.log("[generate-final-report] Grok API status:", grokResponse.status);
+
+    if (!grokResponse.ok) {
+      console.error("[generate-final-report] Grok API error:", grokResponse.status, JSON.stringify(grokData));
+    }
+
     const content = grokData.choices?.[0]?.message?.content || "{}";
 
     let report;

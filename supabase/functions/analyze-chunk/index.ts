@@ -31,7 +31,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "grok-3-mini-fast",
+        model: "grok-3-mini",
         messages: [
           {
             role: "system",
@@ -64,15 +64,38 @@ Transcript chunk: "${chunk_text}"`,
     });
 
     const grokData = await grokResponse.json();
+    console.log("[analyze-chunk] Grok API status:", grokResponse.status);
+    console.log("[analyze-chunk] Grok raw response:", JSON.stringify(grokData));
+
+    if (!grokResponse.ok) {
+      console.error("[analyze-chunk] Grok API error:", grokResponse.status, JSON.stringify(grokData));
+      // Return error details so frontend and direct calls can see what went wrong
+      return new Response(
+        JSON.stringify({
+          error: `Grok API error: ${grokResponse.status}`,
+          scores: { speech: 0, timing: 0, flow: 0, linguistic: 0 },
+          overall: 0,
+          flags: [],
+        }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const content = grokData.choices?.[0]?.message?.content || "{}";
+    console.log("[analyze-chunk] Extracted content:", content);
 
     // Parse Grok response
     let analysis;
     try {
       // Try to extract JSON from the response, handling markdown code blocks
       const jsonMatch = content.match(/\{[\s\S]*\}/);
-      analysis = JSON.parse(jsonMatch ? jsonMatch[0] : content);
-    } catch {
+      const jsonToParse = jsonMatch ? jsonMatch[0] : content;
+      console.log("[analyze-chunk] JSON to parse:", jsonToParse);
+      analysis = JSON.parse(jsonToParse);
+      console.log("[analyze-chunk] Parsed analysis:", JSON.stringify(analysis));
+    } catch (e) {
+      console.error("[analyze-chunk] JSON parse error:", e);
+      console.log("[analyze-chunk] Using default scores");
       analysis = { speech: 15, timing: 15, flow: 15, linguistic: 15, flags: [] };
     }
 

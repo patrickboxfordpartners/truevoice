@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { createClient, LiveTranscriptionEvents, LiveClient } from "@deepgram/sdk";
 
 interface TranscriptWord {
   word: string;
@@ -20,24 +21,8 @@ interface UseDeepgramReturn {
   transcript: string;
   interimText: string;
   results: TranscriptResult[];
-  connect: (sampleRate?: number) => Promise<void>;
+  connect: () => Promise<MediaStream>;
   disconnect: () => void;
-  sendAudio: (data: ArrayBuffer) => void;
-}
-
-function buildDeepgramParams(sampleRate: number) {
-  return [
-    "model=nova-2",
-    "punctuate=true",
-    "diarize=true",
-    "filler_words=true",
-    "smart_format=true",
-    "interim_results=true",
-    "utterance_end_ms=1500",
-    "encoding=linear16",
-    `sample_rate=${sampleRate}`,
-    "channels=1",
-  ].join("&");
 }
 
 export function useDeepgramTranscription(): UseDeepgramReturn {
@@ -45,103 +30,115 @@ export function useDeepgramTranscription(): UseDeepgramReturn {
   const [transcript, setTranscript] = useState("");
   const [interimText, setInterimText] = useState("");
   const [results, setResults] = useState<TranscriptResult[]>([]);
-  const wsRef = useRef<WebSocket | null>(null);
 
-  const connect = useCallback((sampleRate: number = 48000) => {
-    return new Promise<void>((resolve, reject) => {
-      const apiKey = import.meta.env.VITE_DEEPGRAM_API_KEY;
-      if (!apiKey) {
-        console.warn("Missing VITE_DEEPGRAM_API_KEY");
-        reject(new Error("Missing API key"));
-        return;
-      }
+  const deepgramRef = useRef<LiveClient | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
-      // Close any existing connection
-      if (wsRef.current) {
-        try { wsRef.current.close(); } catch { /* noop */ }
-      }
+  const connect = useCallback(async () => {
+    const apiKey = import.meta.env.VITE_DEEPGRAM_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing VITE_DEEPGRAM_API_KEY");
+    }
 
-      // Connect through local WebSocket proxy (adds auth header server-side)
-      const params = buildDeepgramParams(sampleRate);
-      const url = `ws://localhost:8090/?${params}`;
-      console.log(`Deepgram params: sample_rate=${sampleRate}`);
-      console.log("Connecting to Deepgram via proxy...");
-
-      const ws = new WebSocket(url);
-      ws.binaryType = "arraybuffer";
-
-      ws.addEventListener("open", () => {
-        console.log("Deepgram WebSocket connected");
-        setIsConnected(true);
-        resolve();
-      });
-
-      ws.addEventListener("message", (event) => {
-        try {
-          const data = JSON.parse(event.data);
-
-          if (data.type === "Results") {
-            const alt = data.channel?.alternatives?.[0];
-            if (!alt) return;
-
-            const text = alt.transcript || "";
-            if (!text) return;
-
-            const isFinal = data.is_final;
-            const words: TranscriptWord[] = alt.words || [];
-            const speaker = words[0]?.speaker;
-
-            const result: TranscriptResult = { text, words, isFinal, speaker };
-
-            if (isFinal) {
-              setTranscript((prev) => {
-                const separator = prev ? " " : "";
-                return prev + separator + text;
-              });
-              setInterimText("");
-              setResults((prev) => [...prev, result]);
-            } else {
-              setInterimText(text);
-            }
-          }
-        } catch {
-          // Ignore non-JSON
-        }
-      });
-
-      ws.addEventListener("error", (err) => {
-        console.error("Deepgram WebSocket error:", err);
-        reject(new Error("WebSocket connection failed"));
-      });
-
-      ws.addEventListener("close", (event) => {
-        console.log("Deepgram closed:", event.code, event.reason);
-        setIsConnected(false);
-      });
-
-      wsRef.current = ws;
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        sampleRate: 48000,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
     });
+    streamRef.current = stream;
+
+    const deepgram = createClient(apiKey);
+    const connection = deepgram.listen.live({
+      model: "nova-2",
+      language: "en",
+      punctuate: true,
+      diarize: true,
+      filler_words: true,
+      smart_format: true,
+      interim_results: true,
+      utterance_end_ms: 1500,
+      endpointing: 300,
+      vad_events: true,
+    });
+
+    deepgramRef.current = connection;
+
+    connection.on(LiveTranscriptionEvents.Open, () => {
+      setIsConnected(true);
+
+      let mimeType = "audio/webm;codecs=opus";
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = "audio/webm";
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType });
+      mediaRecorderRef.current = mediaRecorder;
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0 && connection.getReadyState() === 1) {
+          connection.send(event.data);
+        }
+      };
+
+      mediaRecorder.start(250);
+    });
+
+    connection.on(LiveTranscriptionEvents.Transcript, (data) => {
+      const alt = data.channel?.alternatives?.[0];
+      if (!alt?.transcript) return;
+
+      const text = alt.transcript;
+      const isFinal = data.is_final ?? false;
+      const words: TranscriptWord[] = alt.words || [];
+      const speaker = words[0]?.speaker;
+
+      const result: TranscriptResult = { text, words, isFinal, speaker };
+
+      if (isFinal) {
+        setTranscript((prev) => (prev ? prev + " " + text : text));
+        setInterimText("");
+        setResults((prev) => [...prev, result]);
+      } else {
+        setInterimText(text);
+      }
+    });
+
+    connection.on(LiveTranscriptionEvents.Error, (error) => {
+      console.error("[deepgram] Error:", error);
+    });
+
+    connection.on(LiveTranscriptionEvents.Warning, (warning) => {
+      console.warn("[deepgram] Warning:", warning);
+    });
+
+    connection.on(LiveTranscriptionEvents.Close, () => {
+      setIsConnected(false);
+    });
+
+    return stream;
   }, []);
 
   const disconnect = useCallback(() => {
-    if (wsRef.current) {
-      try {
-        if (wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.send(JSON.stringify({ type: "CloseStream" }));
-        }
-        wsRef.current.close();
-      } catch {
-        // Already closed
-      }
-      wsRef.current = null;
+    if (mediaRecorderRef.current?.state !== "inactive") {
+      mediaRecorderRef.current?.stop();
     }
-    setIsConnected(false);
-  }, []);
 
-  const sendAudio = useCallback((data: ArrayBuffer) => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) {
-      wsRef.current.send(data);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
     }
+
+    if (deepgramRef.current) {
+      deepgramRef.current.finish();
+      deepgramRef.current = null;
+    }
+
+    setIsConnected(false);
   }, []);
 
   return {
@@ -151,6 +148,5 @@ export function useDeepgramTranscription(): UseDeepgramReturn {
     results,
     connect,
     disconnect,
-    sendAudio,
   };
 }

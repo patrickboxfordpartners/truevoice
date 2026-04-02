@@ -66,6 +66,7 @@ export function useCreateInterview() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.refetchQueries({ queryKey: ["interviews"] });
     },
   });
 }
@@ -78,6 +79,7 @@ export function useUpdateInterview() {
       updateInterview(id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
+      queryClient.refetchQueries({ queryKey: ["interviews"] });
     },
   });
 }

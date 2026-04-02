@@ -13,7 +13,6 @@ export function createAudioProcessor(
 ) {
   // Let the browser pick its native sample rate (usually 44100 or 48000)
   const audioContext = new AudioContext();
-  console.log("[audio] AudioContext sample rate:", audioContext.sampleRate);
 
   const source = audioContext.createMediaStreamSource(stream);
 
@@ -22,12 +21,19 @@ export function createAudioProcessor(
 
   processor.onaudioprocess = (event) => {
     const float32 = event.inputBuffer.getChannelData(0);
+
     const pcm16 = float32ToPcm16(float32);
     onData(pcm16.buffer);
   };
 
   source.connect(processor);
-  processor.connect(audioContext.destination);
+
+  // Connect to a silent gain node instead of destination to prevent feedback
+  // ScriptProcessorNode requires a connection to keep firing events
+  const silentGain = audioContext.createGain();
+  silentGain.gain.value = 0;
+  processor.connect(silentGain);
+  silentGain.connect(audioContext.destination);
 
   return {
     audioContext,
