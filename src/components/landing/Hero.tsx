@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Shield, Eye, Zap } from "lucide-react";
+import { ArrowRight, Shield, Mic, Camera, Keyboard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import heroBg from "@/assets/hero-bg.jpg";
@@ -21,18 +21,19 @@ export const Hero = () => {
           className="max-w-3xl mx-auto text-center"
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm text-primary mb-8">
-            <Zap className="h-3.5 w-3.5" />
-            Real-time interview intelligence
+            <Shield className="h-3.5 w-3.5" />
+            Fight AI-assisted interview fraud
           </div>
 
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.1] mb-6">
-            Authentic Interviews,{" "}
-            <span className="gradient-text">Smarter Hiring</span>
+            Know who you're{" "}
+            <span className="gradient-text">actually hiring</span>
           </h1>
 
           <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            Real-time speech analysis to detect scripted and AI-assisted responses. 
-            Make confident hiring decisions with objective authenticity data.
+            Real-time speech, visual, and behavioral analysis detects scripted
+            and AI-assisted interview responses. Make confident hiring decisions
+            with objective authenticity data.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
@@ -42,25 +43,25 @@ export const Hero = () => {
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
-            <a href="#how-it-works">
+            <Link to="/pricing">
               <Button variant="outline" size="lg" className="text-base px-8 h-12">
-                See How It Works
+                View Pricing
               </Button>
-            </a>
+            </Link>
           </div>
 
           <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5">
-              <Shield className="h-4 w-4 text-success" />
-              Privacy First
+              <Mic className="h-4 w-4 text-success" />
+              Speech Analysis
             </span>
             <span className="flex items-center gap-1.5">
-              <Eye className="h-4 w-4 text-success" />
-              No Recordings Stored
+              <Camera className="h-4 w-4 text-success" />
+              Visual Monitoring
             </span>
             <span className="flex items-center gap-1.5">
-              <Shield className="h-4 w-4 text-success" />
-              SOC 2 Type II
+              <Keyboard className="h-4 w-4 text-success" />
+              Behavior Tracking
             </span>
           </div>
         </motion.div>
