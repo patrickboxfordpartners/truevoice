@@ -102,7 +102,7 @@ const comparisonFeatures: ComparisonFeature[] = [
   },
   {
     name: "API access",
-    tooltip: "RESTful API for integrating TrueVoice data into your ATS, HRIS, or custom workflows.",
+    tooltip: "RESTful API for integrating TrueVoice HQ data into your ATS, HRIS, or custom workflows.",
     starter: false, pro: false, scale: true,
   },
   {

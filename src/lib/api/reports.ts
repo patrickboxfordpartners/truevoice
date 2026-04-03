@@ -114,6 +114,7 @@ export async function getCompletedReports(companyId: string) {
         linguistic: report.linguistic_score,
         engagement: report.engagement,
         confidence: report.confidence,
+        summary: report.summary ?? "",
         flags: (flags ?? []).map((f) => ({
           time: f.time,
           pattern: f.pattern,

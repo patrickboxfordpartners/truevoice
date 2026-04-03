@@ -3,12 +3,13 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Shield, Mic, MicOff, Settings2, AlertTriangle, Clock,
-  ChevronLeft, MessageSquare, StopCircle, Monitor
+  ChevronLeft, MessageSquare, StopCircle, Monitor, Radio,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { ScoreGauge } from "@/components/ScoreGauge";
+import { MiniRadar } from "@/components/dashboard/MiniRadar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -22,6 +23,11 @@ const formatTime = (seconds: number) => {
   const s = seconds % 60;
   return `${m}:${String(s).padStart(2, "0")}`;
 };
+
+const severityDot = (s: string) =>
+  s === "high" ? "bg-destructive" : s === "medium" ? "bg-warning" : "bg-muted-foreground";
+const severityBg = (s: string) =>
+  s === "high" ? "bg-destructive/10 border-destructive/20" : s === "medium" ? "bg-warning/10 border-warning/20" : "bg-muted/50 border-border";
 
 const InterviewRoom = () => {
   const { id } = useParams<{ id: string }>();
@@ -83,11 +89,17 @@ const InterviewRoom = () => {
       <header className="h-14 border-b border-border bg-card/80 backdrop-blur-xl flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">
           <Shield className="h-5 w-5 text-primary" />
-          <span className="font-bold">AuthentiView</span>
-          <span className="text-muted-foreground text-sm hidden sm:inline">— Live Analysis</span>
+          <span><span className="font-extrabold uppercase">TRUE</span><span className="font-medium text-foreground/70">voice</span><span className="font-medium text-gradient">HQ</span></span>
+          <span className="text-muted-foreground text-sm hidden sm:inline">&mdash; Live Analysis</span>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted text-sm font-mono">
+          {interview.isActive && (
+            <div className="flex items-center gap-1.5 text-xs font-medium text-primary">
+              <Radio className="h-3 w-3 animate-pulse" />
+              Live
+            </div>
+          )}
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-muted text-sm font-mono tabular-nums">
             <Clock className="h-3.5 w-3.5 text-muted-foreground" />
             {formatTime(interview.elapsedSeconds)}
           </div>
@@ -126,21 +138,31 @@ const InterviewRoom = () => {
           {/* Pre-start state */}
           {!interview.isActive && (
             <div className="flex-1 flex flex-col items-center justify-center gap-6">
-              <div className="glass-card rounded-xl p-8 max-w-md text-center">
-                <Mic className="h-12 w-12 text-primary mx-auto mb-4" />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="glass-card rounded-xl p-10 max-w-md text-center"
+              >
+                <div className="h-16 w-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-6">
+                  <Mic className="h-8 w-8 text-primary" />
+                </div>
                 <h2 className="text-xl font-bold mb-2">Audio Overlay Mode</h2>
-                <p className="text-sm text-muted-foreground mb-6">
-                  AuthentiView captures your microphone audio to analyze speech patterns in real-time.
-                  Run this alongside your Zoom/Meet call.
+                <p className="text-sm text-muted-foreground mb-2 leading-relaxed">
+                  TrueVoice HQ captures your microphone audio to analyze speech patterns in real-time.
+                </p>
+                <p className="text-xs text-muted-foreground mb-6">
+                  Run this alongside your Zoom, Meet, or Teams call.
                 </p>
                 {interview.audioError && (
-                  <p className="text-sm text-destructive mb-4">{interview.audioError}</p>
+                  <div className="text-sm text-destructive bg-destructive/10 rounded-lg p-3 mb-4">
+                    {interview.audioError}
+                  </div>
                 )}
-                <Button onClick={handleStart} size="lg" className="gap-2">
+                <Button onClick={handleStart} size="lg" className="gap-2 w-full">
                   <Mic className="h-5 w-5" />
                   Start Analysis
                 </Button>
-              </div>
+              </motion.div>
             </div>
           )}
 
@@ -184,7 +206,7 @@ const InterviewRoom = () => {
                     </p>
                   )}
                   {interview.interimText && (
-                    <p className="text-muted-foreground italic">{interview.interimText}</p>
+                    <p className="text-muted-foreground/60 italic">{interview.interimText}</p>
                   )}
                 </div>
               </div>
@@ -197,23 +219,31 @@ const InterviewRoom = () => {
           <motion.aside
             initial={{ x: 40, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            className="w-[340px] border-l border-border bg-card/50 overflow-y-auto p-5 shrink-0"
+            className="w-[340px] border-l border-border bg-card/50 overflow-y-auto p-5 shrink-0 space-y-5"
           >
-            {/* Score Gauge */}
-            <div className="flex flex-col items-center mb-6">
-              <ScoreGauge score={interview.overallScore} size={120} strokeWidth={8} />
-              <p className="text-xs text-muted-foreground mt-2">
-                Updated every ~20 seconds
-              </p>
+            {/* Score + Radar row */}
+            <div className="flex items-center justify-center gap-4">
+              <ScoreGauge score={interview.overallScore} size={100} strokeWidth={8} />
+              <MiniRadar
+                speech={interview.scores.speech}
+                timing={interview.scores.timing}
+                flow={interview.scores.flow}
+                linguistic={interview.scores.linguistic}
+                overall={interview.overallScore}
+                size={90}
+              />
             </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Updates every ~20 seconds
+            </p>
 
             {/* Sub-scores */}
-            <div className="space-y-3 mb-6">
+            <div className="space-y-3">
               {scoreCategories.map((cat) => (
                 <div key={cat.label}>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs text-muted-foreground">{cat.label}</span>
-                    <span className="text-xs font-bold">{cat.score}/{cat.max}</span>
+                    <span className="text-xs font-bold tabular-nums">{cat.score}/{cat.max}</span>
                   </div>
                   <Progress value={(cat.score / cat.max) * 100} className="h-1.5" />
                 </div>
@@ -221,29 +251,32 @@ const InterviewRoom = () => {
             </div>
 
             {/* Flags */}
-            <div className="mb-6">
+            <div>
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-warning" />
-                Detected Patterns ({interview.flags.length})
+                Detected Patterns
+                {interview.flags.length > 0 && (
+                  <span className="text-xs font-normal text-muted-foreground">({interview.flags.length})</span>
+                )}
               </h3>
               {interview.flags.length === 0 ? (
                 <p className="text-xs text-muted-foreground">No flags detected yet</p>
               ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
                   {interview.flags.map((flag, i) => (
                     <motion.div
                       key={flag.id || i}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="text-xs p-2 rounded-lg bg-muted/50"
+                      className={`text-xs p-2.5 rounded-lg border ${severityBg(flag.severity)}`}
                     >
-                      <span className="font-mono text-muted-foreground mr-2">{flag.time}</span>
-                      <span className={
-                        flag.severity === "high" ? "text-destructive" :
-                        flag.severity === "medium" ? "text-warning" : ""
-                      }>
-                        {flag.pattern}
-                      </span>
+                      <div className="flex items-start gap-2">
+                        <span className={`h-2 w-2 rounded-full flex-shrink-0 mt-1 ${severityDot(flag.severity)}`} />
+                        <div className="min-w-0">
+                          <p className="leading-relaxed">{flag.pattern}</p>
+                          <p className="text-muted-foreground mt-0.5 font-mono">{flag.time}</p>
+                        </div>
+                      </div>
                     </motion.div>
                   ))}
                 </div>
@@ -257,7 +290,7 @@ const InterviewRoom = () => {
                 placeholder="Add notes during the interview..."
                 value={interview.notes}
                 onChange={(e) => interview.setNotes(e.target.value)}
-                className="min-h-[100px] text-sm"
+                className="min-h-[100px] text-sm resize-none"
               />
             </div>
           </motion.aside>
@@ -267,9 +300,10 @@ const InterviewRoom = () => {
         {interview.isActive && !sidebarOpen && (
           <button
             onClick={() => setSidebarOpen(true)}
-            className="w-8 border-l border-border bg-card/50 flex items-center justify-center hover:bg-muted transition-colors"
+            className="w-10 border-l border-border bg-card/50 flex items-center justify-center hover:bg-muted transition-colors group"
+            title="Show Analysis"
           >
-            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+            <ChevronLeft className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
           </button>
         )}
       </div>

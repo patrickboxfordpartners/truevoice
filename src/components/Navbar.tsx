@@ -29,8 +29,8 @@ const Navbar = () => {
       }`}
     >
       <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-        <Link to="/" className="text-xl font-bold tracking-tight text-foreground">
-          TrueVoice<span className="text-gradient">.</span>
+        <Link to="/" className="text-xl tracking-tight text-foreground">
+          <span className="font-extrabold uppercase">TRUE</span><span className="font-medium text-foreground/70">voice</span><span className="font-medium text-gradient">HQ</span>
         </Link>
 
         {/* Desktop */}

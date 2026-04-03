@@ -234,7 +234,7 @@ const Pricing = () => {
             Enterprise-grade detection at a fraction of the cost
           </p>
           <p className="text-center text-sm text-muted-foreground mb-12 max-w-xl mx-auto">
-            Legacy platforms charge $25,000+/year. TrueVoice delivers the same
+            Legacy platforms charge $25,000+/year. TrueVoice HQ delivers the same
             detection capabilities starting at $2.63/interview.
           </p>
           <div className="grid grid-cols-3 gap-8">

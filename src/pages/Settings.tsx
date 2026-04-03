@@ -146,7 +146,7 @@ const Settings = () => {
         <div className="container mx-auto px-6 flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            <span className="font-bold text-lg">AuthentiView</span>
+            <span className="text-lg"><span className="font-extrabold uppercase">TRUE</span><span className="font-medium text-foreground/70">voice</span><span className="font-medium text-gradient">HQ</span></span>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">Dashboard</Link>

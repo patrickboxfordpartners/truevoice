@@ -1,7 +1,11 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Plus, Search, TrendingUp, Calendar, Users, Shield, LogOut, Settings, ChevronDown, Clock, ArrowUp, ArrowDown, ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, GitCompareArrows, Download, Moon, Sun, Mail, Table2, CalendarDays, Loader2 } from "lucide-react";
+import {
+  Plus, Search, Shield, LogOut, Moon, Sun, ArrowUp, ArrowDown,
+  ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, Download,
+  Mail, Table2, CalendarDays, Loader2, LayoutGrid, Settings,
+} from "lucide-react";
 import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -11,9 +15,13 @@ import { ScoreBadge } from "@/components/ScoreBadge";
 import { CreateInterviewDialog } from "@/components/CreateInterviewDialog";
 import { EmailTemplateDialog } from "@/components/EmailTemplateDialog";
 import { InterviewCalendar } from "@/components/InterviewCalendar";
+import { InsightStrip } from "@/components/dashboard/InsightStrip";
+import { CandidateCard } from "@/components/dashboard/CandidateCard";
+import { PositionFilter } from "@/components/dashboard/PositionFilter";
 import { useAuth } from "@/contexts/AuthContext";
 import { useInterviews } from "@/hooks/useInterviews";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
+import { useCompletedReports } from "@/hooks/useReport";
 import type { Interview } from "@/types";
 
 const DarkModeToggle = () => {
@@ -32,8 +40,8 @@ const DarkModeToggle = () => {
   );
 };
 
+type ViewMode = "cards" | "table" | "calendar";
 type SortKey = "candidate" | "position" | "date" | "duration" | "score";
-
 type SortDir = "asc" | "desc";
 
 const ITEMS_PER_PAGE = 8;
@@ -43,36 +51,85 @@ const Dashboard = () => {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   const { data: interviews, isLoading } = useInterviews();
+  const { data: completedReports, isLoading: reportsLoading } = useCompletedReports();
   const stats = useDashboardStats(interviews);
 
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [showEmailTemplates, setShowEmailTemplates] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("cards");
+  const [positionFilter, setPositionFilter] = useState("all");
+
+  // Table-specific state
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [scoreFilter, setScoreFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<"table" | "calendar">("table");
   const [page, setPage] = useState(1);
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
 
-  const toggleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDir(d => d === "asc" ? "desc" : "asc");
-    } else {
-      setSortKey(key);
-      setSortDir(key === "date" ? "desc" : "asc");
+  // Build a lookup from interview ID to report data
+  const reportLookup = useMemo(() => {
+    const map = new Map<string, typeof completedReports extends (infer T)[] | undefined ? T : never>();
+    if (completedReports) {
+      for (const r of completedReports) {
+        if (r) map.set(r.id, r);
+      }
     }
-  };
+    return map;
+  }, [completedReports]);
 
-  const SortIcon = ({ col }: { col: SortKey }) => {
-    if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
-    return sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
-  };
+  // Unique positions for filter
+  const positions = useMemo(() => {
+    if (!interviews) return [];
+    const set = new Set(interviews.map((i) => i.position).filter(Boolean));
+    return Array.from(set).sort();
+  }, [interviews]);
 
-  // Map DB interviews to display format
+  // Filtered interviews for cards view
+  const cardInterviews = useMemo(() => {
+    if (!interviews) return [];
+    let items = [...interviews];
+
+    if (search) {
+      const q = search.toLowerCase();
+      items = items.filter(
+        (i) => i.candidate_name.toLowerCase().includes(q) || i.position.toLowerCase().includes(q)
+      );
+    }
+
+    if (positionFilter !== "all") {
+      items = items.filter((i) => i.position === positionFilter);
+    }
+
+    // Sort: completed with reports first (by score desc), then in_progress, then scheduled, then cancelled
+    items.sort((a, b) => {
+      const statusOrder = { in_progress: 0, completed: 1, scheduled: 2, cancelled: 3 };
+      const aOrder = statusOrder[a.status as keyof typeof statusOrder] ?? 4;
+      const bOrder = statusOrder[b.status as keyof typeof statusOrder] ?? 4;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+
+      // Within completed, sort by score desc
+      if (a.status === "completed" && b.status === "completed") {
+        const aScore = reportLookup.get(a.id)?.overall ?? 0;
+        const bScore = reportLookup.get(b.id)?.overall ?? 0;
+        return bScore - aScore;
+      }
+
+      // Within scheduled, sort by date asc (soonest first)
+      if (a.status === "scheduled" && b.status === "scheduled") {
+        return new Date(a.scheduled_at ?? a.created_at).getTime() - new Date(b.scheduled_at ?? b.created_at).getTime();
+      }
+
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+
+    return items;
+  }, [interviews, search, positionFilter, reportLookup]);
+
+  // Table view logic (existing)
   const displayInterviews = useMemo(() => {
     if (!interviews) return [];
     return interviews.map((i) => ({
@@ -80,13 +137,12 @@ const Dashboard = () => {
       candidate: i.candidate_name,
       position: i.position,
       date: i.scheduled_at || i.created_at,
-      duration: i.duration || "—",
-      score: 0, // Score comes from reports, shown as — if no report
+      duration: i.duration || "\u2014",
+      score: reportLookup.get(i.id)?.overall ?? 0,
       status: i.status,
     }));
-  }, [interviews]);
+  }, [interviews, reportLookup]);
 
-  // For calendar view, map to the format InterviewCalendar expects
   const calendarInterviews = useMemo(() => {
     return displayInterviews.map((i) => ({
       id: i.id,
@@ -98,16 +154,30 @@ const Dashboard = () => {
     }));
   }, [displayInterviews]);
 
-  const filtered = useMemo(() => {
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "date" ? "desc" : "asc");
+    }
+  };
+
+  const SortIcon = ({ col }: { col: SortKey }) => {
+    if (sortKey !== col) return <ArrowUpDown className="h-3 w-3 opacity-40" />;
+    return sortDir === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
+  };
+
+  const tableFiltered = useMemo(() => {
     let items = displayInterviews.filter(
       (i) =>
         i.candidate.toLowerCase().includes(search.toLowerCase()) ||
         i.position.toLowerCase().includes(search.toLowerCase())
     );
 
-    if (scoreFilter === "high") items = items.filter(i => i.score >= 80);
-    else if (scoreFilter === "medium") items = items.filter(i => i.score >= 50 && i.score < 80);
-    else if (scoreFilter === "low") items = items.filter(i => i.score < 50);
+    if (scoreFilter === "high") items = items.filter((i) => i.score >= 80);
+    else if (scoreFilter === "medium") items = items.filter((i) => i.score >= 50 && i.score < 80);
+    else if (scoreFilter === "low") items = items.filter((i) => i.score < 50);
 
     items.sort((a, b) => {
       let cmp = 0;
@@ -124,21 +194,16 @@ const Dashboard = () => {
     return items;
   }, [search, scoreFilter, sortKey, sortDir, displayInterviews]);
 
-  // Reset page when filters change
   useMemo(() => { setPage(1); }, [search, scoreFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(tableFiltered.length / ITEMS_PER_PAGE));
   const safePage = Math.min(page, totalPages);
-  const paginated = filtered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
+  const paginated = tableFiltered.slice((safePage - 1) * ITEMS_PER_PAGE, safePage * ITEMS_PER_PAGE);
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/login");
   };
-
-  const monthChange = stats.interviewsLastMonth > 0
-    ? Math.round(((stats.interviewsThisMonth - stats.interviewsLastMonth) / stats.interviewsLastMonth) * 100)
-    : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -147,12 +212,12 @@ const Dashboard = () => {
         <div className="container mx-auto px-6 flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            <span className="font-bold text-lg">AuthentiView</span>
+            <span className="text-lg"><span className="font-extrabold uppercase">TRUE</span><span className="font-medium text-foreground/70">voice</span><span className="font-medium text-gradient">HQ</span></span>
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <Link to="/dashboard" className="font-medium text-foreground">Dashboard</Link>
-              <span className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors">Interviews</span>
-              <Link to="/settings" className="text-muted-foreground hover:text-foreground transition-colors">Settings</Link>
+            <span className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors">Interviews</span>
+            <Link to="/settings" className="text-muted-foreground hover:text-foreground transition-colors">Settings</Link>
           </nav>
           <div className="flex items-center gap-3">
             <DarkModeToggle />
@@ -161,7 +226,9 @@ const Dashboard = () => {
               New Interview
             </Button>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">{initials}</div>
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs">
+                {initials}
+              </div>
               <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-1 text-muted-foreground">
                 <LogOut className="h-3.5 w-3.5" />
               </Button>
@@ -170,119 +237,185 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <main className="container mx-auto px-6 py-8">
-        {/* Stats */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Interviews This Month</span>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <p className="text-3xl font-bold">{stats.interviewsThisMonth}</p>
-            {monthChange !== 0 && (
-              <p className={`text-xs mt-1 flex items-center gap-1 ${monthChange > 0 ? "text-success" : "text-destructive"}`}>
-                <TrendingUp className="h-3 w-3" /> {monthChange > 0 ? "+" : ""}{monthChange}% from last month
-              </p>
-            )}
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card rounded-xl p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Total Interviews</span>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <p className="text-3xl font-bold">{displayInterviews.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">{stats.needsReview} completed</p>
-          </motion.div>
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card rounded-xl p-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">Interviews Today</span>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <p className="text-3xl font-bold">{stats.interviewsToday}</p>
-            <p className="text-xs text-muted-foreground mt-1">{stats.completedToday} completed, {stats.interviewsToday - stats.completedToday} upcoming</p>
-          </motion.div>
-        </div>
+      <main className="container mx-auto px-6 py-8 space-y-6">
+        {/* Insight Strip */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+          <InsightStrip interviews={interviews} completedReports={completedReports as any} />
+        </motion.div>
 
-        <div className="grid lg:grid-cols-[1fr_300px] gap-8">
-          {/* Interviews Table */}
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl overflow-hidden">
-            <div className="p-6 border-b border-border">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-semibold">Recent Interviews</h2>
-                  <div className="flex items-center rounded-lg border border-border p-0.5">
-                    <Button
-                      variant={viewMode === "table" ? "default" : "ghost"}
-                      size="sm"
-                      className="h-7 px-2.5 gap-1.5 text-xs"
-                      onClick={() => setViewMode("table")}
-                    >
-                      <Table2 className="h-3.5 w-3.5" />
-                      Table
-                    </Button>
-                    <Button
-                      variant={viewMode === "calendar" ? "default" : "ghost"}
-                      size="sm"
-                      className="h-7 px-2.5 gap-1.5 text-xs"
-                      onClick={() => setViewMode("calendar")}
-                    >
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      Calendar
-                    </Button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
-                    const headers = ["Candidate", "Position", "Date", "Duration", "Status"];
-                    const rows = filtered.map(i => [
-                      `"${i.candidate}"`,
-                      `"${i.position}"`,
-                      new Date(i.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
-                      i.duration,
-                      i.status,
-                    ].join(","));
-                    const csv = [headers.join(","), ...rows].join("\n");
-                    const blob = new Blob([csv], { type: "text/csv" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = "interviews.csv";
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}>
-                    <Download className="h-3.5 w-3.5" />
-                    Export CSV
-                  </Button>
-                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowEmailTemplates(true)}>
-                    <Mail className="h-3.5 w-3.5" />
-                    Email Templates
-                  </Button>
-                  <Link to="/compare">
-                    <Button variant="outline" size="sm" className="gap-1.5">
-                      <GitCompareArrows className="h-3.5 w-3.5" />
-                      Compare
-                    </Button>
-                  </Link>
-                </div>
-              </div>
+        {/* Controls Row */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="flex items-center justify-between gap-4 flex-wrap"
+        >
+          <div className="flex items-center gap-4 flex-wrap flex-1 min-w-0">
+            <PositionFilter
+              positions={positions}
+              selected={positionFilter}
+              onChange={setPositionFilter}
+            />
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search candidates..."
+                className="pl-10 h-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* View Mode Toggle */}
+            <div className="flex items-center rounded-lg border border-border p-0.5">
+              <Button
+                variant={viewMode === "cards" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 px-2.5 gap-1.5 text-xs"
+                onClick={() => setViewMode("cards")}
+              >
+                <LayoutGrid className="h-3.5 w-3.5" />
+                Cards
+              </Button>
+              <Button
+                variant={viewMode === "table" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 px-2.5 gap-1.5 text-xs"
+                onClick={() => setViewMode("table")}
+              >
+                <Table2 className="h-3.5 w-3.5" />
+                Table
+              </Button>
+              <Button
+                variant={viewMode === "calendar" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 px-2.5 gap-1.5 text-xs"
+                onClick={() => setViewMode("calendar")}
+              >
+                <CalendarDays className="h-3.5 w-3.5" />
+                Calendar
+              </Button>
+            </div>
+
+            <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={() => setShowEmailTemplates(true)}>
+              <Mail className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Templates</span>
+            </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 h-8" onClick={() => {
+              const headers = ["Candidate", "Position", "Date", "Duration", "Score", "Status"];
+              const rows = displayInterviews.map((i) => [
+                `"${i.candidate}"`,
+                `"${i.position}"`,
+                new Date(i.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+                i.duration,
+                i.score || "",
+                i.status,
+              ].join(","));
+              const csv = [headers.join(","), ...rows].join("\n");
+              const blob = new Blob([csv], { type: "text/csv" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = "interviews.csv";
+              a.click();
+              URL.revokeObjectURL(url);
+            }}>
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Export</span>
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* Main Content */}
+        {isLoading || reportsLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : viewMode === "cards" ? (
+          /* Cards View */
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {cardInterviews.length === 0 ? (
+              <div className="col-span-full text-center py-16 text-muted-foreground">
+                {interviews?.length === 0
+                  ? "No interviews yet. Create your first one!"
+                  : "No interviews matching your filters."}
               </div>
-            ) : viewMode === "table" ? (
-              <>
-              <div className="p-6 pt-0 pb-0">
-              <div className="flex items-center gap-3 pb-6">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by candidate or position..."
-                    className="pl-10"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+            ) : (
+              cardInterviews.map((interview, i) => {
+                const report = reportLookup.get(interview.id);
+
+                if (interview.status === "completed" && report) {
+                  const highestSeverity = report.flags.length > 0
+                    ? (report.flags.some((f: any) => f.severity === "high")
+                      ? "high"
+                      : report.flags.some((f: any) => f.severity === "medium")
+                        ? "medium"
+                        : "low") as "low" | "medium" | "high"
+                    : undefined;
+
+                  return (
+                    <CandidateCard
+                      key={interview.id}
+                      type="completed"
+                      id={interview.id}
+                      candidate={interview.candidate_name}
+                      position={interview.position}
+                      date={new Date(interview.scheduled_at ?? interview.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                      overall={report.overall}
+                      speech={report.speech}
+                      timing={report.timing}
+                      flow={report.flow}
+                      linguistic={report.linguistic}
+                      summary={report.summary}
+                      flagCount={report.flags.length}
+                      highestSeverity={highestSeverity}
+                      index={i}
+                    />
+                  );
+                }
+
+                if (interview.status === "scheduled" || interview.status === "in_progress") {
+                  const dateStr = interview.scheduled_at
+                    ? new Date(interview.scheduled_at).toLocaleDateString("en-US", {
+                        month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                      })
+                    : "Not scheduled";
+
+                  return (
+                    <CandidateCard
+                      key={interview.id}
+                      type={interview.status as "scheduled" | "in_progress"}
+                      id={interview.id}
+                      candidate={interview.candidate_name}
+                      position={interview.position}
+                      date={dateStr}
+                      index={i}
+                    />
+                  );
+                }
+
+                // Completed without report — show as simple card
+                return (
+                  <CandidateCard
+                    key={interview.id}
+                    type="scheduled"
+                    id={interview.id}
+                    candidate={interview.candidate_name}
+                    position={interview.position}
+                    date={new Date(interview.scheduled_at ?? interview.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    index={i}
                   />
-                </div>
+                );
+              })
+            )}
+          </div>
+        ) : viewMode === "table" ? (
+          /* Table View */
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-xl overflow-hidden">
+            <div className="p-6 pb-0">
+              <div className="flex items-center gap-3 pb-6">
                 <Select value={scoreFilter} onValueChange={setScoreFilter}>
                   <SelectTrigger className="w-[160px] gap-2">
                     <Filter className="h-3.5 w-3.5 text-muted-foreground" />
@@ -301,7 +434,7 @@ const Dashboard = () => {
                   </Button>
                 )}
               </div>
-              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -315,6 +448,9 @@ const Dashboard = () => {
                     <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("date")}>
                       <span className="inline-flex items-center gap-1.5">Date <SortIcon col="date" /></span>
                     </th>
+                    <th className="px-6 py-3 font-medium cursor-pointer select-none hover:text-foreground transition-colors" onClick={() => toggleSort("score")}>
+                      <span className="inline-flex items-center gap-1.5">Score <SortIcon col="score" /></span>
+                    </th>
                     <th className="px-6 py-3 font-medium">Status</th>
                     <th className="px-6 py-3 font-medium"></th>
                   </tr>
@@ -326,6 +462,9 @@ const Dashboard = () => {
                       <td className="px-6 py-4 text-muted-foreground">{interview.position}</td>
                       <td className="px-6 py-4 text-muted-foreground text-sm">
                         {new Date(interview.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </td>
+                      <td className="px-6 py-4">
+                        {interview.score > 0 ? <ScoreBadge score={interview.score} /> : <span className="text-muted-foreground text-sm">\u2014</span>}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`text-xs font-medium px-2 py-1 rounded-full ${
@@ -352,7 +491,7 @@ const Dashboard = () => {
                   ))}
                   {paginated.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                      <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground">
                         {displayInterviews.length === 0
                           ? "No interviews yet. Create your first one!"
                           : "No interviews found matching your filters."}
@@ -362,17 +501,16 @@ const Dashboard = () => {
                 </tbody>
               </table>
             </div>
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-6 py-4 border-t border-border">
                 <p className="text-sm text-muted-foreground">
-                  Showing {(safePage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(safePage * ITEMS_PER_PAGE, filtered.length)} of {filtered.length}
+                  Showing {(safePage - 1) * ITEMS_PER_PAGE + 1}\u2013{Math.min(safePage * ITEMS_PER_PAGE, tableFiltered.length)} of {tableFiltered.length}
                 </p>
                 <div className="flex items-center gap-1">
-                  <Button variant="outline" size="sm" disabled={safePage <= 1} onClick={() => setPage(p => p - 1)}>
+                  <Button variant="outline" size="sm" disabled={safePage <= 1} onClick={() => setPage((p) => p - 1)}>
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                     <Button
                       key={p}
                       variant={p === safePage ? "default" : "outline"}
@@ -383,73 +521,31 @@ const Dashboard = () => {
                       {p}
                     </Button>
                   ))}
-                  <Button variant="outline" size="sm" disabled={safePage >= totalPages} onClick={() => setPage(p => p + 1)}>
+                  <Button variant="outline" size="sm" disabled={safePage >= totalPages} onClick={() => setPage((p) => p + 1)}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             )}
-              </>
-            ) : (
-              <div className="p-6">
-                <InterviewCalendar
-                  interviews={calendarInterviews}
-                  onReschedule={(id, newDate) => {
-                    const iv = calendarInterviews.find((i) => i.id === id);
-                    if (iv) {
-                      const d = new Date(newDate);
-                      toast({
-                        title: "Interview rescheduled",
-                        description: `${iv.candidate} moved to ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })} at ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`,
-                      });
-                    }
-                  }}
-                />
-              </div>
-            )}
           </motion.div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-card rounded-xl p-6">
-              <Button onClick={() => setShowCreate(true)} className="w-full gap-2 mb-4">
-                <Plus className="h-4 w-4" />
-                Create New Interview
-              </Button>
-              <div>
-                <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  Scheduled Today
-                </h3>
-                <div className="space-y-3">
-                  {stats.scheduledToday.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No interviews scheduled today</p>
-                  ) : (
-                    stats.scheduledToday.map((iv) => (
-                      <div key={iv.id} className="flex items-center justify-between text-sm">
-                        <div>
-                          <p className="font-medium">{iv.candidate_name}</p>
-                          <p className="text-muted-foreground text-xs">{iv.position}</p>
-                        </div>
-                        <span className="text-muted-foreground text-xs">
-                          {iv.scheduled_at
-                            ? new Date(iv.scheduled_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })
-                            : "—"}
-                        </span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="glass-card rounded-xl p-6">
-              <h3 className="text-sm font-semibold mb-2">Completed</h3>
-              <p className="text-3xl font-bold text-success">{stats.needsReview}</p>
-              <p className="text-xs text-muted-foreground">Completed interviews with reports</p>
-            </motion.div>
-          </div>
-        </div>
+        ) : (
+          /* Calendar View */
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-xl p-6">
+            <InterviewCalendar
+              interviews={calendarInterviews}
+              onReschedule={(id, newDate) => {
+                const iv = calendarInterviews.find((i) => i.id === id);
+                if (iv) {
+                  const d = new Date(newDate);
+                  toast({
+                    title: "Interview rescheduled",
+                    description: `${iv.candidate} moved to ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })} at ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`,
+                  });
+                }
+              }}
+            />
+          </motion.div>
+        )}
       </main>
 
       <CreateInterviewDialog open={showCreate} onOpenChange={setShowCreate} />

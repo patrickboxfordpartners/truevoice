@@ -38,7 +38,7 @@ const Login = () => {
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 mb-4">
             <Shield className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl">AuthentiView</span>
+            <span className="text-xl"><span className="font-extrabold uppercase">TRUE</span><span className="font-medium text-foreground/70">voice</span><span className="font-medium text-gradient">HQ</span></span>
           </div>
           <h1 className="text-2xl font-bold">Welcome back</h1>
           <p className="text-sm text-muted-foreground mt-1">
