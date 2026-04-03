@@ -1,40 +1,47 @@
-import { Shield } from "lucide-react";
 import { Link } from "react-router-dom";
 
-export const Footer = () => {
-  return (
-    <footer className="border-t border-border bg-secondary/20 py-12">
-      <div className="container mx-auto px-6">
-        <div className="grid md:grid-cols-4 gap-8 mb-8">
-          <div className="md:col-span-2">
-            <Link to="/" className="flex items-center gap-2 mb-3">
-              <Shield className="h-6 w-6 text-primary" />
-              <span className="text-lg font-bold">AuthentiView</span>
-            </Link>
-            <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">
-              AuthentiView provides decision-support data only. Final hiring decisions remain with the employer.
-            </p>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-3 text-sm">Product</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a></li>
-              <li><Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
-              <li><Link to="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold mb-3 text-sm">Legal</h4>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a></li>
-              <li><a href="#" className="hover:text-foreground transition-colors">Terms of Service</a></li>
-            </ul>
-          </div>
+const Footer = () => (
+  <footer className="border-t border-border bg-background">
+    <div className="max-w-6xl mx-auto px-6 py-16">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+        <div className="col-span-2 md:col-span-1">
+          <p className="text-lg font-bold tracking-tight text-foreground mb-3">
+            TrueVoice<span className="text-gradient">.</span>
+          </p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            AI-powered interview authenticity detection.
+          </p>
         </div>
-        <div className="border-t border-border pt-6 text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} AuthentiView. All rights reserved.
+        <div>
+          <h4 className="text-sm font-semibold text-foreground mb-4">Product</h4>
+          <ul className="space-y-2.5 text-sm text-muted-foreground">
+            <li><Link to="/#features" className="hover:text-foreground transition-colors">Features</Link></li>
+            <li><Link to="/pricing" className="hover:text-foreground transition-colors">Pricing</Link></li>
+            <li><Link to="/#how-it-works" className="hover:text-foreground transition-colors">How It Works</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold text-foreground mb-4">Company</h4>
+          <ul className="space-y-2.5 text-sm text-muted-foreground">
+            <li><a href="#" className="hover:text-foreground transition-colors">About</a></li>
+            <li><a href="#" className="hover:text-foreground transition-colors">Blog</a></li>
+            <li><a href="#" className="hover:text-foreground transition-colors">Careers</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold text-foreground mb-4">Legal</h4>
+          <ul className="space-y-2.5 text-sm text-muted-foreground">
+            <li><a href="#" className="hover:text-foreground transition-colors">Privacy</a></li>
+            <li><a href="#" className="hover:text-foreground transition-colors">Terms</a></li>
+            <li><a href="#" className="hover:text-foreground transition-colors">Security</a></li>
+          </ul>
         </div>
       </div>
-    </footer>
-  );
-};
+      <div className="border-t border-border pt-8 text-sm text-muted-foreground text-center">
+        &copy; {new Date().getFullYear()} TrueVoice Insights. All rights reserved.
+      </div>
+    </div>
+  </footer>
+);
+
+export default Footer;
