@@ -45,8 +45,8 @@ const Signup = () => {
             <Shield className="h-6 w-6 text-primary" />
             <span className="text-xl"><span className="font-extrabold uppercase">TRUE</span><span className="font-medium text-foreground/70">voice</span><span className="font-medium text-gradient">HQ</span></span>
           </div>
-          <h1 className="text-2xl font-bold">Create your account</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-2xl font-bold text-gray-900">Create your account</h1>
+          <p className="text-sm text-gray-500 mt-1">
             Start analyzing interview authenticity
           </p>
         </div>
@@ -91,9 +91,9 @@ const Signup = () => {
           </Button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
+        <p className="text-center text-sm text-gray-500 mt-6">
           Already have an account?{" "}
-          <Link to="/login" className="text-primary hover:underline font-medium">
+          <Link to="/login" className="text-emerald-600 hover:underline font-medium">
             Sign in
           </Link>
         </p>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Mic, Eye, Monitor, Brain, Users, BarChart3, type LucideIcon } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
 
@@ -30,30 +30,52 @@ const tabs: { label: string; value: Category }[] = [
 const Features = () => {
   const [active, setActive] = useState<Category>("all");
   const filtered = active === "all" ? features : features.filter((f) => f.category === active);
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
+
+  useEffect(() => {
+    const idx = tabs.findIndex((t) => t.value === active);
+    const el = tabRefs.current[idx];
+    if (el) {
+      const parent = el.parentElement;
+      if (parent) {
+        setIndicator({
+          left: el.offsetLeft,
+          width: el.offsetWidth,
+        });
+      }
+    }
+  }, [active]);
 
   return (
-    <section id="features" className="py-28 px-6" style={{ background: "var(--section-gradient-2)" }}>
+    <section id="features" className="py-28 px-6 bg-white">
       <div className="max-w-6xl mx-auto">
         <ScrollReveal className="text-center mb-12">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-4 text-gray-900">
             Three layers of <span className="text-gradient">authenticity detection</span>
           </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
             Audio analysis, visual monitoring, and browser-level behavioral tracking work together to give you a complete picture.
           </p>
         </ScrollReveal>
 
-        {/* Interactive tabs */}
+        {/* Segmented control with sliding indicator */}
         <div className="flex justify-center mb-14">
-          <div className="inline-flex items-center gap-1 bg-secondary rounded-full p-1">
-            {tabs.map((tab) => (
+          <div className="relative inline-flex items-center gap-0 bg-gray-100 rounded-xl p-1">
+            {/* Sliding highlight */}
+            <div
+              className="absolute top-1 bottom-1 rounded-lg bg-emerald-500 shadow-md transition-all duration-300 ease-out"
+              style={{ left: indicator.left, width: indicator.width }}
+            />
+            {tabs.map((tab, i) => (
               <button
                 key={tab.value}
+                ref={(el) => { tabRefs.current[i] = el; }}
                 onClick={() => setActive(tab.value)}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                className={`relative z-10 px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors duration-300 ${
                   active === tab.value
-                    ? "bg-background shadow-soft text-foreground"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "text-white"
+                    : "text-gray-500 hover:text-gray-900"
                 }`}
               >
                 {tab.label}
@@ -62,18 +84,18 @@ const Features = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="flex flex-wrap justify-center gap-6">
           {filtered.map((f, i) => (
-            <ScrollReveal key={f.title} delay={i * 0.06}>
+            <ScrollReveal key={f.title} delay={i * 0.06} className="w-full md:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)]">
               <div className="group relative rounded-2xl border border-border bg-card p-8 transition-all duration-300 hover:shadow-elevated hover:-translate-y-1.5 h-full overflow-hidden">
                 {/* Hover glow */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.06),transparent_70%)]" />
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none bg-[radial-gradient(circle_at_50%_0%,hsl(0_0%_0%/0.03),transparent_70%)]" />
                 <div className="relative">
-                  <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center mb-5 transition-all duration-300 group-hover:bg-primary/20 group-hover:scale-110">
-                    <f.icon size={22} className="text-primary transition-transform duration-300 group-hover:rotate-[-8deg]" />
+                  <div className="w-11 h-11 rounded-xl bg-gray-100 flex items-center justify-center mb-5 transition-all duration-300 group-hover:bg-gray-200 group-hover:scale-110">
+                    <f.icon size={22} className="text-gray-700 transition-transform duration-300 group-hover:rotate-[-8deg]" />
                   </div>
-                  <h3 className="text-lg font-semibold text-card-foreground mb-2">{f.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{f.description}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{f.title}</h3>
+                  <p className="text-sm text-gray-500 leading-relaxed">{f.description}</p>
                 </div>
               </div>
             </ScrollReveal>

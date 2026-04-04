@@ -119,12 +119,12 @@ const comparisonFeatures: ComparisonFeature[] = [
 
 const CellValue = ({ value }: { value: boolean | string }) => {
   if (typeof value === "string") {
-    return <span className="text-sm font-semibold text-card-foreground">{value}</span>;
+    return <span className="text-sm font-semibold text-gray-900">{value}</span>;
   }
   return value ? (
-    <Check size={18} className="text-primary mx-auto" />
+    <Check size={18} className="text-emerald-500 mx-auto" />
   ) : (
-    <X size={18} className="text-muted-foreground/30 mx-auto" />
+    <X size={18} className="text-gray-500/30 mx-auto" />
   );
 };
 
@@ -132,10 +132,10 @@ const ComparisonTable = () => (
   <section className="py-28 px-6" style={{ background: "var(--section-gradient-3)" }}>
     <div className="max-w-5xl mx-auto">
       <ScrollReveal className="text-center mb-14">
-        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4">
+        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4 text-gray-900">
           Compare <span className="text-gradient">every feature</span>
         </h2>
-        <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+        <p className="text-gray-600 text-lg max-w-xl mx-auto">
           See exactly what's included in each plan. Hover any feature for details.
         </p>
       </ScrollReveal>
@@ -144,12 +144,12 @@ const ComparisonTable = () => (
       <div className="md:hidden space-y-3">
         {comparisonFeatures.map((feature) => (
           <ScrollReveal key={feature.name}>
-            <div className="rounded-xl border border-border bg-card p-4 transition-colors hover:bg-primary/[0.03]">
+            <div className="rounded-xl border border-border bg-card p-4 transition-colors hover:bg-gray-50">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-sm font-medium text-card-foreground">{feature.name}</span>
+                <span className="text-sm font-medium text-gray-900">{feature.name}</span>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button className="text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+                    <button className="text-gray-500/40 hover:text-gray-500 transition-colors">
                       <HelpCircle size={14} />
                     </button>
                   </TooltipTrigger>
@@ -163,10 +163,10 @@ const ComparisonTable = () => (
                   <div
                     key={plan}
                     className={`flex flex-col items-center gap-1 rounded-lg py-2 ${
-                      plan === "pro" ? "bg-primary/5" : "bg-secondary/50"
+                      plan === "pro" ? "bg-gray-100" : "bg-gray-50"
                     }`}
                   >
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
                       {plan}
                     </span>
                     <CellValue value={feature[plan]} />
@@ -182,31 +182,31 @@ const ComparisonTable = () => (
       <ScrollReveal className="hidden md:block">
         <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-soft">
           {/* Header */}
-          <div className="grid grid-cols-4 border-b border-border bg-secondary/50">
-            <div className="p-5 text-sm font-semibold text-muted-foreground">Features</div>
-            <div className="p-5 text-center text-sm font-bold text-card-foreground">Starter</div>
-            <div className="p-5 text-center text-sm font-bold text-primary relative">
+          <div className="grid grid-cols-4 border-b border-border bg-gray-50">
+            <div className="p-5 text-sm font-semibold text-gray-500">Features</div>
+            <div className="p-5 text-center text-sm font-bold text-gray-900">Starter</div>
+            <div className="p-5 text-center text-sm font-bold text-emerald-600 relative">
               Pro
-              <span className="absolute -top-0 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[10px] font-semibold px-2.5 py-0.5 rounded-b-md">
+              <span className="absolute -top-0 left-1/2 -translate-x-1/2 bg-emerald-500 text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-b-md">
                 Popular
               </span>
             </div>
-            <div className="p-5 text-center text-sm font-bold text-card-foreground">Scale</div>
+            <div className="p-5 text-center text-sm font-bold text-gray-900">Scale</div>
           </div>
 
           {/* Rows */}
           {comparisonFeatures.map((feature, i) => (
             <div
               key={feature.name}
-              className={`grid grid-cols-4 transition-colors duration-200 hover:bg-primary/[0.03] ${
+              className={`grid grid-cols-4 transition-colors duration-200 hover:bg-gray-50 ${
                 i < comparisonFeatures.length - 1 ? "border-b border-border/50" : ""
               }`}
             >
               <div className="p-4 flex items-center gap-2">
-                <span className="text-sm text-card-foreground">{feature.name}</span>
+                <span className="text-sm text-gray-900">{feature.name}</span>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button className="text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+                    <button className="text-gray-500/40 hover:text-gray-500 transition-colors">
                       <HelpCircle size={14} />
                     </button>
                   </TooltipTrigger>
@@ -218,7 +218,7 @@ const ComparisonTable = () => (
               <div className="p-4 flex items-center justify-center">
                 <CellValue value={feature.starter} />
               </div>
-              <div className="p-4 flex items-center justify-center bg-primary/[0.02]">
+              <div className="p-4 flex items-center justify-center bg-gray-50/50">
                 <CellValue value={feature.pro} />
               </div>
               <div className="p-4 flex items-center justify-center">

@@ -1,18 +1,59 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
+  const [onDarkBg, setOnDarkBg] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navRef = useRef<HTMLElement>(null);
+
+  const checkBackground = useCallback(() => {
+    if (!navRef.current) return;
+    const navHeight = navRef.current.getBoundingClientRect().height;
+    const sampleY = navHeight / 2;
+    // Temporarily hide navbar so elementFromPoint hits the content behind it
+    navRef.current.style.pointerEvents = "none";
+    navRef.current.style.visibility = "hidden";
+    const el = document.elementFromPoint(window.innerWidth / 2, sampleY);
+    navRef.current.style.pointerEvents = "";
+    navRef.current.style.visibility = "";
+
+    if (!el) return;
+
+    // Walk up to find the nearest element with a non-transparent background
+    let target: Element | null = el;
+    let r = 255, g = 255, b = 255;
+    while (target) {
+      const bg = window.getComputedStyle(target).backgroundColor;
+      const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/);
+      if (match) {
+        const alpha = match[4] !== undefined ? +match[4] : 1;
+        if (alpha > 0.5) {
+          r = +match[1]; g = +match[2]; b = +match[3];
+          break;
+        }
+      }
+      target = target.parentElement;
+    }
+
+    // Only switch to white logo on genuinely dark backgrounds (luminance < 128)
+    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+    setOnDarkBg(luminance < 128);
+  }, []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll);
+    const onScroll = () => {
+      setScrolled(window.scrollY > 20);
+      checkBackground();
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    // Check on mount and route change
+    checkBackground();
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [checkBackground, location.pathname]);
 
   const navLinks = [
     { label: "Features", href: "/#features" },
@@ -22,15 +63,20 @@ const Navbar = () => {
 
   return (
     <nav
+      ref={navRef}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? "glass-surface shadow-soft py-3"
+          ? "bg-white shadow-soft py-3"
           : "bg-transparent py-5"
       }`}
     >
       <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
-        <Link to="/" className="text-xl tracking-tight text-foreground">
-          <span className="font-extrabold uppercase">TRUE</span><span className="font-medium text-foreground/70">voice</span><span className="font-medium text-gradient">HQ</span>
+        <Link to="/" className="flex items-center">
+          <img
+            src={onDarkBg && !scrolled ? "/truevoice-logo-white.png" : "/truevoice-logo.png"}
+            alt="TrueVoice HQ"
+            className="h-10 w-auto transition-opacity duration-300"
+          />
         </Link>
 
         {/* Desktop */}
@@ -40,9 +86,13 @@ const Navbar = () => {
               key={link.href}
               to={link.href}
               className={`text-sm font-medium transition-colors duration-200 ${
-                location.pathname === link.href
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                onDarkBg && !scrolled
+                  ? location.pathname === link.href
+                    ? "text-white"
+                    : "text-white/80 hover:text-white"
+                  : location.pathname === link.href
+                    ? "text-gray-900"
+                    : "text-gray-600 hover:text-gray-900"
               }`}
             >
               {link.label}
@@ -51,7 +101,7 @@ const Navbar = () => {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
-          <Button variant="ghost" size="sm" asChild>
+          <Button variant="ghost" size="sm" asChild className={onDarkBg && !scrolled ? "text-white hover:bg-white/10" : ""}>
             <Link to="/auth">Log In</Link>
           </Button>
           <Button size="sm" asChild>
@@ -61,7 +111,7 @@ const Navbar = () => {
 
         {/* Mobile toggle */}
         <button
-          className="md:hidden text-foreground"
+          className={`md:hidden ${onDarkBg && !scrolled ? "text-white" : "text-foreground"}`}
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -76,7 +126,7 @@ const Navbar = () => {
               <Link
                 key={link.href}
                 to={link.href}
-                className="text-sm font-medium text-foreground"
+                className="text-sm font-medium text-gray-900"
                 onClick={() => setMobileOpen(false)}
               >
                 {link.label}

@@ -8,8 +8,10 @@ import { getInterviewByToken } from "@/lib/api/interviews";
 import { supabase } from "@/lib/supabase";
 import { useBehaviorMonitor } from "@/hooks/useBehaviorMonitor";
 import { useWebcamMonitor } from "@/hooks/useWebcamMonitor";
+import { useVideoInterview } from "@/hooks/useVideoInterview";
+import { VideoRoom } from "@/components/VideoRoom";
 
-type Step = "loading" | "error" | "welcome" | "consent" | "systemcheck" | "tips" | "waiting";
+type Step = "loading" | "error" | "welcome" | "consent" | "systemcheck" | "tips" | "waiting" | "interview";
 
 const STEPS: { key: Step; label: string }[] = [
   { key: "welcome", label: "Welcome" },
@@ -67,6 +69,9 @@ const CandidateInterview = () => {
   const [estimatedDuration, setEstimatedDuration] = useState("45 min");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Video interview analysis hook
+  const videoInterview = useVideoInterview(interview?.id || "");
 
   // Monitoring is active once the candidate passes the consent step
   const monitoringActive = ["systemcheck", "tips", "waiting"].includes(step);
@@ -193,6 +198,28 @@ const CandidateInterview = () => {
   };
 
   const allChecksPassed = checks.camera && checks.mic && checks.internet;
+
+  const enterInterviewRoom = async () => {
+    if (!interview?.id) return;
+
+    // Set room name and update status
+    const roomName = `interview-${interview.id}`;
+    await supabase
+      .from("interviews")
+      .update({
+        livekit_room_name: roomName,
+        livekit_started_at: new Date().toISOString(),
+        status: "waiting_for_interviewer",
+      })
+      .eq("id", interview.id);
+
+    setStep("interview");
+
+    // Start AI transcription and analysis
+    setTimeout(() => {
+      videoInterview.startTranscription();
+    }, 2000); // Small delay to let video connect first
+  };
 
   if (step === "loading") {
     return (
@@ -399,16 +426,19 @@ const CandidateInterview = () => {
               <div className="h-48 rounded-xl bg-foreground/5 flex items-center justify-center mb-6 border border-border/50">
                 <div className="flex flex-col items-center gap-2">
                   <Camera className="h-6 w-6 text-muted-foreground" />
-                  <span className="text-muted-foreground text-sm">Camera preview</span>
+                  <span className="text-muted-foreground text-sm">Ready to join</span>
                 </div>
               </div>
               <div className="flex items-center justify-center gap-2 mb-2">
                 <div className="h-2 w-2 rounded-full bg-success animate-pulse" />
-                <h2 className="text-xl font-bold">Waiting for interviewer...</h2>
+                <h2 className="text-xl font-bold">Ready to start</h2>
               </div>
               <p className="text-sm text-muted-foreground mb-6">
-                {interviewerName} will join shortly. Sit tight and relax.
+                Click below to enter the interview room. {interviewerName} will join shortly.
               </p>
+              <Button className="w-full mb-4" onClick={enterInterviewRoom}>
+                Join Interview Room
+              </Button>
               <div className="space-y-2 text-sm text-muted-foreground text-left bg-muted/30 rounded-lg p-4">
                 <p className="text-xs font-semibold text-foreground uppercase tracking-wide mb-2">Quick reminders</p>
                 <p>Speak naturally and take your time thinking</p>
@@ -422,6 +452,21 @@ const CandidateInterview = () => {
               </div>
             </div>
           </motion.div>
+        )}
+
+        {step === "interview" && interview && (
+          <div className="h-screen w-screen fixed top-0 left-0">
+            <VideoRoom
+              roomName={`interview-${interview.id}`}
+              participantName={interview.candidate_name || "Candidate"}
+              participantIdentity={`candidate-${interview.id}`}
+              isHost={false}
+              onDisconnected={() => {
+                videoInterview.stopTranscription();
+                setStep("waiting");
+              }}
+            />
+          </div>
         )}
       </AnimatePresence>
     </div>

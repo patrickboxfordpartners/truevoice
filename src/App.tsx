@@ -14,9 +14,12 @@ import Settings from "./pages/Settings";
 import CandidateInterview from "./pages/CandidateInterview";
 import Compare from "./pages/Compare";
 import InterviewRoom from "./pages/InterviewRoom";
+import InterviewerRoom from "./pages/InterviewerRoom";
+import VideoTest from "./pages/VideoTest";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
+import "@livekit/components-styles";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +38,7 @@ const App = () => (
               <Route path="/signup" element={<Signup />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/interview/:token" element={<CandidateInterview />} />
+              <Route path="/video-test" element={<VideoTest />} />
 
               {/* Protected routes */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -42,6 +46,7 @@ const App = () => (
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/compare" element={<ProtectedRoute><Compare /></ProtectedRoute>} />
               <Route path="/room/:id" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>} />
+              <Route path="/interviewer/:id" element={<ProtectedRoute><InterviewerRoom /></ProtectedRoute>} />
 
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -40,8 +40,8 @@ const Login = () => {
             <Shield className="h-6 w-6 text-primary" />
             <span className="text-xl"><span className="font-extrabold uppercase">TRUE</span><span className="font-medium text-foreground/70">voice</span><span className="font-medium text-gradient">HQ</span></span>
           </div>
-          <h1 className="text-2xl font-bold">Welcome back</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
+          <p className="text-sm text-gray-500 mt-1">
             Sign in to your account
           </p>
         </div>
@@ -76,9 +76,9 @@ const Login = () => {
           </Button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
+        <p className="text-center text-sm text-gray-500 mt-6">
           Don't have an account?{" "}
-          <Link to="/signup" className="text-primary hover:underline font-medium">
+          <Link to="/signup" className="text-emerald-600 hover:underline font-medium">
             Sign up
           </Link>
         </p>

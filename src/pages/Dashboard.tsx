@@ -481,9 +481,15 @@ const Dashboard = () => {
                           <Link to={`/report/${interview.id}`}>
                             <Button variant="ghost" size="sm">View Report</Button>
                           </Link>
-                        ) : interview.status === "scheduled" ? (
-                          <Link to={`/room/${interview.id}`}>
-                            <Button variant="ghost" size="sm">Start</Button>
+                        ) : interview.status === "scheduled" || interview.status === "waiting_for_interviewer" ? (
+                          <Link to={`/interviewer/${interview.id}`}>
+                            <Button variant="ghost" size="sm" className="gap-1.5">
+                              {interview.status === "waiting_for_interviewer" ? "Join Interview" : "Start Interview"}
+                            </Button>
+                          </Link>
+                        ) : interview.status === "in_progress" ? (
+                          <Link to={`/interviewer/${interview.id}`}>
+                            <Button variant="ghost" size="sm" className="gap-1.5">Rejoin</Button>
                           </Link>
                         ) : null}
                       </td>

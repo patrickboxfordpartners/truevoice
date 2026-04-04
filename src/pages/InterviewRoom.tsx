@@ -88,8 +88,7 @@ const InterviewRoom = () => {
       {/* Top bar */}
       <header className="h-14 border-b border-border bg-card/80 backdrop-blur-xl flex items-center justify-between px-4 shrink-0">
         <div className="flex items-center gap-3">
-          <Shield className="h-5 w-5 text-primary" />
-          <span><span className="font-extrabold uppercase">TRUE</span><span className="font-medium text-foreground/70">voice</span><span className="font-medium text-gradient">HQ</span></span>
+          <img src="/truevoice-logo.jpg" alt="TrueVoice HQ" className="h-6 object-contain" />
           <span className="text-muted-foreground text-sm hidden sm:inline">&mdash; Live Analysis</span>
         </div>
         <div className="flex items-center gap-3">
