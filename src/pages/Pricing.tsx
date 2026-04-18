@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, Minus, ArrowRight } from "lucide-react";
+import { Check, Minus, ArrowRight, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/landing/Footer";
 import ScrollReveal from "@/components/ScrollReveal";
@@ -10,65 +10,20 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useBilling } from "@/hooks/useBilling";
+import { plans as planDefs } from "@/lib/plans";
 
-const plans = [
-  {
-    name: "Starter",
-    description: "Audio-only analysis",
-    monthly: 79,
-    annual: 63,
-    interviews: "30 interviews/mo",
-    cta: "Get started",
-    features: [
-      "Real-time speech pattern scoring",
-      "Response timing analysis",
-      "Conversational flow detection",
-      "Linguistic authenticity scoring",
-      "Tab & window focus monitoring",
-      "Clipboard paste detection",
-      "Post-interview reports",
-      "Email invitation templates",
-    ],
-    popular: false,
-  },
-  {
-    name: "Pro",
-    description: "Audio + video analysis",
-    monthly: 149,
-    annual: 119,
-    interviews: "30 interviews/mo",
-    cta: "Get started",
-    features: [
-      "Everything in Starter",
-      "Webcam gaze & attention analysis",
-      "Screen-reading detection",
-      "Multi-face detection",
-      "Phone/device detection",
-      "Face presence tracking",
-      "Visual behavior timeline",
-      "Priority support",
-    ],
-    popular: true,
-  },
-  {
-    name: "Scale",
-    description: "High-volume hiring",
-    monthly: 349,
-    annual: 279,
-    interviews: "100 interviews/mo",
-    cta: "Get started",
-    features: [
-      "Everything in Pro",
-      "Up to 10 team members",
-      "Shared interview dashboard",
-      "Team analytics & trends",
-      "Bulk candidate import (CSV)",
-      "API access",
-      "Dedicated onboarding call",
-    ],
-    popular: false,
-  },
-];
+const plans = planDefs.map((p) => ({
+  name: p.name,
+  description: p.description,
+  monthly: p.monthlyPrice,
+  annual: p.annualMonthly,
+  interviews: p.interviews,
+  cta: "Get started",
+  features: p.features,
+  popular: p.popular,
+  priceIds: p.priceIds,
+}));
 
 const faqs = [
   {
@@ -99,6 +54,7 @@ const faqs = [
 
 const Pricing = () => {
   const [annual, setAnnual] = useState(false);
+  const { startCheckout, loading } = useBilling();
 
   return (
     <div className="min-h-screen bg-white">
@@ -181,13 +137,15 @@ const Pricing = () => {
 
                 <Button
                   size="lg"
+                  disabled={loading}
+                  onClick={() => startCheckout(annual ? plan.priceIds.yearly : plan.priceIds.monthly)}
                   className={`w-full mt-8 mb-8 ${
                     plan.popular
                       ? "bg-white text-gray-900 hover:bg-gray-100"
                       : "bg-gray-900 text-white hover:bg-gray-800"
                   }`}
                 >
-                  {plan.cta}
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : plan.cta}
                 </Button>
 
                 <div className={`h-px ${plan.popular ? "bg-gray-700" : "bg-gray-100"}`} />
@@ -275,9 +233,14 @@ const Pricing = () => {
             <p className="text-gray-400 mb-8">
               Set up in minutes. Cancel anytime.
             </p>
-            <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100">
-              Get started
-              <ArrowRight size={16} />
+            <Button
+              size="lg"
+              disabled={loading}
+              onClick={() => startCheckout(plans[1].priceIds.monthly)}
+              className="bg-white text-gray-900 hover:bg-gray-100"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Get started"}
+              {!loading && <ArrowRight size={16} />}
             </Button>
           </div>
         </ScrollReveal>

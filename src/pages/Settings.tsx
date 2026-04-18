@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, ArrowLeft, Building2, Clock, Save, Globe, Users, Briefcase, Moon, Sun, UserPlus, Trash2, Mail, Crown, Pencil, Eye, Loader2 } from "lucide-react";
+import { Shield, ArrowLeft, Building2, Clock, Save, Globe, Users, Briefcase, Moon, Sun, UserPlus, Trash2, Mail, Crown, Pencil, Eye, Loader2, CreditCard, ExternalLink, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCompany, useUpdateCompany } from "@/hooks/useCompany";
 import { useTeam, useUpdateMemberRole, useRemoveMember, useInviteTeamMember } from "@/hooks/useTeam";
+import { useBilling } from "@/hooks/useBilling";
+import { plans as planDefs } from "@/lib/plans";
 import type { Role } from "@/types";
 
 const ROLE_CONFIG: Record<Role, { label: string; color: string; icon: React.ReactNode }> = {
@@ -31,6 +33,7 @@ const Settings = () => {
   const { data: company, isLoading: companyLoading } = useCompany();
   const { data: teamMembers, isLoading: teamLoading } = useTeam();
   const updateCompany = useUpdateCompany();
+  const { startCheckout, openBillingPortal, loading: billingLoading } = useBilling();
   const updateRole = useUpdateMemberRole();
   const removeMember = useRemoveMember();
   const inviteMember = useInviteTeamMember();
@@ -419,6 +422,81 @@ const Settings = () => {
             <p className="text-xs text-muted-foreground mt-4">
               <strong>Admin</strong> — full access &amp; settings · <strong>Editor</strong> — create &amp; manage interviews · <strong>Viewer</strong> — read-only access
             </p>
+          </motion.section>
+
+          {/* Billing */}
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-6">
+              <CreditCard className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold">Billing & Plan</h2>
+            </div>
+
+            {company ? (
+              <>
+                <div className="flex items-center justify-between p-4 rounded-lg bg-accent/30 border mb-6">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold capitalize">
+                        {company.subscription_tier === "free" ? "Free" : company.subscription_tier} Plan
+                      </span>
+                      {company.subscription_status === "active" && (
+                        <CheckCircle2 className="h-4 w-4 text-success" />
+                      )}
+                      {company.subscription_status === "past_due" && (
+                        <Badge variant="destructive" className="text-xs">Past due</Badge>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {company.subscription_status === "active"
+                        ? "Active subscription"
+                        : company.subscription_status === "canceled"
+                        ? "Subscription canceled"
+                        : company.subscription_status === "past_due"
+                        ? "Payment required"
+                        : "No active subscription"}
+                    </p>
+                  </div>
+                  {company.subscription_tier !== "free" && company.subscription_status === "active" ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={billingLoading}
+                      onClick={openBillingPortal}
+                      className="gap-2"
+                    >
+                      {billingLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
+                      Manage billing
+                    </Button>
+                  ) : null}
+                </div>
+
+                {(company.subscription_tier === "free" || !company.subscription_status || company.subscription_status === "canceled") && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {planDefs.map((plan) => (
+                      <div key={plan.key} className={`rounded-lg border p-4 flex flex-col gap-3 ${plan.popular ? "border-primary/50 bg-primary/5" : ""}`}>
+                        <div>
+                          {plan.popular && <p className="text-xs font-semibold text-primary mb-1">Most popular</p>}
+                          <p className="text-sm font-semibold">{plan.name}</p>
+                          <p className="text-xs text-muted-foreground">{plan.description}</p>
+                        </div>
+                        <p className="text-2xl font-bold">${plan.monthlyPrice}<span className="text-xs font-normal text-muted-foreground">/mo</span></p>
+                        <Button
+                          size="sm"
+                          variant={plan.popular ? "default" : "outline"}
+                          disabled={billingLoading}
+                          onClick={() => startCheckout(plan.priceIds.monthly)}
+                          className="w-full"
+                        >
+                          {billingLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : `Choose ${plan.name}`}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted-foreground">Loading billing information...</p>
+            )}
           </motion.section>
 
           {/* Save */}

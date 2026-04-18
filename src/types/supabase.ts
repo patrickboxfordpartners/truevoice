@@ -23,6 +23,10 @@ export interface Database {
           auto_record: boolean;
           authenticity_detection: boolean;
           require_candidate_camera: boolean;
+          subscription_tier: string;
+          subscription_status: string;
+          stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -39,6 +43,10 @@ export interface Database {
           auto_record?: boolean;
           authenticity_detection?: boolean;
           require_candidate_camera?: boolean;
+          subscription_tier?: string;
+          subscription_status?: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -55,6 +63,10 @@ export interface Database {
           auto_record?: boolean;
           authenticity_detection?: boolean;
           require_candidate_camera?: boolean;
+          subscription_tier?: string;
+          subscription_status?: string;
+          stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
           updated_at?: string;
         };
       };
