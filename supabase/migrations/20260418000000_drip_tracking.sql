@@ -1,0 +1,3 @@
+ALTER TABLE profiles
+  ADD COLUMN IF NOT EXISTS drip_day3_sent_at TIMESTAMPTZ,
+  ADD COLUMN IF NOT EXISTS drip_day7_sent_at TIMESTAMPTZ;
