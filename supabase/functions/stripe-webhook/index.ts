@@ -109,6 +109,28 @@ serve(async (req) => {
           console.error("[stripe-webhook] Error updating company:", error);
         } else {
           console.log(`[stripe-webhook] Company ${companyId} activated on ${tier}`);
+
+          // Send welcome drip email to the user who made the purchase
+          try {
+            const clerkId = subscription.metadata?.clerkId;
+            if (clerkId) {
+              // Look up the profile by clerkId isn't available here — use customer email
+              const customer = await stripe.customers.retrieve(session.customer as string);
+              const email = (customer as any).email;
+              if (email) {
+                await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/send-drip-email`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+                  },
+                  body: JSON.stringify({ companyId, sequence: "welcome" }),
+                });
+              }
+            }
+          } catch (dripErr) {
+            console.error("[stripe-webhook] Drip email failed (non-fatal):", dripErr);
+          }
         }
         break;
       }
