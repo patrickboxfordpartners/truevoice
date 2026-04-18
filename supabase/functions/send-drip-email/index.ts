@@ -1,8 +1,78 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const RESEND_API_URL = "https://api.resend.com/emails";
-const FROM = "TrueVoice HQ <hello@truevoicehq.com>";
+const FROM = "TrueVoice HQ <hello@boxfordpartners.com>";
+const SES_REGION = "us-east-1";
+
+async function hmac(key: ArrayBuffer, data: string): Promise<ArrayBuffer> {
+  const k = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return crypto.subtle.sign("HMAC", k, new TextEncoder().encode(data));
+}
+
+function hex(buf: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function sha256(data: string): Promise<string> {
+  return hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(data)));
+}
+
+async function sendViaSES(to: string, subject: string, html: string): Promise<void> {
+  const accessKeyId = Deno.env.get("AWS_ACCESS_KEY_ID");
+  const secretAccessKey = Deno.env.get("AWS_SECRET_ACCESS_KEY");
+  if (!accessKeyId || !secretAccessKey) throw new Error("AWS credentials not set");
+
+  const now = new Date();
+  const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+  const dateTimeStr = now.toISOString().replace(/[:-]/g, "").replace(/\.\d+/, "");
+
+  const payload = JSON.stringify({
+    FromEmailAddress: FROM,
+    Destination: { ToAddresses: [to] },
+    Content: {
+      Simple: {
+        Subject: { Data: subject, Charset: "UTF-8" },
+        Body: { Html: { Data: html, Charset: "UTF-8" } },
+      },
+    },
+  });
+
+  const bodyHash = await sha256(payload);
+  const host = `email.${SES_REGION}.amazonaws.com`;
+  const path = "/v2/email/outbound-emails";
+
+  const canonicalHeaders = `content-type:application/json\nhost:${host}\nx-amz-date:${dateTimeStr}\n`;
+  const signedHeaders = "content-type;host;x-amz-date";
+  const canonicalRequest = `POST\n${path}\n\n${canonicalHeaders}\n${signedHeaders}\n${bodyHash}`;
+
+  const credentialScope = `${dateStr}/${SES_REGION}/ses/aws4_request`;
+  const stringToSign = `AWS4-HMAC-SHA256\n${dateTimeStr}\n${credentialScope}\n${await sha256(canonicalRequest)}`;
+
+  const enc = new TextEncoder();
+  const kDate = await hmac(enc.encode(`AWS4${secretAccessKey}`), dateStr);
+  const kRegion = await hmac(kDate, SES_REGION);
+  const kService = await hmac(kRegion, "ses");
+  const kSigning = await hmac(kService, "aws4_request");
+  const signature = hex(await hmac(kSigning, stringToSign));
+
+  const authHeader = `AWS4-HMAC-SHA256 Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  const res = await fetch(`https://${host}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Host": host,
+      "X-Amz-Date": dateTimeStr,
+      "Authorization": authHeader,
+    },
+    body: payload,
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`SES error ${res.status}: ${text}`);
+  }
+}
 
 interface DripEmail {
   to: string;
@@ -135,10 +205,9 @@ serve(async (req) => {
       ? await supabase.from("companies").select("subscription_tier").eq("id", companyId).single()
       : { data: null };
 
-    const resendKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendKey) {
-      console.log("[send-drip-email] RESEND_API_KEY not set, skipping");
-      return new Response(JSON.stringify({ sent: false, reason: "no_resend_key" }));
+    if (!Deno.env.get("AWS_ACCESS_KEY_ID")) {
+      console.log("[send-drip-email] AWS credentials not set, skipping");
+      return new Response(JSON.stringify({ sent: false, reason: "no_aws_credentials" }));
     }
 
     const emailData: DripEmail = {
@@ -150,29 +219,10 @@ serve(async (req) => {
 
     const { subject, html } = getEmailContent(emailData);
 
-    const res = await fetch(RESEND_API_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: FROM,
-        to: [email],
-        subject,
-        html,
-      }),
-    });
-
-    const result = await res.json();
-
-    if (!res.ok) {
-      console.error("[send-drip-email] Resend error:", result);
-      return new Response(JSON.stringify({ sent: false, error: result }), { status: 500 });
-    }
+    await sendViaSES(email, subject, html);
 
     console.log(`[send-drip-email] Sent ${sequence} to ${email}`);
-    return new Response(JSON.stringify({ sent: true, id: result.id }));
+    return new Response(JSON.stringify({ sent: true }));
   } catch (err) {
     console.error("[send-drip-email] Error:", err);
     return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
