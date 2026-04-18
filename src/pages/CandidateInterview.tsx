@@ -76,6 +76,13 @@ const CandidateInterview = () => {
   // Monitoring is active once the candidate passes the consent step
   const monitoringActive = ["systemcheck", "tips", "waiting"].includes(step);
 
+  // Webcam analysis is Pro/Scale only — check the interviewing company's plan
+  const companyTier = (interview as any)?.companies?.subscription_tier ?? "free";
+  const companyStatus = (interview as any)?.companies?.subscription_status ?? "inactive";
+  const companyHasVideo =
+    (companyTier === "pro" || companyTier === "scale") &&
+    (companyStatus === "active" || companyStatus === "trialing");
+
   useBehaviorMonitor({
     interviewId: interview?.id || "",
     enabled: monitoringActive,
@@ -84,7 +91,7 @@ const CandidateInterview = () => {
 
   useWebcamMonitor({
     interviewId: interview?.id || "",
-    enabled: monitoringActive,
+    enabled: monitoringActive && companyHasVideo,
     elapsedSeconds,
     intervalSeconds: 15,
   });

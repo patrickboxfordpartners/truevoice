@@ -1,10 +1,10 @@
-import { useState, useMemo } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useMemo, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Plus, Search, Shield, LogOut, Moon, Sun, ArrowUp, ArrowDown,
   ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, Download,
-  Mail, Table2, CalendarDays, Loader2, LayoutGrid, Settings,
+  Mail, Table2, CalendarDays, Loader2, LayoutGrid, Settings, CheckCircle2,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,7 @@ import { InsightStrip } from "@/components/dashboard/InsightStrip";
 import { CandidateCard } from "@/components/dashboard/CandidateCard";
 import { PositionFilter } from "@/components/dashboard/PositionFilter";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePlan } from "@/hooks/usePlan";
 import { useInterviews } from "@/hooks/useInterviews";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useCompletedReports } from "@/hooks/useReport";
@@ -50,7 +51,21 @@ const Dashboard = () => {
   const { toast } = useToast();
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const plan = usePlan();
+  const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(
+    searchParams.get("checkout") === "success"
+  );
   const { data: interviews, isLoading } = useInterviews();
+
+  // Clear the ?checkout=success param from the URL after showing the banner
+  useEffect(() => {
+    if (searchParams.get("checkout") === "success") {
+      const next = new URLSearchParams(searchParams);
+      next.delete("checkout");
+      setSearchParams(next, { replace: true });
+    }
+  }, []);
   const { data: completedReports, isLoading: reportsLoading } = useCompletedReports();
   const stats = useDashboardStats(interviews);
 
@@ -207,6 +222,24 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Checkout success banner */}
+      {showCheckoutSuccess && (
+        <div className="bg-green-500 text-white px-4 py-3 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-5 w-5 shrink-0" />
+            <span className="text-sm font-medium">
+              You're now on the <span className="font-bold capitalize">{plan.tier}</span> plan. Video interviews and all Pro features are now active.
+            </span>
+          </div>
+          <button
+            onClick={() => setShowCheckoutSuccess(false)}
+            className="shrink-0 text-white/80 hover:text-white transition-colors text-lg leading-none"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {/* Top Nav */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-xl">
         <div className="container mx-auto px-6 flex items-center justify-between h-16">

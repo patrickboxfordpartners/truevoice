@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { VideoRoomWithAnalysis } from "@/components/VideoRoom";
 import { supabase } from "@/lib/supabase";
-import { Shield, Loader2, AlertCircle, AlertTriangle } from "lucide-react";
+import { Shield, Loader2, AlertCircle, AlertTriangle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePlan } from "@/hooks/usePlan";
+import { useBilling } from "@/hooks/useBilling";
 import { Progress } from "@/components/ui/progress";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { MiniRadar } from "@/components/dashboard/MiniRadar";
@@ -20,6 +22,8 @@ export default function InterviewerRoom() {
   const [interview, setInterview] = useState<any>(null);
   const [error, setError] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const plan = usePlan();
+  const { startCheckout, loading: billingLoading } = useBilling();
 
   // Live AI analysis
   const videoInterview = useVideoInterview(id || "");
@@ -73,6 +77,33 @@ export default function InterviewerRoom() {
         <h1 className="text-xl font-bold mb-2">Interview Not Found</h1>
         <p className="text-muted-foreground text-sm mb-6">{error || "This interview does not exist."}</p>
         <Button onClick={() => navigate("/dashboard")}>Back to Dashboard</Button>
+      </div>
+    );
+  }
+
+  // Gate: video interviews require Pro or Scale
+  if (!plan.hasVideo) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center p-6 text-center">
+        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+          <Lock className="h-7 w-7 text-primary" />
+        </div>
+        <h1 className="text-2xl font-bold mb-2">Video interviews require Pro</h1>
+        <p className="text-muted-foreground text-sm max-w-sm mb-8">
+          Upgrade to Pro to unlock LiveKit video interviews, webcam gaze analysis, screen-reading detection, and visual behavior monitoring.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate("/dashboard")}>
+            Back to Dashboard
+          </Button>
+          <Button
+            disabled={billingLoading}
+            onClick={() => startCheckout(import.meta.env.VITE_STRIPE_PRICE_PRO_MONTHLY || "")}
+          >
+            {billingLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+            Upgrade to Pro — $149/mo
+          </Button>
+        </div>
       </div>
     );
   }

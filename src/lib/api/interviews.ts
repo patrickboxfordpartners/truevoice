@@ -27,7 +27,7 @@ export async function getInterview(id: string) {
 export async function getInterviewByToken(token: string) {
   const { data, error } = await supabase
     .from("interviews")
-    .select("*, companies(name)")
+    .select("*, companies(name, subscription_tier, subscription_status)")
     .eq("candidate_token", token)
     .single();
   if (error) throw error;
