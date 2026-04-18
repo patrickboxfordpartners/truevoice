@@ -25,7 +25,7 @@ const Signup = () => {
         title: "Account created",
         description: "Check your email to confirm your account, then sign in.",
       });
-      navigate("/login");
+      navigate("/onboarding");
     } catch (err: any) {
       toast({
         title: "Signup failed",

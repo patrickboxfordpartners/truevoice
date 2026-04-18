@@ -18,6 +18,7 @@ import InterviewerRoom from "./pages/InterviewerRoom";
 import VideoTest from "./pages/VideoTest";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 import "@livekit/components-styles";
 
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/video-test" element={<VideoTest />} />
 
               {/* Protected routes */}
+              <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/report/:id" element={<ProtectedRoute><Report /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
