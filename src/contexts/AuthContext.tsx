@@ -7,6 +7,7 @@ import {
 } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { posthog } from "@/lib/posthog";
 import type { Profile, Company } from "@/types";
 
 interface AuthState {
@@ -114,12 +115,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return;
       if (session?.user) {
         fetchProfile(session.user.id).then(({ profile, company }) => {
-          if (mounted) setState({ user: session.user, session, profile, company, loading: false });
+          if (mounted) {
+            setState({ user: session.user, session, profile, company, loading: false });
+            posthog.identify(session.user.id, {
+              email: session.user.email,
+              name: profile?.full_name ?? undefined,
+              company: company?.name ?? undefined,
+              plan: company?.subscription_tier ?? "free",
+            });
+          }
         }).catch(() => {
           if (mounted) setState({ user: session.user, session, profile: null, company: null, loading: false });
         });
       } else {
         setState({ user: null, session: null, profile: null, company: null, loading: false });
+        posthog.reset();
       }
     });
 
