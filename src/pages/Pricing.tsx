@@ -195,7 +195,7 @@ const Pricing = () => {
                   Frequently asked questions
                 </h2>
                 <p className="text-sm text-gray-500 leading-relaxed">
-                  Can't find what you're looking for? <a href="mailto:hello@boxfordpartners.com" className="text-gray-900 underline underline-offset-4 decoration-gray-300 hover:decoration-gray-900 transition-colors">Reach out</a> and we'll get back to you.
+                  Can't find what you're looking for? <a href="mailto:hello@truevoicehq.com" className="text-gray-900 underline underline-offset-4 decoration-gray-300 hover:decoration-gray-900 transition-colors">Reach out</a> and we'll get back to you.
                 </p>
               </div>
 

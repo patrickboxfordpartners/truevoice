@@ -45,12 +45,12 @@ const Footer = () => (
               </a>
             </li>
             <li>
-              <a href="mailto:hello@boxfordpartners.com" className="hover:text-foreground transition-colors">
+              <a href="mailto:hello@truevoicehq.com" className="hover:text-foreground transition-colors">
                 Support
               </a>
             </li>
             <li>
-              <a href="mailto:hello@boxfordpartners.com" className="hover:text-foreground transition-colors">
+              <a href="mailto:hello@truevoicehq.com" className="hover:text-foreground transition-colors">
                 Contact
               </a>
             </li>
