@@ -16,12 +16,15 @@ export function useBilling() {
     try {
       // Check if user is logged in
       const { data: { session } } = await supabase.auth.getSession();
+      console.log("[useBilling] Session check:", { hasSession: !!session, userId: session?.user?.id });
+
       if (!session) {
-        // Redirect to sign up, then back to pricing
+        console.log("[useBilling] No session found, redirecting to signup");
         window.location.href = `/signup?redirect=${encodeURIComponent(`/pricing?plan=${priceId}`)}`;
         return;
       }
 
+      console.log("[useBilling] Calling stripe-checkout Edge Function with priceId:", priceId);
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
         body: {
           priceId,
