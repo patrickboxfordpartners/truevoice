@@ -1,6 +1,7 @@
 import type { Database } from "./supabase";
 
 // Row type shortcuts
+export type Candidate = Database["public"]["Tables"]["candidates"]["Row"];
 export type Company = Database["public"]["Tables"]["companies"]["Row"];
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Interview = Database["public"]["Tables"]["interviews"]["Row"];

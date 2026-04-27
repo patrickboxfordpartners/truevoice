@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Download, Share2, Calendar, AlertTriangle, Clock,
-  Lightbulb, TrendingUp, BarChart3, Activity, Loader2, Eye,
+  Lightbulb, TrendingUp, BarChart3, Activity, Loader2, Eye, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScoreGauge } from "@/components/ScoreGauge";
@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { useReport } from "@/hooks/useReport";
 import { getScoreColor } from "@/components/ScoreGauge";
+import { usePanelists } from "@/hooks/usePanelists";
 
 const getDelayColor = (delay: number) => {
   if (delay < 1.5) return "hsl(0, 84%, 60%)";
@@ -68,6 +69,10 @@ const Report = () => {
 
   const { interview, report, flags, timeline, responseDelays, interviewer } = data;
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const { data: panelists = [] } = usePanelists(interview.id);
+  const isPanelInterview = (report.panelist_count ?? 1) > 1;
+
   const timelineData = timeline.map((t) => ({
     min: t.minute,
     score: t.score,
@@ -109,7 +114,7 @@ const Report = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-6 py-8 max-w-6xl">
-        <Link to="/dashboard" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
+        <Link to="/dashboard" className="no-print inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
           <ArrowLeft className="h-4 w-4" />
           Back to Dashboard
         </Link>
@@ -119,7 +124,15 @@ const Report = () => {
           <div className="flex flex-col lg:flex-row lg:items-center gap-6">
             {/* Left: Candidate info */}
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold mb-1">{interview.candidate_name}</h1>
+              <div className="flex items-center gap-3 mb-1 flex-wrap">
+                <h1 className="text-2xl font-bold">{interview.candidate_name}</h1>
+                {isPanelInterview && (
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    <Users className="h-3 w-3" />
+                    Panel Interview
+                  </span>
+                )}
+              </div>
               <p className="text-muted-foreground">{interview.position}</p>
               <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground flex-wrap">
                 {dateStr && <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{dateStr}</span>}
@@ -145,9 +158,23 @@ const Report = () => {
             </div>
 
             {/* Right: Actions */}
-            <div className="flex lg:flex-col gap-2">
-              <Button variant="outline" size="sm" className="gap-1.5"><Download className="h-3.5 w-3.5" />PDF</Button>
+            <div className="flex lg:flex-col gap-2 no-print">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => window.print()}
+              >
+                <Download className="h-3.5 w-3.5" />PDF
+              </Button>
               <Button variant="outline" size="sm" className="gap-1.5"><Share2 className="h-3.5 w-3.5" />Share</Button>
+              {interview.candidate_id && (
+                <Link to={`/candidates/${interview.candidate_id}`}>
+                  <Button variant="outline" size="sm" className="gap-1.5 w-full">
+                    <Eye className="h-3.5 w-3.5" />History
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </motion.div>
@@ -412,10 +439,67 @@ const Report = () => {
               </li>
             </ul>
           )}
-          <div className="flex gap-3 mt-6">
+          <div className="flex flex-wrap items-center gap-3 mt-6 no-print">
             <Button className="gap-2"><Calendar className="h-4 w-4" />Schedule Follow-Up</Button>
+            {interview.candidate_id && (
+              <Link
+                to={`/candidates/${interview.candidate_id}`}
+                className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+              >
+                View {interview.candidate_name}&apos;s full interview history &#8594;
+              </Link>
+            )}
           </div>
         </motion.div>
+
+        {/* Panel Notes */}
+        {panelists.length > 0 && panelists.some((p) => p.notes) && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-card rounded-xl p-6 mb-8">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Users className="h-5 w-5 text-muted-foreground" />
+              Panel Notes
+            </h2>
+            <div className="space-y-4">
+              {panelists
+                .filter((p) => p.notes)
+                .map((p) => {
+                  const name = p.profile.full_name ?? p.profile.email;
+                  const initials = name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase();
+                  return (
+                    <div key={p.id} className="flex gap-3">
+                      {p.profile.avatar_url ? (
+                        <img
+                          src={p.profile.avatar_url}
+                          alt={initials}
+                          className="h-8 w-8 rounded-full object-cover border border-border shrink-0 mt-0.5"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-primary/10 border border-border flex items-center justify-center text-xs font-bold text-primary shrink-0 mt-0.5">
+                          {initials}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-sm font-medium">{name}</span>
+                          {p.score_override !== null && p.score_override !== undefined && (
+                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                              Score: {p.score_override}/100
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{p.notes}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );

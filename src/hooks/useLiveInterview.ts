@@ -6,6 +6,20 @@ import type { LiveScores } from "@/types";
 
 const CHUNK_INTERVAL_MS = 20_000;
 const MIN_WORDS_PER_CHUNK = 10;
+const MIN_GAP_SECONDS = 0.5;
+const MAX_GAP_SECONDS = 30;
+
+interface ResponseDelay {
+  question: string;
+  delay: number;
+  label: "instant" | "normal" | "delayed";
+}
+
+function classifyDelay(gap: number): "instant" | "normal" | "delayed" {
+  if (gap < 1.5) return "instant";
+  if (gap <= 4.0) return "normal";
+  return "delayed";
+}
 
 interface UseLiveInterviewReturn {
   isActive: boolean;
@@ -18,6 +32,7 @@ interface UseLiveInterviewReturn {
   timeline: InterviewTimeline[];
   audioError: string | null;
   isTranscribing: boolean;
+  isRecording: boolean;
   start: () => Promise<void>;
   stop: () => Promise<void>;
   notes: string;
@@ -33,6 +48,8 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
   const [timeline, setTimeline] = useState<InterviewTimeline[]>([]);
   const [notes, setNotes] = useState("");
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const egressIdRef = useRef<string | null>(null);
 
   const deepgram = useDeepgramTranscription();
 
@@ -42,6 +59,8 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
   const lastChunkEndRef = useRef(0);
   const transcriptRef = useRef("");
   const scoresRef = useRef<LiveScores>(scores);
+  const responseDelaysRef = useRef<ResponseDelay[]>([]);
+  const lastResultIndexRef = useRef(0);
 
   const overallScore = scores.speech + scores.timing + scores.flow + scores.linguistic;
 
@@ -53,6 +72,43 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
   useEffect(() => {
     scoresRef.current = scores;
   }, [scores]);
+
+  // Silence gap detection — runs whenever Deepgram appends a new final result
+  useEffect(() => {
+    const results = deepgram.results;
+    const newCount = results.length;
+    const prevCount = lastResultIndexRef.current;
+
+    if (newCount < 2 || newCount <= prevCount) return;
+
+    // Process any newly arrived results
+    for (let i = Math.max(prevCount, 1); i < newCount; i++) {
+      const prev = results[i - 1];
+      const curr = results[i];
+
+      const prevLastWord = prev.words[prev.words.length - 1];
+      const currFirstWord = curr.words[0];
+
+      if (!prevLastWord || !currFirstWord) continue;
+
+      const gap = currFirstWord.start - prevLastWord.end;
+
+      if (gap < MIN_GAP_SECONDS || gap > MAX_GAP_SECONDS) continue;
+
+      // Build a short question reference from the last ~8 words of the previous utterance
+      const prevWords = prev.words.map((w) => w.punctuated_word ?? w.word);
+      const snippet = prevWords.slice(-8).join(" ");
+      const question = prevWords.length > 8 ? `...${snippet}` : snippet;
+
+      responseDelaysRef.current.push({
+        question,
+        delay: Math.round(gap * 100) / 100,
+        label: classifyDelay(gap),
+      });
+    }
+
+    lastResultIndexRef.current = newCount;
+  }, [deepgram.results]);
 
   // Timer
   useEffect(() => {
@@ -111,6 +167,9 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
     lastChunkEndRef.current = fullTranscript.length;
     const currentChunk = chunkIndexRef.current++;
 
+    // Drain the delays buffer and clear it before the async call
+    const pendingDelays = responseDelaysRef.current.splice(0);
+
     try {
       const { data, error } = await supabase.functions.invoke("analyze-chunk", {
         body: {
@@ -119,6 +178,7 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
           chunk_index: currentChunk,
           elapsed_seconds: elapsedSeconds,
           previous_scores: currentScores,
+          response_delays: pendingDelays.length > 0 ? pendingDelays : undefined,
         },
       });
 
@@ -141,7 +201,8 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
         .update({ status: "in_progress", updated_at: new Date().toISOString() })
         .eq("id", interviewId);
 
-      await deepgram.connect();
+      const language = localStorage.getItem("interview_language") || "en";
+      await deepgram.connect(language);
       setIsActive(true);
 
       chunkTimerRef.current = setInterval(() => {
@@ -152,6 +213,23 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
       setTimeout(() => {
         sendChunkForAnalysis();
       }, 5000);
+
+      // Start LiveKit recording — fire and forget; failure must not block the interview
+      const roomName = `interview-${interviewId}`;
+      supabase.functions
+        .invoke("start-recording", { body: { interview_id: interviewId, room_name: roomName } })
+        .then(({ data, error }) => {
+          if (error) {
+            console.warn("[useLiveInterview] Recording start failed (non-blocking):", error.message);
+          } else if (data?.egress_id) {
+            egressIdRef.current = data.egress_id;
+            setIsRecording(true);
+            console.log("[useLiveInterview] Recording started, egress_id:", data.egress_id);
+          }
+        })
+        .catch((err) => {
+          console.warn("[useLiveInterview] Recording start exception (non-blocking):", err);
+        });
     } catch (error: any) {
       const errorMessage = error.message || "Failed to start interview";
       console.error("[useLiveInterview] Start error:", errorMessage);
@@ -167,6 +245,22 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
     if (chunkTimerRef.current) clearInterval(chunkTimerRef.current);
 
     deepgram.disconnect();
+
+    // Stop LiveKit recording — fire and forget; failure must not block interview teardown
+    const currentEgressId = egressIdRef.current;
+    if (currentEgressId) {
+      setIsRecording(false);
+      egressIdRef.current = null;
+      supabase.functions
+        .invoke("stop-recording", { body: { interview_id: interviewId, egress_id: currentEgressId } })
+        .then(({ error }) => {
+          if (error) console.warn("[useLiveInterview] Recording stop failed (non-blocking):", error.message);
+          else console.log("[useLiveInterview] Recording stopped, egress_id:", currentEgressId);
+        })
+        .catch((err) => {
+          console.warn("[useLiveInterview] Recording stop exception (non-blocking):", err);
+        });
+    }
 
     await sendChunkForAnalysis();
 
@@ -201,6 +295,7 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
     timeline,
     audioError,
     isTranscribing: deepgram.isConnected,
+    isRecording,
     start,
     stop,
     notes,

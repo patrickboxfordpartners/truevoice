@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import {
   Plus, Search, Shield, LogOut, Moon, Sun, ArrowUp, ArrowDown,
   ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, Download,
-  Mail, Table2, CalendarDays, Loader2, LayoutGrid, Settings, CheckCircle2,
+  Mail, Table2, CalendarDays, Loader2, LayoutGrid, Settings, CheckCircle2, Users,
+  Upload, Lock,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { CreateInterviewDialog } from "@/components/CreateInterviewDialog";
 import { EmailTemplateDialog } from "@/components/EmailTemplateDialog";
+import { BulkImportDialog } from "@/components/BulkImportDialog";
 import { InterviewCalendar } from "@/components/InterviewCalendar";
 import { InsightStrip } from "@/components/dashboard/InsightStrip";
 import { CandidateCard } from "@/components/dashboard/CandidateCard";
@@ -23,6 +25,7 @@ import { usePlan } from "@/hooks/usePlan";
 import { useInterviews } from "@/hooks/useInterviews";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useCompletedReports } from "@/hooks/useReport";
+import { useCandidates } from "@/hooks/useCandidates";
 import type { Interview } from "@/types";
 
 const DarkModeToggle = () => {
@@ -41,7 +44,7 @@ const DarkModeToggle = () => {
   );
 };
 
-type ViewMode = "cards" | "table" | "calendar";
+type ViewMode = "cards" | "table" | "calendar" | "candidates";
 type SortKey = "candidate" | "position" | "date" | "duration" | "score";
 type SortDir = "asc" | "desc";
 
@@ -67,11 +70,13 @@ const Dashboard = () => {
     }
   }, []);
   const { data: completedReports, isLoading: reportsLoading } = useCompletedReports();
+  const { data: candidates, isLoading: candidatesLoading } = useCandidates();
   const stats = useDashboardStats(interviews);
 
   const [search, setSearch] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [showEmailTemplates, setShowEmailTemplates] = useState(false);
+  const [showBulkImport, setShowBulkImport] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
   const [positionFilter, setPositionFilter] = useState("all");
 
@@ -254,6 +259,23 @@ const Dashboard = () => {
           </nav>
           <div className="flex items-center gap-3">
             <DarkModeToggle />
+            {plan.hasBulkImport ? (
+              <Button variant="outline" size="sm" onClick={() => setShowBulkImport(true)} className="gap-2 hidden sm:flex">
+                <Upload className="h-4 w-4" />
+                Import CSV
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2 hidden sm:flex text-muted-foreground"
+                onClick={() => window.location.href = "/settings"}
+                title="Upgrade to Scale to use bulk import"
+              >
+                <Lock className="h-3.5 w-3.5" />
+                Import CSV
+              </Button>
+            )}
             <Button onClick={() => setShowCreate(true)} className="gap-2">
               <Plus className="h-4 w-4" />
               New Interview
@@ -329,6 +351,15 @@ const Dashboard = () => {
               >
                 <CalendarDays className="h-3.5 w-3.5" />
                 Calendar
+              </Button>
+              <Button
+                variant={viewMode === "candidates" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 px-2.5 gap-1.5 text-xs"
+                onClick={() => setViewMode("candidates")}
+              >
+                <Users className="h-3.5 w-3.5" />
+                Candidates
               </Button>
             </div>
 
@@ -567,7 +598,7 @@ const Dashboard = () => {
               </div>
             )}
           </motion.div>
-        ) : (
+        ) : viewMode === "calendar" ? (
           /* Calendar View */
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-xl p-6">
             <InterviewCalendar
@@ -584,11 +615,85 @@ const Dashboard = () => {
               }}
             />
           </motion.div>
+        ) : (
+          /* Candidates View */
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                All Candidates
+              </h2>
+              <span className="text-xs text-muted-foreground">{candidates?.length ?? 0} total</span>
+            </div>
+            {candidatesLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : !candidates || candidates.length === 0 ? (
+              <div className="px-6 py-12 text-center text-muted-foreground text-sm">
+                No candidates yet. Create an interview to add one.
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-xs text-muted-foreground border-b border-border">
+                    <th className="px-6 py-3 font-medium">Candidate</th>
+                    <th className="px-6 py-3 font-medium">Email</th>
+                    <th className="px-6 py-3 font-medium">Interviews</th>
+                    <th className="px-6 py-3 font-medium">Avg Score</th>
+                    <th className="px-6 py-3 font-medium">Last Interview</th>
+                    <th className="px-6 py-3 font-medium"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {candidates.map((candidate) => (
+                    <tr
+                      key={candidate.id}
+                      className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                    >
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-xs shrink-0">
+                            {candidate.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)}
+                          </div>
+                          <span className="font-medium text-sm">{candidate.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{candidate.email}</td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">{candidate.interview_count}</td>
+                      <td className="px-6 py-4">
+                        {candidate.avg_score !== null ? (
+                          <ScoreBadge score={candidate.avg_score} />
+                        ) : (
+                          <span className="text-muted-foreground text-sm">&mdash;</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-muted-foreground">
+                        {candidate.last_interview_at
+                          ? new Date(candidate.last_interview_at).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          : "—"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <Link to={`/candidates/${candidate.id}`}>
+                          <Button variant="ghost" size="sm">View Profile</Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </motion.div>
         )}
       </main>
 
       <CreateInterviewDialog open={showCreate} onOpenChange={setShowCreate} />
       <EmailTemplateDialog open={showEmailTemplates} onOpenChange={setShowEmailTemplates} />
+      <BulkImportDialog open={showBulkImport} onOpenChange={setShowBulkImport} />
     </div>
   );
 };

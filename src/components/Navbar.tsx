@@ -105,7 +105,7 @@ const Navbar = () => {
             <Link to="/auth">Log In</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link to="/dashboard">Start Free Trial</Link>
+            <Link to="/signup">Get Started</Link>
           </Button>
         </div>
 
@@ -137,7 +137,7 @@ const Navbar = () => {
                 <Link to="/auth">Log In</Link>
               </Button>
               <Button size="sm" asChild>
-                <Link to="/dashboard">Start Free Trial</Link>
+                <Link to="/signup">Get Started</Link>
               </Button>
             </div>
           </div>

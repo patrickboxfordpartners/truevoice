@@ -19,6 +19,9 @@ import VideoTest from "./pages/VideoTest";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Onboarding from "./pages/Onboarding";
+import CandidateProfile from "./pages/CandidateProfile";
+import Analytics from "./pages/Analytics";
+import CandidateFeedback from "./pages/CandidateFeedback";
 import NotFound from "./pages/NotFound";
 import "@livekit/components-styles";
 
@@ -39,6 +42,7 @@ const App = () => (
               <Route path="/signup" element={<Signup />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/interview/:token" element={<CandidateInterview />} />
+              <Route path="/feedback/:token" element={<CandidateFeedback />} />
               <Route path="/video-test" element={<VideoTest />} />
 
               {/* Protected routes */}
@@ -46,6 +50,8 @@ const App = () => (
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/report/:id" element={<ProtectedRoute><Report /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="/candidates/:id" element={<ProtectedRoute><CandidateProfile /></ProtectedRoute>} />
+              <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
               <Route path="/compare" element={<ProtectedRoute><Compare /></ProtectedRoute>} />
               <Route path="/room/:id" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>} />
               <Route path="/interviewer/:id" element={<ProtectedRoute><InterviewerRoom /></ProtectedRoute>} />

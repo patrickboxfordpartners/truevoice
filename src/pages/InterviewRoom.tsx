@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Shield, Mic, MicOff, Settings2, AlertTriangle, Clock,
   ChevronLeft, MessageSquare, StopCircle, Monitor, Radio,
+  ListChecks, ChevronDown, ChevronUp, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScoreGauge } from "@/components/ScoreGauge";
 import { MiniRadar } from "@/components/dashboard/MiniRadar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -17,6 +20,22 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useLiveInterview } from "@/hooks/useLiveInterview";
+import { usePanelists, useJoinAsPanel, useUpdatePanelistNotes } from "@/hooks/usePanelists";
+import { supabase } from "@/lib/supabase";
+
+interface ScriptQuestion {
+  id: string;
+  text: string;
+  type: "behavioral" | "situational" | "technical" | "authenticity";
+  suggested_follow_up: string;
+}
+
+const QUESTION_TYPE_COLORS: Record<string, string> = {
+  behavioral: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  situational: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  technical: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  authenticity: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+};
 
 const formatTime = (seconds: number) => {
   const m = Math.floor(seconds / 60);
@@ -36,7 +55,87 @@ const InterviewRoom = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [micMuted, setMicMuted] = useState(false);
 
+  // Question script state
+  const [scriptQuestions, setScriptQuestions] = useState<ScriptQuestion[]>([]);
+  const [askedQuestions, setAskedQuestions] = useState<Set<string>>(new Set());
+  const [scriptExpanded, setScriptExpanded] = useState(true);
+
+  const [panelMode, setPanelMode] = useState(false);
+  const [myNotes, setMyNotes] = useState("");
+  const [myScore, setMyScore] = useState<string>("");
+  const notesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scoreDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const interview = useLiveInterview(id || "");
+
+  const { data: panelists = [] } = usePanelists(id);
+  const joinAsPanel = useJoinAsPanel(id);
+  const updateNotes = useUpdatePanelistNotes(id);
+
+  // Auto-join as panelist when entering the room
+  useEffect(() => {
+    if (id) {
+      joinAsPanel.mutate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  // Debounced save for panel notes (2 seconds)
+  const handleMyNotesChange = useCallback((value: string) => {
+    setMyNotes(value);
+    if (notesDebounceRef.current) clearTimeout(notesDebounceRef.current);
+    notesDebounceRef.current = setTimeout(() => {
+      updateNotes.mutate({ notes: value });
+    }, 2000);
+  }, [updateNotes]);
+
+  // Debounced save for panel score (2 seconds)
+  const handleMyScoreChange = useCallback((value: string) => {
+    setMyScore(value);
+    if (scoreDebounceRef.current) clearTimeout(scoreDebounceRef.current);
+    const parsed = value === "" ? null : parseInt(value, 10);
+    if (parsed === null || (!isNaN(parsed) && parsed >= 0 && parsed <= 100)) {
+      scoreDebounceRef.current = setTimeout(() => {
+        updateNotes.mutate({ score_override: parsed });
+      }, 2000);
+    }
+  }, [updateNotes]);
+
+  // Load saved questions from interview notes on mount
+  useEffect(() => {
+    if (!id) return;
+    supabase
+      .from("interviews")
+      .select("notes")
+      .eq("id", id)
+      .single()
+      .then(({ data }) => {
+        if (!data?.notes) return;
+        try {
+          const parsed = JSON.parse(data.notes);
+          if (Array.isArray(parsed?.questions) && parsed.questions.length > 0) {
+            setScriptQuestions(parsed.questions);
+          }
+        } catch {
+          // notes is plain text — no questions to show
+        }
+      });
+  }, [id]);
+
+  const toggleAsked = (qId: string) => {
+    setAskedQuestions((prev) => {
+      const next = new Set(prev);
+      if (next.has(qId)) {
+        next.delete(qId);
+      } else {
+        next.add(qId);
+      }
+      return next;
+    });
+  };
+
+  // Index of the first unanswered question (for "current" highlight)
+  const currentQuestionIndex = scriptQuestions.findIndex((q) => !askedQuestions.has(q.id));
 
   const handleStart = async () => {
     try {
@@ -108,6 +207,21 @@ const InterviewRoom = () => {
               Transcribing
             </div>
           )}
+          {panelists.length > 0 && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Users className="h-3.5 w-3.5" />
+              {panelists.length} panelist{panelists.length !== 1 ? "s" : ""} watching
+            </div>
+          )}
+          <Button
+            variant={panelMode ? "secondary" : "outline"}
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setPanelMode(!panelMode)}
+          >
+            <Users className="h-3.5 w-3.5" />
+            Panel Mode
+          </Button>
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" size="sm" className="gap-1.5" disabled={!interview.isActive}>
@@ -282,6 +396,71 @@ const InterviewRoom = () => {
               )}
             </div>
 
+            {/* Question Script */}
+            {scriptQuestions.length > 0 && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setScriptExpanded(!scriptExpanded)}
+                  className="w-full flex items-center justify-between mb-2"
+                >
+                  <h3 className="text-sm font-semibold flex items-center gap-2">
+                    <ListChecks className="h-4 w-4 text-primary" />
+                    Question Script
+                    <span className="text-xs font-normal text-muted-foreground">
+                      ({askedQuestions.size}/{scriptQuestions.length})
+                    </span>
+                  </h3>
+                  {scriptExpanded ? (
+                    <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                </button>
+                {scriptExpanded && (
+                  <div className="space-y-1.5 max-h-72 overflow-y-auto pr-1">
+                    {scriptQuestions.map((q, i) => {
+                      const isAsked = askedQuestions.has(q.id);
+                      const isCurrent = i === currentQuestionIndex;
+                      return (
+                        <motion.div
+                          key={q.id}
+                          layout
+                          className={`flex gap-2.5 p-2.5 rounded-lg border transition-colors cursor-pointer ${
+                            isAsked
+                              ? "border-border bg-muted/30 opacity-50"
+                              : isCurrent
+                              ? "border-primary/40 bg-primary/5 ring-1 ring-primary/20"
+                              : "border-border bg-transparent"
+                          }`}
+                          onClick={() => toggleAsked(q.id)}
+                        >
+                          <Checkbox
+                            checked={isAsked}
+                            onCheckedChange={() => toggleAsked(q.id)}
+                            className="mt-0.5 shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <p className={`text-xs leading-relaxed ${isAsked ? "line-through text-muted-foreground" : ""}`}>
+                              {q.text}
+                            </p>
+                            <span
+                              className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                                QUESTION_TYPE_COLORS[q.type] ?? "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {q.type}
+                            </span>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Notes */}
             <div>
               <h3 className="text-sm font-semibold mb-2">Interview Notes</h3>
@@ -292,6 +471,74 @@ const InterviewRoom = () => {
                 className="min-h-[100px] text-sm resize-none"
               />
             </div>
+
+            {/* Panel Mode section */}
+            {panelMode && (
+              <div className="border-t border-border pt-4 space-y-3">
+                {/* Panelist avatars */}
+                {panelists.length > 0 && (
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                      <Users className="h-4 w-4 text-primary" />
+                      Panelists
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {panelists.map((p) => {
+                        const initials = (p.profile.full_name ?? p.profile.email)
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase();
+                        return (
+                          <div key={p.id} className="flex items-center gap-1.5" title={p.profile.full_name ?? p.profile.email}>
+                            {p.profile.avatar_url ? (
+                              <img
+                                src={p.profile.avatar_url}
+                                alt={initials}
+                                className="h-7 w-7 rounded-full object-cover border border-border"
+                              />
+                            ) : (
+                              <div className="h-7 w-7 rounded-full bg-primary/10 border border-border flex items-center justify-center text-[10px] font-bold text-primary">
+                                {initials}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* My Notes */}
+                <div>
+                  <h3 className="text-sm font-semibold mb-1.5">My Notes</h3>
+                  <Textarea
+                    placeholder="Private notes visible only to you..."
+                    value={myNotes}
+                    onChange={(e) => handleMyNotesChange(e.target.value)}
+                    className="min-h-[80px] text-sm resize-none"
+                  />
+                  {updateNotes.isPending && (
+                    <p className="text-[10px] text-muted-foreground mt-1">Saving...</p>
+                  )}
+                </div>
+
+                {/* My Score */}
+                <div>
+                  <h3 className="text-sm font-semibold mb-1.5">My Score <span className="font-normal text-muted-foreground">(0-100, optional)</span></h3>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="e.g. 72"
+                    value={myScore}
+                    onChange={(e) => handleMyScoreChange(e.target.value)}
+                    className="h-8 text-sm w-28"
+                  />
+                </div>
+              </div>
+            )}
           </motion.aside>
         )}
 

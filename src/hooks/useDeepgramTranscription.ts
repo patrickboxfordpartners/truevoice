@@ -21,7 +21,7 @@ interface UseDeepgramReturn {
   transcript: string;
   interimText: string;
   results: TranscriptResult[];
-  connect: () => Promise<MediaStream>;
+  connect: (language?: string) => Promise<MediaStream>;
   disconnect: () => void;
 }
 
@@ -35,7 +35,7 @@ export function useDeepgramTranscription(): UseDeepgramReturn {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (language: string = "en") => {
     const apiKey = import.meta.env.VITE_DEEPGRAM_API_KEY;
     if (!apiKey) {
       throw new Error("Missing VITE_DEEPGRAM_API_KEY");
@@ -55,7 +55,7 @@ export function useDeepgramTranscription(): UseDeepgramReturn {
     const deepgram = createClient(apiKey);
     const connection = deepgram.listen.live({
       model: "nova-2",
-      language: "en",
+      language,
       punctuate: true,
       diarize: true,
       filler_words: true,

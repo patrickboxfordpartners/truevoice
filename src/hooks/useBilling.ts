@@ -17,8 +17,8 @@ export function useBilling() {
       // Check if user is logged in
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        // Redirect to sign up, then back to checkout
-        window.location.href = `/auth/signup?redirect=${encodeURIComponent(`/pricing?plan=${priceId}`)}`;
+        // Redirect to sign up, then back to pricing
+        window.location.href = `/signup?redirect=${encodeURIComponent(`/pricing?plan=${priceId}`)}`;
         return;
       }
 

@@ -9,6 +9,35 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      candidates: {
+        Row: {
+          id: string;
+          company_id: string;
+          name: string;
+          email: string;
+          linkedin_url: string | null;
+          notes: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          company_id: string;
+          name: string;
+          email: string;
+          linkedin_url?: string | null;
+          notes?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          name?: string;
+          email?: string;
+          linkedin_url?: string | null;
+          notes?: string | null;
+          updated_at?: string;
+        };
+      };
       companies: {
         Row: {
           id: string;
@@ -20,6 +49,7 @@ export interface Database {
           default_duration: number;
           feedback_deadline: number;
           timezone: string;
+          transcription_language: string | null;
           auto_record: boolean;
           authenticity_detection: boolean;
           require_candidate_camera: boolean;
@@ -27,6 +57,7 @@ export interface Database {
           subscription_status: string;
           stripe_customer_id: string | null;
           stripe_subscription_id: string | null;
+          api_key: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -40,6 +71,7 @@ export interface Database {
           default_duration?: number;
           feedback_deadline?: number;
           timezone?: string;
+          transcription_language?: string | null;
           auto_record?: boolean;
           authenticity_detection?: boolean;
           require_candidate_camera?: boolean;
@@ -47,6 +79,7 @@ export interface Database {
           subscription_status?: string;
           stripe_customer_id?: string | null;
           stripe_subscription_id?: string | null;
+          api_key?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -60,6 +93,7 @@ export interface Database {
           default_duration?: number;
           feedback_deadline?: number;
           timezone?: string;
+          transcription_language?: string | null;
           auto_record?: boolean;
           authenticity_detection?: boolean;
           require_candidate_camera?: boolean;
@@ -67,6 +101,7 @@ export interface Database {
           subscription_status?: string;
           stripe_customer_id?: string | null;
           stripe_subscription_id?: string | null;
+          api_key?: string | null;
           updated_at?: string;
         };
       };
@@ -119,8 +154,10 @@ export interface Database {
           status: "scheduled" | "in_progress" | "completed" | "cancelled";
           candidate_token: string;
           candidate_consented: boolean;
+          candidate_id: string | null;
           transcript: string | null;
           notes: string | null;
+          language: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -136,8 +173,10 @@ export interface Database {
           status?: "scheduled" | "in_progress" | "completed" | "cancelled";
           candidate_token?: string;
           candidate_consented?: boolean;
+          candidate_id?: string | null;
           transcript?: string | null;
           notes?: string | null;
+          language?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -149,8 +188,10 @@ export interface Database {
           duration?: string | null;
           status?: "scheduled" | "in_progress" | "completed" | "cancelled";
           candidate_consented?: boolean;
+          candidate_id?: string | null;
           transcript?: string | null;
           notes?: string | null;
+          language?: string | null;
           updated_at?: string;
         };
       };

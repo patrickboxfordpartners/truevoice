@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
+import { Link } from "react-router-dom";
 
 const CTASection = () => (
   <section className="py-28 px-6 bg-truevoice-light">
@@ -9,11 +10,13 @@ const CTASection = () => (
         Ready to hire with <span className="text-gradient">confidence</span>?
       </h2>
       <p className="text-gray-600 text-lg mb-10">
-        Start your 14-day free trial today. No credit card required.
+        Choose the plan that fits your hiring needs.
       </p>
-      <Button size="lg" className="bg-truevoice-accent hover:bg-truevoice-accent/90 text-white shadow-lg">
-        Start Free Trial
-        <ArrowRight size={18} />
+      <Button size="lg" className="bg-truevoice-accent hover:bg-truevoice-accent/90 text-white shadow-lg" asChild>
+        <Link to="/pricing">
+          View Pricing
+          <ArrowRight size={18} />
+        </Link>
       </Button>
     </ScrollReveal>
   </section>

@@ -1,0 +1,2 @@
+ALTER TABLE interviews ADD COLUMN IF NOT EXISTS recording_url TEXT;
+ALTER TABLE interviews ADD COLUMN IF NOT EXISTS egress_id TEXT;

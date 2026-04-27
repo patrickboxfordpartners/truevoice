@@ -6,13 +6,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/** Strip <think>...</think> reasoning blocks and extract the last JSON object. */
+function extractJson(raw: string): string | null {
+  // Remove reasoning model thinking blocks
+  const stripped = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+  // Find all {...} blocks and take the last one (most likely the actual output)
+  const matches = [...stripped.matchAll(/\{[\s\S]*?\}/g)];
+  if (matches.length === 0) return null;
+  // Try from last to first until one parses cleanly
+  for (let i = matches.length - 1; i >= 0; i--) {
+    try {
+      JSON.parse(matches[i][0]);
+      return matches[i][0];
+    } catch {
+      continue;
+    }
+  }
+  // Fall back to greedy match on stripped content
+  const greedy = stripped.match(/\{[\s\S]*\}/);
+  return greedy ? greedy[0] : null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { interview_id, chunk_text, chunk_index, elapsed_seconds, previous_scores } =
+    const { interview_id, chunk_text, chunk_index, elapsed_seconds, previous_scores, response_delays } =
       await req.json();
 
     const xaiKey = Deno.env.get("XAI_API_KEY");
@@ -23,7 +44,7 @@ serve(async (req) => {
       });
     }
 
-    // Call Grok for analysis
+    // Use grok-3-fast — non-reasoning model, reliable JSON output, lower latency
     const grokResponse = await fetch("https://api.x.ai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -31,32 +52,40 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "grok-3-mini",
+        model: "grok-3-fast",
         messages: [
           {
             role: "system",
             content: `You are an interview authenticity analyst. Analyze the following transcript chunk from a live interview and score it on 4 dimensions (each 0-25):
-- speech: Natural speech patterns (filler words, self-corrections, vocal variety) vs reading/scripted cadence
-- timing: Natural thinking time vs suspiciously instant or very delayed responses
-- flow: Conversational engagement (clarifying questions, back-and-forth) vs monologue delivery
-- linguistic: Spoken language patterns (contractions, informal grammar) vs written/formal language
 
-Also detect any flags/patterns with severity (low/medium/high).
+- speech: Natural speech patterns (filler words, self-corrections, vocal variety) vs reading/scripted cadence. Score 20-25 for highly natural, 10-19 for mixed, 0-9 for clearly scripted.
+- timing: Natural thinking time based on MEASURED response delays. Use the provided timing data to score authentically: mostly "normal" delays = 20-25, mix = 12-19, mostly "instant" or "delayed" = 0-11. If no timing data is provided, infer from speech patterns in the text.
+- flow: Conversational engagement (clarifying questions, back-and-forth) vs monologue delivery. Score 20-25 for engaged, 10-19 for mixed, 0-9 for pure monologue.
+- linguistic: Spoken language patterns (contractions, informal grammar, spoken fillers) vs written/formal language. Score 20-25 for natural spoken language, 10-19 for mixed, 0-9 for formal/written.
 
-Return ONLY valid JSON in this format:
-{
-  "speech": <0-25>,
-  "timing": <0-25>,
-  "flow": <0-25>,
-  "linguistic": <0-25>,
-  "flags": [{"pattern": "description", "severity": "low|medium|high"}]
-}`,
+Also detect any behavioral flags with severity (low/medium/high). Only flag real patterns, not normal speech.
+
+You MUST return ONLY valid JSON with no explanation, no markdown, no code fences:
+{"speech":20,"timing":18,"flow":15,"linguistic":22,"flags":[{"pattern":"description","severity":"low"}]}`,
           },
           {
             role: "user",
-            content: `Elapsed time: ${elapsed_seconds}s
-Previous scores: ${JSON.stringify(previous_scores || {})}
-Transcript chunk: "${chunk_text}"`,
+            content: [
+              `Elapsed time: ${elapsed_seconds}s`,
+              `Previous scores: ${JSON.stringify(previous_scores || {})}`,
+              Array.isArray(response_delays) && response_delays.length > 0
+                ? `Response timing data for this chunk: ${JSON.stringify(
+                    response_delays.map((d: { question: string; delay: number; label: string }) => ({
+                      question: d.question,
+                      delay_seconds: d.delay,
+                      label: d.label,
+                    }))
+                  )}\n- "instant" responses (<1.5s) may indicate memorized/scripted answers\n- "normal" responses (1.5-4s) indicate natural thinking time\n- "delayed" responses (>4s) may indicate uncertainty or searching for answers`
+                : null,
+              `Transcript chunk to analyze: "${chunk_text}"`,
+            ]
+              .filter(Boolean)
+              .join("\n"),
           },
         ],
         temperature: 0.3,
@@ -65,56 +94,57 @@ Transcript chunk: "${chunk_text}"`,
 
     const grokData = await grokResponse.json();
     console.log("[analyze-chunk] Grok API status:", grokResponse.status);
-    console.log("[analyze-chunk] Grok raw response:", JSON.stringify(grokData));
+    console.log("[analyze-chunk] Grok raw response:", JSON.stringify(grokData).slice(0, 500));
 
     if (!grokResponse.ok) {
       console.error("[analyze-chunk] Grok API error:", grokResponse.status, JSON.stringify(grokData));
-      // Return error details so frontend and direct calls can see what went wrong
       return new Response(
         JSON.stringify({
           error: `Grok API error: ${grokResponse.status}`,
-          scores: { speech: 0, timing: 0, flow: 0, linguistic: 0 },
-          overall: 0,
+          grok_error: grokData,
+          scores: { speech: 15, timing: 15, flow: 15, linguistic: 15 },
+          overall: 60,
           flags: [],
         }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const content = grokData.choices?.[0]?.message?.content || "{}";
-    console.log("[analyze-chunk] Extracted content:", content);
+    const rawContent = grokData.choices?.[0]?.message?.content || "";
+    console.log("[analyze-chunk] Raw content:", rawContent.slice(0, 300));
 
-    // Parse Grok response
-    let analysis;
+    // Parse Grok response — handle reasoning model thinking blocks and markdown fences
+    let analysis: { speech?: number; timing?: number; flow?: number; linguistic?: number; flags?: unknown[] } = {};
     try {
-      // Try to extract JSON from the response, handling markdown code blocks
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      const jsonToParse = jsonMatch ? jsonMatch[0] : content;
-      console.log("[analyze-chunk] JSON to parse:", jsonToParse);
-      analysis = JSON.parse(jsonToParse);
+      const jsonStr = extractJson(rawContent);
+      console.log("[analyze-chunk] Extracted JSON string:", jsonStr);
+      if (!jsonStr) throw new Error("No JSON found in response");
+      analysis = JSON.parse(jsonStr);
       console.log("[analyze-chunk] Parsed analysis:", JSON.stringify(analysis));
     } catch (e) {
-      console.error("[analyze-chunk] JSON parse error:", e);
-      console.log("[analyze-chunk] Using default scores");
+      console.error("[analyze-chunk] JSON parse error:", e, "| Raw:", rawContent.slice(0, 200));
+      // Use neutral mid-range scores rather than zeros so the UI shows something meaningful
       analysis = { speech: 15, timing: 15, flow: 15, linguistic: 15, flags: [] };
     }
 
+    // Use nullish coalescing so a legitimate 0 score from Grok is preserved
     const scores = {
-      speech: Math.min(25, Math.max(0, analysis.speech || 0)),
-      timing: Math.min(25, Math.max(0, analysis.timing || 0)),
-      flow: Math.min(25, Math.max(0, analysis.flow || 0)),
-      linguistic: Math.min(25, Math.max(0, analysis.linguistic || 0)),
+      speech: Math.min(25, Math.max(0, analysis.speech ?? 15)),
+      timing: Math.min(25, Math.max(0, analysis.timing ?? 15)),
+      flow: Math.min(25, Math.max(0, analysis.flow ?? 15)),
+      linguistic: Math.min(25, Math.max(0, analysis.linguistic ?? 15)),
     };
 
     const overall = scores.speech + scores.timing + scores.flow + scores.linguistic;
-    const flags = analysis.flags || [];
+    const flags = (analysis.flags as Array<{ pattern: string; severity?: string }>) || [];
+
+    console.log("[analyze-chunk] Final scores:", JSON.stringify(scores), "overall:", overall);
 
     // Save to Supabase
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Save transcript chunk
     await supabase.from("transcript_chunks").insert({
       interview_id,
       chunk_index,
@@ -126,7 +156,6 @@ Transcript chunk: "${chunk_text}"`,
       linguistic_score: scores.linguistic,
     });
 
-    // Save timeline point
     const minutes = Math.floor(elapsed_seconds / 60);
     const mins = `${minutes}:${String(elapsed_seconds % 60).padStart(2, "0")}`;
     await supabase.from("interview_timeline").insert({
@@ -135,18 +164,25 @@ Transcript chunk: "${chunk_text}"`,
       score: overall,
     });
 
-    // Save any flags
     if (flags.length > 0) {
-      const timeStr = `${Math.floor(elapsed_seconds / 60)}:${String(
-        elapsed_seconds % 60
-      ).padStart(2, "0")}`;
-
+      const timeStr = `${Math.floor(elapsed_seconds / 60)}:${String(elapsed_seconds % 60).padStart(2, "0")}`;
       await supabase.from("interview_flags").insert(
-        flags.map((f: any) => ({
+        flags.map((f) => ({
           interview_id,
           time: timeStr,
           pattern: f.pattern,
           severity: f.severity || "low",
+        }))
+      );
+    }
+
+    if (Array.isArray(response_delays) && response_delays.length > 0) {
+      await supabase.from("response_delays").insert(
+        response_delays.map((d: { question: string; delay: number; label: string }) => ({
+          interview_id,
+          question: d.question,
+          delay: d.delay,
+          label: d.label,
         }))
       );
     }
@@ -156,8 +192,9 @@ Transcript chunk: "${chunk_text}"`,
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    console.error("[analyze-chunk] Unhandled error:", err);
     return new Response(
-      JSON.stringify({ error: err.message }),
+      JSON.stringify({ error: (err as Error).message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

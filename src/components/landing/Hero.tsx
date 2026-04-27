@@ -47,8 +47,8 @@ const Hero = () => {
 
       <div className="fade-in-up fade-in-up-delay-3 flex flex-col sm:flex-row items-center justify-center gap-4">
         <Button variant="hero" size="xl" asChild>
-          <Link to="/dashboard">
-            Start Free Trial
+          <Link to="/signup">
+            Get Started
             <ArrowRight size={18} />
           </Link>
         </Button>

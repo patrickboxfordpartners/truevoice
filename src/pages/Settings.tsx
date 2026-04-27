@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Shield, ArrowLeft, Building2, Clock, Save, Globe, Users, Briefcase, Moon, Sun, UserPlus, Trash2, Mail, Crown, Pencil, Eye, Loader2, CreditCard, ExternalLink, CheckCircle2 } from "lucide-react";
+import { Shield, ArrowLeft, Building2, Clock, Save, Globe, Users, Briefcase, Moon, Sun, UserPlus, Trash2, Mail, Crown, Pencil, Eye, Loader2, CreditCard, ExternalLink, CheckCircle2, Code2, KeyRound, RefreshCw, EyeOff, Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCompany, useUpdateCompany } from "@/hooks/useCompany";
 import { useTeam, useUpdateMemberRole, useRemoveMember, useInviteTeamMember } from "@/hooks/useTeam";
 import { useBilling } from "@/hooks/useBilling";
+import { usePlan } from "@/hooks/usePlan";
 import { plans as planDefs } from "@/lib/plans";
 import type { Role } from "@/types";
 
@@ -37,9 +38,14 @@ const Settings = () => {
   const updateRole = useUpdateMemberRole();
   const removeMember = useRemoveMember();
   const inviteMember = useInviteTeamMember();
+  const plan = usePlan();
 
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<Role>("viewer");
+
+  // API key state
+  const [apiKeyRevealed, setApiKeyRevealed] = useState(false);
+  const [isGeneratingKey, setIsGeneratingKey] = useState(false);
 
   // Company profile state — initialized from fetched data
   const [companyName, setCompanyName] = useState("");
@@ -50,6 +56,7 @@ const Settings = () => {
 
   // Interview preferences state
   const [defaultDuration, setDefaultDuration] = useState("45");
+  const [transcriptionLanguage, setTranscriptionLanguage] = useState("en");
   const [autoRecord, setAutoRecord] = useState(true);
   const [authenticityDetection, setAuthenticityDetection] = useState(true);
   const [candidateCamera, setCandidateCamera] = useState(true);
@@ -65,6 +72,7 @@ const Settings = () => {
       setIndustry(company.industry || "technology");
       setCompanySize(company.company_size || "51-200");
       setDefaultDuration(String(company.default_duration));
+      setTranscriptionLanguage(company.transcription_language || "en");
       setAutoRecord(company.auto_record);
       setAuthenticityDetection(company.authenticity_detection);
       setCandidateCamera(company.require_candidate_camera);
@@ -77,6 +85,28 @@ const Settings = () => {
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
 
+  const handleGenerateApiKey = async () => {
+    setIsGeneratingKey(true);
+    try {
+      // Generate a new UUID and save to companies.api_key
+      const newKey = crypto.randomUUID();
+      updateCompany.mutate(
+        { api_key: newKey } as any,
+        {
+          onSuccess: () => {
+            setApiKeyRevealed(true);
+            toast({ title: "New API key generated", description: "Your new key is now active. Previous key is revoked." });
+          },
+          onError: (err: any) => {
+            toast({ title: "Failed to generate key", description: err.message, variant: "destructive" });
+          },
+        }
+      );
+    } finally {
+      setIsGeneratingKey(false);
+    }
+  };
+
   const handleSave = () => {
     updateCompany.mutate(
       {
@@ -88,6 +118,7 @@ const Settings = () => {
         default_duration: parseInt(defaultDuration),
         feedback_deadline: parseInt(feedbackDeadline),
         timezone,
+        transcription_language: transcriptionLanguage,
         auto_record: autoRecord,
         authenticity_detection: authenticityDetection,
         require_candidate_camera: candidateCamera,
@@ -295,6 +326,29 @@ const Settings = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>Transcription Language</Label>
+                <Select value={transcriptionLanguage} onValueChange={setTranscriptionLanguage}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Spanish</SelectItem>
+                    <SelectItem value="fr">French</SelectItem>
+                    <SelectItem value="de">German</SelectItem>
+                    <SelectItem value="pt">Portuguese</SelectItem>
+                    <SelectItem value="it">Italian</SelectItem>
+                    <SelectItem value="nl">Dutch</SelectItem>
+                    <SelectItem value="ja">Japanese</SelectItem>
+                    <SelectItem value="ko">Korean</SelectItem>
+                    <SelectItem value="zh">Mandarin Chinese</SelectItem>
+                    <SelectItem value="ar">Arabic</SelectItem>
+                    <SelectItem value="hi">Hindi</SelectItem>
+                    <SelectItem value="ru">Russian</SelectItem>
+                    <SelectItem value="pl">Polish</SelectItem>
+                    <SelectItem value="tr">Turkish</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <Separator />
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -496,6 +550,116 @@ const Settings = () => {
               </>
             ) : (
               <p className="text-sm text-muted-foreground">Loading billing information...</p>
+            )}
+          </motion.section>
+
+          {/* API Access — Scale only */}
+          <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-card rounded-xl p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Code2 className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold">API Access</h2>
+              {!plan.hasAPI && (
+                <span className="ml-auto text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground flex items-center gap-1">
+                  <Lock className="h-3 w-3" /> Scale only
+                </span>
+              )}
+            </div>
+
+            {plan.hasAPI ? (
+              <div className="space-y-5">
+                <p className="text-sm text-muted-foreground">
+                  Use your API key to create interviews and retrieve reports programmatically.
+                </p>
+
+                {/* API Key display */}
+                <div className="space-y-1.5">
+                  <Label>API Key</Label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 relative">
+                      <Input
+                        readOnly
+                        value={
+                          apiKeyRevealed
+                            ? company?.api_key ?? "Not generated yet"
+                            : "••••••••-••••-••••-••••-••••••••••••"
+                        }
+                        className="font-mono text-sm pr-10"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => setApiKeyRevealed((v) => !v)}
+                      >
+                        {apiKeyRevealed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateApiKey}
+                      disabled={isGeneratingKey || updateCompany.isPending}
+                      className="gap-1.5 shrink-0"
+                    >
+                      {isGeneratingKey ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      )}
+                      {company?.api_key ? "Regenerate" : "Generate Key"}
+                    </Button>
+                  </div>
+                  {company?.api_key && (
+                    <p className="text-xs text-muted-foreground">
+                      Keep this key secret. Regenerating will immediately revoke the old key.
+                    </p>
+                  )}
+                </div>
+
+                {/* Usage snippet */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Example: Create an interview</Label>
+                  <div className="rounded-lg border border-border bg-muted/40 p-3 overflow-x-auto">
+                    <pre className="text-xs font-mono text-foreground/80 whitespace-pre">{`curl -X POST https://<your-project>.supabase.co/functions/v1/api-create-interview \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "candidate_name": "Jane Doe",
+    "candidate_email": "jane@example.com",
+    "position": "Senior Engineer",
+    "scheduled_at": "2026-05-01T10:00:00Z"
+  }'`}</pre>
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Example: Fetch a report</Label>
+                  <div className="rounded-lg border border-border bg-muted/40 p-3 overflow-x-auto">
+                    <pre className="text-xs font-mono text-foreground/80 whitespace-pre">{`curl "https://<your-project>.supabase.co/functions/v1/api-get-report?interview_id=<id>" \\
+  -H "Authorization: Bearer YOUR_API_KEY"`}</pre>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-border p-6 text-center space-y-3">
+                <KeyRound className="h-8 w-8 mx-auto text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">API access requires the Scale plan</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Integrate TrueVoice HQ into your hiring workflow with full REST API access.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const scalePlan = planDefs.find((p) => p.key === "scale");
+                    if (scalePlan) startCheckout(scalePlan.priceIds.monthly);
+                  }}
+                  disabled={billingLoading}
+                >
+                  {billingLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+                  Upgrade to Scale
+                </Button>
+              </div>
             )}
           </motion.section>
 

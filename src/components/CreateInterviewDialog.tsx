@@ -7,10 +7,34 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Check, Copy, Mail, Loader2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Check, Copy, Mail, Loader2, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useCreateInterview } from "@/hooks/useInterviews";
 import { getSiteUrl } from "@/lib/config";
+import { supabase } from "@/lib/supabase";
+
+const QUESTION_TYPE_LABELS: Record<string, string> = {
+  behavioral: "Behavioral",
+  situational: "Situational",
+  technical: "Technical",
+  authenticity: "Authenticity",
+};
+
+const QUESTION_TYPE_COLORS: Record<string, string> = {
+  behavioral: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  situational: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+  technical: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+  authenticity: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+};
+
+interface GeneratedQuestion {
+  id: string;
+  text: string;
+  type: "behavioral" | "situational" | "technical" | "authenticity";
+  suggested_follow_up: string;
+}
 
 const schema = z.object({
   candidateName: z.string().min(1, "Candidate name is required"),
@@ -31,12 +55,22 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
   const [step, setStep] = useState<"form" | "success">("form");
   const [copied, setCopied] = useState(false);
   const [generatedToken, setGeneratedToken] = useState("");
+  const [language, setLanguage] = useState("default");
+
+  // AI question generation state
+  const [jdExpanded, setJdExpanded] = useState(false);
+  const [jobDescription, setJobDescription] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedQuestions, setGeneratedQuestions] = useState<GeneratedQuestion[]>([]);
+  const [selectedQuestions, setSelectedQuestions] = useState<Set<string>>(new Set());
+
   const createInterview = useCreateInterview();
 
   const {
     register,
     handleSubmit,
     reset,
+    getValues,
     formState: { errors },
   } = useForm<FormData>({ resolver: zodResolver(schema) });
 
@@ -44,14 +78,61 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
     ? `${getSiteUrl()}/interview/${generatedToken}`
     : "";
 
+  const handleGenerateQuestions = async () => {
+    const position = getValues("position");
+    if (!position) {
+      toast({ title: "Enter a position first", variant: "destructive" });
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-questions", {
+        body: { position, job_description: jobDescription || undefined },
+      });
+      if (error) throw error;
+      const questions: GeneratedQuestion[] = data?.questions ?? [];
+      setGeneratedQuestions(questions);
+      setSelectedQuestions(new Set(questions.map((q) => q.id)));
+    } catch (err: any) {
+      toast({
+        title: "Question generation failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const toggleQuestion = (id: string) => {
+    setSelectedQuestions((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
   const onSubmit = async (data: FormData) => {
+    // Embed selected questions into notes as JSON; preserve any plain notes text
+    let notesValue: string | null = data.notes || null;
+    const chosen = generatedQuestions.filter((q) => selectedQuestions.has(q.id));
+    if (chosen.length > 0) {
+      const payload = { questions: chosen, notes: data.notes || "" };
+      notesValue = JSON.stringify(payload);
+    }
+
     createInterview.mutate(
       {
         candidate_name: data.candidateName,
         candidate_email: data.candidateEmail,
         position: data.position,
         scheduled_at: data.scheduledAt || null,
-        notes: data.notes || null,
+        notes: notesValue,
+        language: language !== "default" ? language : null,
       },
       {
         onSuccess: (interview) => {
@@ -79,6 +160,11 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
   const handleClose = () => {
     setStep("form");
     setGeneratedToken("");
+    setLanguage("default");
+    setJdExpanded(false);
+    setJobDescription("");
+    setGeneratedQuestions([]);
+    setSelectedQuestions(new Set());
     reset();
     onOpenChange(false);
   };
@@ -106,6 +192,137 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
                 <Label htmlFor="position">Position / Role *</Label>
                 <Input id="position" placeholder="e.g. Senior Engineer" {...register("position")} />
                 {errors.position && <p className="text-xs text-destructive">{errors.position.message}</p>}
+              </div>
+
+              {/* AI Question Generation */}
+              <div className="rounded-lg border border-border overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setJdExpanded(!jdExpanded)}
+                  className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium hover:bg-muted/50 transition-colors"
+                >
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    Generate AI Questions
+                  </span>
+                  {jdExpanded ? (
+                    <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
+                </button>
+
+                {jdExpanded && (
+                  <div className="px-4 pb-4 pt-2 space-y-3 border-t border-border">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="jobDescription" className="text-xs text-muted-foreground">
+                        Job Description (optional — improves question quality)
+                      </Label>
+                      <Textarea
+                        id="jobDescription"
+                        placeholder="Paste the job description here..."
+                        rows={4}
+                        value={jobDescription}
+                        onChange={(e) => setJobDescription(e.target.value)}
+                        className="text-sm resize-none"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 w-full"
+                      onClick={handleGenerateQuestions}
+                      disabled={isGenerating}
+                    >
+                      {isGenerating ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      {isGenerating ? "Generating..." : "Generate Questions"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* Generated questions checklist */}
+              {generatedQuestions.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">
+                      Select questions to include ({selectedQuestions.size}/{generatedQuestions.length})
+                    </Label>
+                    <button
+                      type="button"
+                      className="text-xs text-primary hover:underline"
+                      onClick={() => {
+                        if (selectedQuestions.size === generatedQuestions.length) {
+                          setSelectedQuestions(new Set());
+                        } else {
+                          setSelectedQuestions(new Set(generatedQuestions.map((q) => q.id)));
+                        }
+                      }}
+                    >
+                      {selectedQuestions.size === generatedQuestions.length ? "Deselect all" : "Select all"}
+                    </button>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                    {generatedQuestions.map((q) => (
+                      <div
+                        key={q.id}
+                        className={`flex gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${
+                          selectedQuestions.has(q.id)
+                            ? "border-primary/30 bg-primary/5"
+                            : "border-border bg-transparent"
+                        }`}
+                        onClick={() => toggleQuestion(q.id)}
+                      >
+                        <Checkbox
+                          checked={selectedQuestions.has(q.id)}
+                          onCheckedChange={() => toggleQuestion(q.id)}
+                          className="mt-0.5 shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <p className="text-xs leading-relaxed">{q.text}</p>
+                          <span
+                            className={`inline-block text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                              QUESTION_TYPE_COLORS[q.type] ?? "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {QUESTION_TYPE_LABELS[q.type] ?? q.type}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label>Language</Label>
+                <Select value={language} onValueChange={setLanguage}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="default">Company Default</SelectItem>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Spanish</SelectItem>
+                    <SelectItem value="fr">French</SelectItem>
+                    <SelectItem value="de">German</SelectItem>
+                    <SelectItem value="pt">Portuguese</SelectItem>
+                    <SelectItem value="it">Italian</SelectItem>
+                    <SelectItem value="nl">Dutch</SelectItem>
+                    <SelectItem value="ja">Japanese</SelectItem>
+                    <SelectItem value="ko">Korean</SelectItem>
+                    <SelectItem value="zh">Mandarin Chinese</SelectItem>
+                    <SelectItem value="ar">Arabic</SelectItem>
+                    <SelectItem value="hi">Hindi</SelectItem>
+                    <SelectItem value="ru">Russian</SelectItem>
+                    <SelectItem value="pl">Polish</SelectItem>
+                    <SelectItem value="tr">Turkish</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="scheduledAt">Interview Date & Time</Label>

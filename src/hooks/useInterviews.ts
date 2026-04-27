@@ -58,15 +58,37 @@ export function useCreateInterview() {
         await refreshProfile();
       }
 
+      // Upsert a persistent candidate profile keyed on (company_id, email)
+      const { data: candidateData, error: candidateError } = await supabase
+        .from("candidates")
+        .upsert(
+          {
+            company_id: companyId,
+            name: input.candidate_name,
+            email: input.candidate_email,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "company_id,email", ignoreDuplicates: false }
+        )
+        .select("id")
+        .single();
+
+      if (candidateError) {
+        // Non-fatal: proceed without linking rather than blocking the interview
+        console.warn("Candidate upsert failed:", candidateError.message);
+      }
+
       return createInterview({
         ...input,
         company_id: companyId,
         created_by: user.id,
+        candidate_id: candidateData?.id ?? null,
       });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.refetchQueries({ queryKey: ["interviews"] });
+      queryClient.invalidateQueries({ queryKey: ["candidates"] });
     },
   });
 }
