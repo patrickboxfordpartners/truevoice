@@ -63,13 +63,12 @@ export default function Onboarding() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <div className="border-b border-border px-6 py-4 flex items-center gap-2">
-        <Shield className="h-5 w-5 text-primary" />
-        <span className="text-lg font-semibold">
-          <span className="font-extrabold uppercase">TRUE</span>
-          <span className="font-medium text-foreground/70">voice</span>
-          <span className="font-medium text-gradient">HQ</span>
-        </span>
+      <div className="border-b border-border px-6 py-4">
+        <img
+          src="/truevoice-logo.png"
+          alt="TrueVoice HQ"
+          className="h-10 w-auto"
+        />
       </div>
 
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-12">
