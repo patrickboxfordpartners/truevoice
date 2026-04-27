@@ -30,16 +30,25 @@ export function useBilling() {
         },
       });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (error) {
+        console.error("[useBilling] Supabase function error:", error);
+        throw error;
+      }
+      if (data?.error) {
+        console.error("[useBilling] Edge function returned error:", data.error);
+        throw new Error(data.error);
+      }
       if (data?.url) {
         window.location.href = data.url;
+      } else {
+        console.error("[useBilling] No checkout URL returned:", data);
+        throw new Error("No checkout URL returned from server");
       }
     } catch (err: any) {
-      console.error("[useBilling] checkout error:", err);
+      console.error("[useBilling] Full checkout error:", err);
       toast({
         title: "Checkout failed",
-        description: err.message || "Unable to start checkout. Please try again.",
+        description: err.message || err.msg || "Unable to start checkout. Please try again.",
         variant: "destructive",
       });
     } finally {
