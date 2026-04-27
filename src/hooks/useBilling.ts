@@ -25,11 +25,17 @@ export function useBilling() {
       }
 
       console.log("[useBilling] Calling stripe-checkout Edge Function with priceId:", priceId);
+
+      // Get access token and explicitly pass it
+      const accessToken = session.access_token;
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
         body: {
           priceId,
           successUrl: `${window.location.origin}/dashboard?checkout=success`,
           cancelUrl: `${window.location.origin}/pricing?checkout=cancelled`,
+        },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
         },
       });
 

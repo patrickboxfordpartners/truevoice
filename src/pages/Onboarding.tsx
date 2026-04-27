@@ -61,7 +61,7 @@ export default function Onboarding() {
   const scalePlan = plans.find((p) => p.key === "scale");
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
       <div className="border-b border-border px-6 py-4">
         <img
@@ -182,8 +182,8 @@ export default function Onboarding() {
                 {[starterPlan, proPlan, scalePlan].filter(Boolean).map((plan) => (
                   <div
                     key={plan!.key}
-                    className={`glass-card rounded-xl p-5 flex flex-col gap-3 ${
-                      plan!.popular ? "border-primary/50 ring-1 ring-primary/30" : ""
+                    className={`border border-border rounded-xl p-5 flex flex-col gap-3 bg-white ${
+                      plan!.popular ? "border-primary shadow-lg" : ""
                     }`}
                   >
                     {plan!.popular && (
