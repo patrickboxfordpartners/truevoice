@@ -14,6 +14,14 @@ export function useBilling() {
 
     setLoading(true);
     try {
+      // Check if user is logged in
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        // Redirect to sign up, then back to checkout
+        window.location.href = `/auth/signup?redirect=${encodeURIComponent(`/pricing?plan=${priceId}`)}`;
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
         body: {
           priceId,
