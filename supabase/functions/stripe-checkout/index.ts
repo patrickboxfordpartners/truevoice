@@ -109,6 +109,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
+      allow_promotion_codes: true,
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: successUrl || "https://truevoicehq.com/dashboard?checkout=success",
       cancel_url: cancelUrl || "https://truevoicehq.com/pricing?checkout=cancelled",

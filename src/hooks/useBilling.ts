@@ -29,7 +29,7 @@ export function useBilling() {
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
         body: {
           priceId,
-          successUrl: `${window.location.origin}/dashboard?checkout=success`,
+          successUrl: `${window.location.origin}/onboarding?checkout=success`,
           cancelUrl: `${window.location.origin}/pricing?checkout=cancelled`,
         },
       });

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import { Link, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 const Login = () => {
   const { signIn } = useAuth();
   const { toast } = useToast();
+  const { setTheme } = useTheme();
+  useEffect(() => { setTheme("light"); }, [setTheme]);
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Check, Minus, ArrowRight, Loader2 } from "lucide-react";
 import Navbar from "@/components/Navbar";
@@ -54,6 +55,8 @@ const faqs = [
 const Pricing = () => {
   const [annual, setAnnual] = useState(false);
   const { startCheckout, loading } = useBilling();
+  const { setTheme } = useTheme();
+  useEffect(() => { setTheme("light"); }, [setTheme]);
 
   return (
     <div className="min-h-screen bg-background">
