@@ -14,9 +14,9 @@ export function useBilling() {
 
     setLoading(true);
     try {
-      // Check if user is logged in
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log("[useBilling] Session check:", { hasSession: !!session, userId: session?.user?.id });
+      // Refresh session to get a fresh token
+      const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
+      console.log("[useBilling] Session check:", { hasSession: !!session, userId: session?.user?.id, refreshError });
 
       if (!session) {
         console.log("[useBilling] No session found, redirecting to login");
@@ -26,16 +26,11 @@ export function useBilling() {
 
       console.log("[useBilling] Calling stripe-checkout Edge Function with priceId:", priceId);
 
-      // Get access token and explicitly pass it
-      const accessToken = session.access_token;
       const { data, error } = await supabase.functions.invoke("stripe-checkout", {
         body: {
           priceId,
           successUrl: `${window.location.origin}/dashboard?checkout=success`,
           cancelUrl: `${window.location.origin}/pricing?checkout=cancelled`,
-        },
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
         },
       });
 
