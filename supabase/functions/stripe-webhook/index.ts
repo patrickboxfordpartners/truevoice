@@ -64,7 +64,7 @@ serve(async (req) => {
       });
     }
 
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    const event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
 
     // Supabase admin client for database updates
     const supabase = createClient(
