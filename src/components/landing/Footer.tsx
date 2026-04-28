@@ -3,10 +3,10 @@ import { Link } from "react-router-dom";
 const Footer = () => (
   <footer className="border-t border-border bg-[hsl(155,20%,92%)]">
     <div className="max-w-6xl mx-auto px-6 py-16">
-      <div className="grid gap-12 text-center md:grid-cols-4 md:text-left mb-12">
+      <div className="grid gap-12 text-center md:grid-cols-4 mb-12">
         {/* Brand */}
         <div className="md:col-span-1">
-          <div className="flex justify-center md:justify-start mb-3">
+          <div className="flex justify-center mb-3">
             <img src="/truevoice-logo.png" alt="TrueVoice HQ" className="h-8 w-auto" />
           </div>
           <a

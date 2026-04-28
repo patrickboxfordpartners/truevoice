@@ -110,12 +110,13 @@ const Pricing = () => {
                     : "border-border"
                 }`}
               >
-                {plan.popular && (
-                  <p className="text-xs font-semibold text-accent uppercase tracking-wider mb-4">Most popular</p>
-                )}
-                {!plan.popular && <div className="mb-4" />}
+                <div className="h-5">
+                  {plan.popular && (
+                    <p className="text-xs font-semibold text-accent uppercase tracking-wider">Most popular</p>
+                  )}
+                </div>
 
-                <h3 className="text-lg font-semibold text-foreground">
+                <h3 className="text-lg font-semibold text-foreground mt-4">
                   {plan.name}
                 </h3>
                 <p className="text-sm mt-1 text-muted-foreground">
@@ -128,10 +129,11 @@ const Pricing = () => {
                   </span>
                   <span className="text-sm text-muted-foreground">/mo</span>
                 </div>
-                <p className="text-xs text-muted-foreground mb-8">
+                <p className="text-xs text-muted-foreground">
                   {plan.interviews}
                 </p>
 
+                <div className="mt-8">
                 <Button
                   size="lg"
                   disabled={loading}
@@ -144,6 +146,7 @@ const Pricing = () => {
                 >
                   {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Choose plan"}
                 </Button>
+                </div>
 
                 <div className="h-px bg-border mt-8 mb-8" />
 
