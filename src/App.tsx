@@ -17,7 +17,7 @@ import InterviewRoom from "./pages/InterviewRoom";
 import InterviewerRoom from "./pages/InterviewerRoom";
 import VideoTest from "./pages/VideoTest";
 import Login from "./pages/Login";
-// Signup removed - users come through Stripe checkout
+import Signup from "./pages/Signup";
 import Onboarding from "./pages/Onboarding";
 import CandidateProfile from "./pages/CandidateProfile";
 import Analytics from "./pages/Analytics";
@@ -39,6 +39,7 @@ const App = () => (
               {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/interview/:token" element={<CandidateInterview />} />
               <Route path="/feedback/:token" element={<CandidateFeedback />} />

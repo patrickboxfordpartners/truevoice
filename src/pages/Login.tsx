@@ -77,8 +77,8 @@ const Login = () => {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           Need an account?{" "}
-          <Link to="/pricing" className="text-accent hover:underline font-medium">
-            View pricing
+          <Link to="/signup" className="text-accent hover:underline font-medium">
+            Sign up
           </Link>
         </p>
       </div>
