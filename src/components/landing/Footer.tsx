@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 const Footer = () => (
-  <footer className="border-t border-border bg-background">
+  <footer className="border-t border-border bg-[hsl(155,20%,92%)]">
     <div className="max-w-6xl mx-auto px-6 py-16">
       <div className="grid gap-12 text-center md:grid-cols-4 md:text-left mb-12">
         {/* Brand */}

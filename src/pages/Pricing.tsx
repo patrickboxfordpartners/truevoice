@@ -19,7 +19,6 @@ const plans = planDefs.map((p) => ({
   monthly: p.monthlyPrice,
   annual: p.annualMonthly,
   interviews: p.interviews,
-  cta: "Get started",
   features: p.features,
   popular: p.popular,
   priceIds: p.priceIds,
@@ -57,81 +56,79 @@ const Pricing = () => {
   const { startCheckout, loading } = useBilling();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <Navbar />
 
       {/* Header */}
       <section className="pt-40 pb-12 px-6">
         <div className="max-w-2xl mx-auto text-center">
-          <p className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-4">Pricing</p>
-          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-gray-900 mb-5">
+          <p className="text-sm font-medium text-accent uppercase tracking-wider mb-4">Pricing</p>
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground mb-5">
             Simple, transparent pricing
           </h1>
-          <p className="text-lg text-gray-500 leading-relaxed">
+          <p className="text-lg text-muted-foreground leading-relaxed">
             Pick the plan that fits your hiring volume.
           </p>
         </div>
       </section>
 
       {/* Toggle */}
-      <div className="flex justify-center mb-16 px-6">
-        <div className="inline-flex items-center bg-gray-100 rounded-lg p-1">
+      <div className="flex justify-center mb-12 sm:mb-16 px-6">
+        <div className="inline-flex items-center bg-secondary rounded-lg p-1">
           <button
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`px-4 sm:px-5 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
               !annual
-                ? "bg-white shadow-sm text-gray-900"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
             onClick={() => setAnnual(false)}
           >
             Monthly
           </button>
           <button
-            className={`px-5 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`px-4 sm:px-5 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
               annual
-                ? "bg-white shadow-sm text-gray-900"
-                : "text-gray-500 hover:text-gray-700"
+                ? "bg-white shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
             onClick={() => setAnnual(true)}
           >
-            Annually <span className="text-emerald-600 font-semibold text-xs ml-1">-20%</span>
+            Annually <span className="text-accent font-semibold text-xs ml-1">-20%</span>
           </button>
         </div>
       </div>
 
       {/* Cards */}
-      <section className="px-6 pb-32">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-0 md:items-start">
+      <section className="px-4 sm:px-6 pb-24 sm:pb-32">
+        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:items-stretch">
           {plans.map((plan, i) => (
             <ScrollReveal key={plan.name} delay={i * 0.08} className="h-full">
               <div
-                className={`relative flex flex-col h-full px-8 py-10 ${
+                className={`relative flex flex-col h-full px-6 sm:px-8 py-8 sm:py-10 bg-card rounded-xl border text-center ${
                   plan.popular
-                    ? "bg-gray-900 text-white md:-my-4 md:py-14 md:rounded-2xl md:shadow-2xl md:z-10"
-                    : i === 0
-                      ? "bg-white md:rounded-l-2xl md:border md:border-r-0 md:border-gray-200"
-                      : "bg-white md:rounded-r-2xl md:border md:border-l-0 md:border-gray-200"
-                } ${i !== 1 ? "border-b md:border-b border-gray-200 md:border-b-gray-200" : ""}`}
+                    ? "border-accent shadow-elevated"
+                    : "border-border"
+                }`}
               >
                 {plan.popular && (
-                  <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-6">Most popular</p>
+                  <p className="text-xs font-semibold text-accent uppercase tracking-wider mb-4">Most popular</p>
                 )}
-                {!plan.popular && <div className="mb-6" />}
+                {!plan.popular && <div className="mb-4" />}
 
-                <h3 className={`text-lg font-semibold ${plan.popular ? "text-white" : "text-gray-900"}`}>
+                <h3 className="text-lg font-semibold text-foreground">
                   {plan.name}
                 </h3>
-                <p className={`text-sm mt-1 ${plan.popular ? "text-gray-400" : "text-gray-500"}`}>
+                <p className="text-sm mt-1 text-muted-foreground">
                   {plan.description}
                 </p>
 
-                <div className="mt-6 mb-1 text-center">
-                  <span className={`text-5xl font-bold tracking-tight ${plan.popular ? "text-white" : "text-gray-900"}`}>
+                <div className="mt-6 mb-1">
+                  <span className="text-5xl font-bold tracking-tight text-foreground">
                     ${annual ? plan.annual : plan.monthly}
                   </span>
-                  <span className={`text-sm ${plan.popular ? "text-gray-500" : "text-gray-400"}`}>/mo</span>
+                  <span className="text-sm text-muted-foreground">/mo</span>
                 </div>
-                <p className={`text-xs text-center ${plan.popular ? "text-gray-500" : "text-gray-400"}`}>
+                <p className="text-xs text-muted-foreground mb-8">
                   {plan.interviews}
                 </p>
 
@@ -139,24 +136,22 @@ const Pricing = () => {
                   size="lg"
                   disabled={loading}
                   onClick={() => startCheckout(annual ? plan.priceIds.yearly : plan.priceIds.monthly)}
-                  className={`w-full mt-8 mb-8 ${
+                  className={`w-full h-12 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated ${
                     plan.popular
-                      ? "bg-white text-gray-900 hover:bg-gray-100"
-                      : "bg-gray-900 text-white hover:bg-gray-800"
+                      ? "bg-accent text-white hover:bg-accent/85"
+                      : "bg-foreground text-background hover:bg-foreground/85"
                   }`}
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : plan.cta}
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Choose plan"}
                 </Button>
 
-                <div className={`h-px ${plan.popular ? "bg-gray-700" : "bg-gray-100"}`} />
+                <div className="h-px bg-border mt-8 mb-8" />
 
-                <ul className="mt-8 space-y-4 flex-1">
+                <ul className="space-y-4 flex-1 text-left">
                   {plan.features.map((f) => (
                     <li key={f} className="flex items-start gap-3 text-sm">
-                      <Check size={16} className={`mt-0.5 shrink-0 ${plan.popular ? "text-gray-500" : "text-gray-400"}`} />
-                      <span className={plan.popular ? "text-gray-300" : "text-gray-600"}>
-                        {f}
-                      </span>
+                      <Check size={16} className={`mt-0.5 shrink-0 ${plan.popular ? "text-accent" : "text-muted-foreground"}`} />
+                      <span className="text-muted-foreground">{f}</span>
                     </li>
                   ))}
                 </ul>
@@ -166,12 +161,12 @@ const Pricing = () => {
         </div>
       </section>
 
-      {/* Comparison — collapsed by default */}
-      <section className="px-6 pb-32">
+      {/* Comparison */}
+      <section className="px-4 sm:px-6 pb-24 sm:pb-32">
         <div className="max-w-3xl mx-auto">
           <ScrollReveal>
             <details className="group">
-              <summary className="flex items-center justify-center gap-2 cursor-pointer text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors select-none list-none">
+              <summary className="flex items-center justify-center gap-2 cursor-pointer text-sm font-medium text-muted-foreground hover:text-foreground transition-colors select-none list-none">
                 <span>Compare all features</span>
                 <ArrowRight size={14} className="transition-transform duration-200 group-open:rotate-90" />
               </summary>
@@ -184,34 +179,32 @@ const Pricing = () => {
       </section>
 
       {/* FAQ */}
-      <section className="px-6 pb-32">
+      <section className="px-4 sm:px-6 pb-24 sm:pb-32">
         <div className="max-w-5xl mx-auto">
           <ScrollReveal>
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-12 md:gap-16">
-              {/* Left column — sticky heading */}
-              <div className="md:col-span-4 md:sticky md:top-28 md:self-start">
-                <p className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-3">Support</p>
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-16">
+              <div className="md:col-span-4 md:sticky md:top-28 md:self-start text-center md:text-left">
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-3">Support</p>
+                <h2 className="text-3xl font-bold text-foreground mb-4">
                   Frequently asked questions
                 </h2>
-                <p className="text-sm text-gray-500 leading-relaxed">
-                  Can't find what you're looking for? <a href="mailto:hello@truevoicehq.com" className="text-gray-900 underline underline-offset-4 decoration-gray-300 hover:decoration-gray-900 transition-colors">Reach out</a> and we'll get back to you.
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Can't find what you're looking for? <a href="mailto:hello@truevoicehq.com" className="text-accent hover:underline transition-colors">Reach out</a> and we'll get back to you.
                 </p>
               </div>
 
-              {/* Right column — accordion */}
               <div className="md:col-span-8">
                 <Accordion type="single" collapsible className="space-y-0">
                   {faqs.map((faq, i) => (
                     <AccordionItem
                       key={i}
                       value={`faq-${i}`}
-                      className="border-0 border-b border-gray-100 last:border-0"
+                      className="border-0 border-b border-border last:border-0"
                     >
-                      <AccordionTrigger className="text-[15px] font-medium text-gray-900 hover:no-underline py-6 text-left">
+                      <AccordionTrigger className="text-[15px] font-medium text-foreground hover:no-underline py-6 text-left">
                         {faq.q}
                       </AccordionTrigger>
-                      <AccordionContent className="text-sm text-gray-500 leading-relaxed pb-6">
+                      <AccordionContent className="text-sm text-muted-foreground leading-relaxed pb-6">
                         {faq.a}
                       </AccordionContent>
                     </AccordionItem>
@@ -224,23 +217,23 @@ const Pricing = () => {
       </section>
 
       {/* CTA */}
-      <section className="px-6 pb-32">
+      <section className="px-4 sm:px-6 pb-24 sm:pb-32">
         <ScrollReveal>
-          <div className="max-w-3xl mx-auto bg-gray-900 rounded-2xl px-8 py-16 text-center">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-              Ready to get started?
+          <div className="max-w-3xl mx-auto border border-border rounded-xl px-6 sm:px-8 py-12 sm:py-16 text-center">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">
+              Ready to protect your process?
             </h2>
-            <p className="text-gray-400 mb-8">
+            <p className="text-muted-foreground mb-8">
               Set up in minutes. Cancel anytime.
             </p>
             <Button
               size="lg"
               disabled={loading}
               onClick={() => startCheckout(plans[1].priceIds.monthly)}
-              className="bg-white text-gray-900 hover:bg-gray-100"
+              className="bg-foreground text-background hover:bg-accent transition-colors hover:-translate-y-0.5 hover:shadow-elevated duration-200"
             >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Get started"}
-              {!loading && <ArrowRight size={16} />}
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Choose Pro"}
+              {!loading && <ArrowRight size={16} className="ml-2" />}
             </Button>
           </div>
         </ScrollReveal>
@@ -276,27 +269,27 @@ const comparisonRows: { feature: string; starter: boolean | string; pro: boolean
 ];
 
 const Cell = ({ value }: { value: boolean | string }) => {
-  if (typeof value === "string") return <span className="text-sm font-medium text-gray-900">{value}</span>;
+  if (typeof value === "string") return <span className="text-sm font-medium text-foreground">{value}</span>;
   return value
-    ? <Check size={16} className="text-gray-900" />
-    : <Minus size={16} className="text-gray-300" />;
+    ? <Check size={16} className="text-accent" />
+    : <Minus size={16} className="text-muted-foreground/40" />;
 };
 
 const CompactComparison = () => (
-  <div className="overflow-x-auto">
-    <table className="w-full text-sm">
+  <div className="overflow-x-auto -mx-4 sm:mx-0">
+    <table className="w-full text-sm min-w-[500px]">
       <thead>
-        <tr className="border-b border-gray-200">
-          <th className="text-left py-3 pr-4 font-medium text-gray-400 w-1/2">Feature</th>
-          <th className="text-center py-3 px-2 font-medium text-gray-900">Starter</th>
-          <th className="text-center py-3 px-2 font-medium text-gray-900">Pro</th>
-          <th className="text-center py-3 px-2 font-medium text-gray-900">Scale</th>
+        <tr className="border-b border-border">
+          <th className="text-left py-3 pr-4 font-medium text-muted-foreground w-1/2">Feature</th>
+          <th className="text-center py-3 px-2 font-medium text-foreground">Starter</th>
+          <th className="text-center py-3 px-2 font-medium text-foreground">Pro</th>
+          <th className="text-center py-3 px-2 font-medium text-foreground">Scale</th>
         </tr>
       </thead>
       <tbody>
         {comparisonRows.map((row) => (
-          <tr key={row.feature} className="border-b border-gray-50">
-            <td className="py-3 pr-4 text-gray-600">{row.feature}</td>
+          <tr key={row.feature} className="border-b border-border/50">
+            <td className="py-3 pr-4 text-muted-foreground">{row.feature}</td>
             <td className="py-3 px-2 text-center"><Cell value={row.starter} /></td>
             <td className="py-3 px-2 text-center"><Cell value={row.pro} /></td>
             <td className="py-3 px-2 text-center"><Cell value={row.scale} /></td>

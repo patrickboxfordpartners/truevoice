@@ -14,17 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Geist', 'system-ui', 'sans-serif'],
       },
       colors: {
-        // TrueVoice HQ Brand Colors
-        "true-green": "#A8E34A",
-        "voicehq-green": "#0A5C36",
-        "truevoice-dark": "#1A2F2A",
-        "truevoice-light": "#F4F7F5",
-        "truevoice-gray": "#64748B",
-        "truevoice-accent": "#10B981",
-
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

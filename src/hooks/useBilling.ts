@@ -19,8 +19,8 @@ export function useBilling() {
       console.log("[useBilling] Session check:", { hasSession: !!session, userId: session?.user?.id });
 
       if (!session) {
-        console.log("[useBilling] No session found, redirecting to signup");
-        window.location.href = `/signup?redirect=${encodeURIComponent(`/pricing?plan=${priceId}`)}`;
+        console.log("[useBilling] No session found, redirecting to login");
+        window.location.href = `/login?redirect=${encodeURIComponent(`/pricing?plan=${priceId}`)}`;
         return;
       }
 

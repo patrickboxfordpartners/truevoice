@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Shield, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,17 +36,16 @@ const Login = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <Shield className="h-6 w-6 text-primary" />
-            <span className="text-xl"><span className="font-extrabold uppercase">TRUE</span><span className="font-medium text-foreground/70">voice</span><span className="font-medium text-gradient">HQ</span></span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <Link to="/" className="inline-block mb-6">
+            <img src="/truevoice-logo.png" alt="TrueVoice HQ" className="h-8 w-auto mx-auto" />
+          </Link>
+          <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Sign in to your account
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="glass-card rounded-xl p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -76,10 +75,10 @@ const Login = () => {
           </Button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
-          Don't have an account?{" "}
-          <Link to="/signup" className="text-emerald-600 hover:underline font-medium">
-            Sign up
+        <p className="text-center text-sm text-muted-foreground mt-6">
+          Need an account?{" "}
+          <Link to="/pricing" className="text-accent hover:underline font-medium">
+            View pricing
           </Link>
         </p>
       </div>
