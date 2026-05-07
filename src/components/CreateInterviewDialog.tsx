@@ -216,7 +216,7 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
                   <div className="px-4 pb-4 pt-2 space-y-3 border-t border-border">
                     <div className="space-y-1.5">
                       <Label htmlFor="jobDescription" className="text-xs text-muted-foreground">
-                        Job Description (optional — improves question quality)
+                        Job Description (optional, improves question quality)
                       </Label>
                       <Textarea
                         id="jobDescription"

@@ -101,7 +101,7 @@ export default function InterviewerRoom() {
             onClick={() => startCheckout(import.meta.env.VITE_STRIPE_PRICE_PRO_MONTHLY || "")}
           >
             {billingLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-            Upgrade to Pro — $149/mo
+            Upgrade to Pro, $149/mo
           </Button>
         </div>
       </div>

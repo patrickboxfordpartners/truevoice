@@ -117,7 +117,7 @@ const InterviewRoom = () => {
             setScriptQuestions(parsed.questions);
           }
         } catch {
-          // notes is plain text — no questions to show
+          // notes is plain text, no questions to show
         }
       });
   }, [id]);
@@ -279,7 +279,7 @@ const InterviewRoom = () => {
             </div>
           )}
 
-          {/* Active state — live transcript */}
+          {/* Active state, live transcript */}
           {interview.isActive && (
             <>
               {/* Controls */}
@@ -327,7 +327,7 @@ const InterviewRoom = () => {
           )}
         </div>
 
-        {/* Sidebar — Analysis panel */}
+        {/* Sidebar, Analysis panel */}
         {interview.isActive && sidebarOpen && (
           <motion.aside
             initial={{ x: 40, opacity: 0 }}

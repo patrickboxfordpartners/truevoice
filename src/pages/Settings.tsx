@@ -47,7 +47,7 @@ const Settings = () => {
   const [apiKeyRevealed, setApiKeyRevealed] = useState(false);
   const [isGeneratingKey, setIsGeneratingKey] = useState(false);
 
-  // Company profile state — initialized from fetched data
+  // Company profile state, initialized from fetched data
   const [companyName, setCompanyName] = useState("");
   const [companyWebsite, setCompanyWebsite] = useState("");
   const [companyDescription, setCompanyDescription] = useState("");
@@ -474,7 +474,7 @@ const Settings = () => {
               </div>
             )}
             <p className="text-xs text-muted-foreground mt-4">
-              <strong>Admin</strong> — full access &amp; settings · <strong>Editor</strong> — create &amp; manage interviews · <strong>Viewer</strong> — read-only access
+              <strong>Admin</strong>, full access &amp; settings · <strong>Editor</strong>, create &amp; manage interviews · <strong>Viewer</strong>, read-only access
             </p>
           </motion.section>
 
@@ -553,7 +553,7 @@ const Settings = () => {
             )}
           </motion.section>
 
-          {/* API Access — Scale only */}
+          {/* API Access, Scale only */}
           <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-card rounded-xl p-6">
             <div className="flex items-center gap-2 mb-4">
               <Code2 className="h-5 w-5 text-primary" />

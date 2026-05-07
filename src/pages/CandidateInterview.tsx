@@ -76,7 +76,7 @@ const CandidateInterview = () => {
   // Monitoring is active once the candidate passes the consent step
   const monitoringActive = ["systemcheck", "tips", "waiting"].includes(step);
 
-  // Webcam analysis is Pro/Scale only — check the interviewing company's plan
+  // Webcam analysis is Pro/Scale only, check the interviewing company's plan
   const companyTier = (interview as any)?.companies?.subscription_tier ?? "free";
   const companyStatus = (interview as any)?.companies?.subscription_status ?? "inactive";
   const companyHasVideo =
@@ -154,7 +154,7 @@ const CandidateInterview = () => {
         { event: "UPDATE", schema: "public", table: "interviews", filter: `id=eq.${interview.id}` },
         (payload) => {
           if (payload.new.status === "in_progress") {
-            // Interview has started — redirect or show notification
+            // Interview has started, redirect or show notification
             setInterview((prev: any) => ({ ...prev, ...payload.new }));
           }
         }
@@ -420,7 +420,7 @@ const CandidateInterview = () => {
                 ))}
               </div>
               <Button className="w-full gap-2" onClick={() => setStep("waiting")}>
-                I'm Ready — Join Waiting Room <ChevronRight className="h-4 w-4" />
+                I'm Ready, Join Waiting Room <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
           </motion.div>

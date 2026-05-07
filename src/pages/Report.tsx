@@ -296,7 +296,7 @@ const Report = () => {
 
         {/* Two-column: Flags list + Score breakdown */}
         <div className="grid lg:grid-cols-[1fr_1fr] gap-6 mb-6">
-          {/* Detected Patterns — chronological */}
+          {/* Detected Patterns, chronological */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="glass-card rounded-xl p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-warning" />
@@ -322,7 +322,7 @@ const Report = () => {
             )}
           </motion.div>
 
-          {/* Score Breakdown — compact */}
+          {/* Score Breakdown, compact */}
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card rounded-xl p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Activity className="h-5 w-5 text-muted-foreground" />

@@ -73,7 +73,7 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
     scoresRef.current = scores;
   }, [scores]);
 
-  // Silence gap detection — runs whenever Deepgram appends a new final result
+  // Silence gap detection, runs whenever Deepgram appends a new final result
   useEffect(() => {
     const results = deepgram.results;
     const newCount = results.length;
@@ -214,7 +214,7 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
         sendChunkForAnalysis();
       }, 5000);
 
-      // Start LiveKit recording — fire and forget; failure must not block the interview
+      // Start LiveKit recording, fire and forget; failure must not block the interview
       const roomName = `interview-${interviewId}`;
       supabase.functions
         .invoke("start-recording", { body: { interview_id: interviewId, room_name: roomName } })
@@ -246,7 +246,7 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
 
     deepgram.disconnect();
 
-    // Stop LiveKit recording — fire and forget; failure must not block interview teardown
+    // Stop LiveKit recording, fire and forget; failure must not block interview teardown
     const currentEgressId = egressIdRef.current;
     if (currentEgressId) {
       setIsRecording(false);
@@ -280,7 +280,7 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
         body: { interview_id: interviewId },
       });
     } catch {
-      // Edge function not deployed yet — report generation skipped
+      // Edge function not deployed yet, report generation skipped
     }
   }, [deepgram, interviewId, notes, sendChunkForAnalysis]);
 

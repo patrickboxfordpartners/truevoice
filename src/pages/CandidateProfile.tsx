@@ -283,7 +283,7 @@ const CandidateProfile = () => {
           </div>
         </motion.div>
 
-        {/* Charts row — only when there's data */}
+        {/* Charts row, only when there's data */}
         {completedInterviews.length > 0 && (
           <div className="grid lg:grid-cols-2 gap-6 mb-6">
             {/* Score trend */}
@@ -297,7 +297,7 @@ const CandidateProfile = () => {
               {trendData.length === 1 ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-2">
                   <p className="text-3xl font-bold">{trendData[0].score}</p>
-                  <p className="text-sm text-muted-foreground">{trendData[0].label} — {trendData[0].position}</p>
+                  <p className="text-sm text-muted-foreground">{trendData[0].label}, {trendData[0].position}</p>
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height={200}>

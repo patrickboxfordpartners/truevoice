@@ -43,7 +43,7 @@ export function useJoinAsPanel(interviewId: string | undefined) {
   return useMutation({
     mutationFn: async () => {
       if (!interviewId || !profile?.id) return;
-      // upsert — safe to call multiple times
+      // upsert, safe to call multiple times
       const { error } = await supabase
         .from("interview_panelists")
         .upsert(

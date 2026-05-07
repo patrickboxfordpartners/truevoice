@@ -101,7 +101,7 @@ export function useWebcamMonitor({
       }
 
       if (analysis.multiple_faces) {
-        sendFlag("Multiple faces detected — possible assistance", "high");
+        sendFlag("Multiple faces detected, possible assistance", "high");
       }
 
       if (analysis.reading_detected) {
@@ -116,7 +116,7 @@ export function useWebcamMonitor({
         sendFlag("Phone or secondary device visible", "medium");
       }
     } catch {
-      // Vision analysis failed silently — don't disrupt the interview
+      // Vision analysis failed silently, don't disrupt the interview
     }
   }, [interviewId, sendFlag, intervalSeconds]);
 
@@ -162,7 +162,7 @@ export function useWebcamMonitor({
           if (mounted) captureAndAnalyze();
         }, 3000);
       } catch {
-        // Camera access denied or unavailable — monitor silently disabled
+        // Camera access denied or unavailable, monitor silently disabled
       }
     };
 

@@ -273,7 +273,7 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
                               )}
                             </td>
                             <td className="px-3 py-2 text-muted-foreground text-xs">
-                              {row.scheduled_at || "—"}
+                              {row.scheduled_at || ", "}
                             </td>
                             <td className="px-3 py-2">
                               {isValid ? (

@@ -152,7 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) throw error;
     // Company creation is handled by fetchProfile when it detects a
-    // profile without a company_id — no need to do it here.
+    // profile without a company_id, no need to do it here.
   }
 
   async function signOut() {

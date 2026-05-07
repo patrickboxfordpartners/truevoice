@@ -460,7 +460,7 @@ const Dashboard = () => {
                   );
                 }
 
-                // Completed without report — show as simple card
+                // Completed without report, show as simple card
                 return (
                   <CandidateCard
                     key={interview.id}
@@ -675,7 +675,7 @@ const Dashboard = () => {
                               day: "numeric",
                               year: "numeric",
                             })
-                          : "—"}
+                          : ", "}
                       </td>
                       <td className="px-6 py-4">
                         <Link to={`/candidates/${candidate.id}`}>
