@@ -47,6 +47,7 @@ const Report = () => {
   const { id } = useParams();
   const { data, isLoading, error } = useReport(id);
   const [hoveredFlag, setHoveredFlag] = useState<number | null>(null);
+  const { data: panelists = [] } = usePanelists(data?.interview?.id);
 
   if (isLoading) {
     return (
@@ -68,9 +69,6 @@ const Report = () => {
   }
 
   const { interview, report, flags, timeline, responseDelays, interviewer } = data;
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { data: panelists = [] } = usePanelists(interview.id);
   const isPanelInterview = (report.panelist_count ?? 1) > 1;
 
   const timelineData = timeline.map((t) => ({
