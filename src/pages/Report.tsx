@@ -49,6 +49,21 @@ const Report = () => {
   const [hoveredFlag, setHoveredFlag] = useState<number | null>(null);
   const { data: panelists = [] } = usePanelists(data?.interview?.id);
 
+  const flags = data?.flags ?? [];
+  const flagsByMinute = useMemo(() => {
+    const map = new Map<number, typeof flags>();
+    for (const flag of flags) {
+      const parts = flag.time?.split(":") ?? [];
+      const min = parts.length >= 2 ? parseInt(parts[0], 10) : 0;
+      const existing = map.get(min) ?? [];
+      existing.push(flag);
+      map.set(min, existing);
+    }
+    return map;
+  }, [flags]);
+
+  const flagMinutes = useMemo(() => Array.from(flagsByMinute.keys()), [flagsByMinute]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -57,7 +72,7 @@ const Report = () => {
     );
   }
 
-  if (error || !data) {
+  if (error || !data || !data.report) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">Report not found or not yet generated.</p>
@@ -68,30 +83,13 @@ const Report = () => {
     );
   }
 
-  const { interview, report, flags, timeline, responseDelays, interviewer } = data;
+  const { interview, report, timeline, responseDelays, interviewer } = data;
   const isPanelInterview = (report.panelist_count ?? 1) > 1;
 
   const timelineData = timeline.map((t) => ({
     min: t.minute,
     score: t.score,
   }));
-
-  // Map flags to their nearest timeline minute for pinning
-  const flagsByMinute = useMemo(() => {
-    const map = new Map<number, typeof flags>();
-    for (const flag of flags) {
-      // Parse time like "2:30" or "02:30" to get minute
-      const parts = flag.time?.split(":") ?? [];
-      const min = parts.length >= 2 ? parseInt(parts[0], 10) : 0;
-      const existing = map.get(min) ?? [];
-      existing.push(flag);
-      map.set(min, existing);
-    }
-    return map;
-  }, [flags]);
-
-  // Timeline minutes that have flags
-  const flagMinutes = useMemo(() => Array.from(flagsByMinute.keys()), [flagsByMinute]);
 
   const delayData = responseDelays.map((d) => ({
     question: d.question,
