@@ -13,7 +13,7 @@ export async function getFullReport(interviewId: string): Promise<FullReport> {
         .from("interview_reports")
         .select("*")
         .eq("interview_id", interviewId)
-        .single(),
+        .maybeSingle(),
       supabase
         .from("interview_flags")
         .select("*")
@@ -71,7 +71,7 @@ export async function getCompletedReports(companyId: string) {
         .from("interview_reports")
         .select("*")
         .eq("interview_id", interview.id)
-        .single();
+        .maybeSingle();
 
       const { data: flags } = await supabase
         .from("interview_flags")
