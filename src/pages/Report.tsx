@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -48,6 +48,19 @@ const Report = () => {
   const { data, isLoading, error } = useReport(id);
   const [hoveredFlag, setHoveredFlag] = useState<number | null>(null);
   const { data: panelists = [] } = usePanelists(data?.interview?.id);
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [showSticky, setShowSticky] = useState(false);
+
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowSticky(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [data]);
 
   const flags = data?.flags ?? [];
   const flagsByMinute = useMemo(() => {
@@ -109,6 +122,29 @@ const Report = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Sticky header */}
+      {showSticky && (
+        <div className="fixed top-0 left-0 right-0 z-50 border-b border-border bg-card/95 backdrop-blur-xl no-print">
+          <div className="container mx-auto px-6 max-w-6xl flex items-center justify-between h-14">
+            <div className="flex items-center gap-4 min-w-0">
+              <Link to="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
+                <ArrowLeft className="h-4 w-4" />
+              </Link>
+              <div className="min-w-0">
+                <span className="font-semibold truncate">{interview.candidate_name}</span>
+                <span className="text-muted-foreground text-sm ml-3">{dateStr}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`text-lg font-bold tabular-nums ${report.overall_score >= 75 ? "text-success" : report.overall_score >= 50 ? "text-warning" : "text-destructive"}`}>
+                {report.overall_score}
+              </span>
+              <span className="text-xs text-muted-foreground">/100</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="container mx-auto px-6 py-8 max-w-6xl">
         <Link to="/dashboard" className="no-print inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6">
           <ArrowLeft className="h-4 w-4" />
@@ -116,7 +152,7 @@ const Report = () => {
         </Link>
 
         {/* Compact Header: Candidate info + Score + Radar in one row */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-6 mb-6">
+        <motion.div ref={headerRef} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-xl p-6 mb-6">
           <div className="flex flex-col lg:flex-row lg:items-center gap-6">
             {/* Left: Candidate info */}
             <div className="flex-1 min-w-0">
