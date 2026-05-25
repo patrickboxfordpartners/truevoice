@@ -73,7 +73,7 @@ function DemoReport({
           </Link>
           <div className="flex items-center gap-3">
             <Link to="/signup">
-              <Button size="sm">Start free trial</Button>
+              <Button size="sm">Get started</Button>
             </Link>
           </div>
         </div>
@@ -85,7 +85,7 @@ function DemoReport({
         <span className="text-muted-foreground">—</span>
         <span className="text-muted-foreground">This is sample data. No real candidates.</span>
         <Link to="/signup" className="text-primary font-medium hover:underline ml-2">
-          Start free trial →
+          Get started →
         </Link>
       </div>
 
@@ -414,7 +414,7 @@ function DemoReport({
             <Link to="/signup">
               <Button className="gap-2">
                 <Calendar className="h-4 w-4" />
-                Start free trial to interview real candidates
+                Get started to interview real candidates
               </Button>
             </Link>
           </div>
@@ -452,7 +452,7 @@ export default function Demo() {
               Sign in
             </Link>
             <Link to="/signup">
-              <Button size="sm">Start free trial</Button>
+              <Button size="sm">Get started</Button>
             </Link>
           </div>
         </div>
@@ -468,7 +468,7 @@ export default function Demo() {
               Explore the dashboard with sample candidates. No signup required.
             </span>
             <Link to="/signup" className="text-primary font-medium hover:underline">
-              Start free trial →
+              Get started →
             </Link>
           </div>
           <button
@@ -598,7 +598,7 @@ export default function Demo() {
           </p>
           <div className="flex items-center justify-center gap-3 flex-wrap">
             <Link to="/signup">
-              <Button size="lg">Start free trial</Button>
+              <Button size="lg">Get started</Button>
             </Link>
             <Link to="/pricing">
               <Button variant="outline" size="lg">View pricing</Button>
