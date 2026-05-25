@@ -139,13 +139,13 @@ const Hero = () => {
 
           <motion.div className="flex flex-col sm:flex-row items-center lg:items-start justify-center lg:justify-start gap-4" {...anim(0.3)}>
             <Button size="lg" asChild className="rounded-md bg-foreground text-background hover:bg-accent transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated">
-              <Link to="/pricing">
-                View Pricing
+              <Link to="/demo">
+                Try demo
                 <ArrowRight size={16} className="ml-2" />
               </Link>
             </Button>
             <Button variant="ghost" size="lg" asChild className="text-muted-foreground hover:text-foreground">
-              <a href="#how-it-works">See how it works</a>
+              <Link to="/pricing">View pricing</Link>
             </Button>
           </motion.div>
         </div>

@@ -22,6 +22,7 @@ import Onboarding from "./pages/Onboarding";
 import CandidateProfile from "./pages/CandidateProfile";
 import Analytics from "./pages/Analytics";
 import CandidateFeedback from "./pages/CandidateFeedback";
+import Demo from "./pages/Demo";
 import NotFound from "./pages/NotFound";
 import "@livekit/components-styles";
 
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/interview/:token" element={<CandidateInterview />} />
               <Route path="/feedback/:token" element={<CandidateFeedback />} />
+              <Route path="/demo" element={<Demo />} />
               <Route path="/video-test" element={<VideoTest />} />
 
               {/* Protected routes */}
