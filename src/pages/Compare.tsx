@@ -117,8 +117,8 @@ const Compare = () => {
   }, [dbReports]);
 
   const ids = Object.keys(reportMap);
-  const [leftId, setLeftId] = useState<string>(ids[0] || "1");
-  const [rightId, setRightId] = useState<string>(ids[1] || "2");
+  const [leftId, setLeftId] = useState<string>(ids[0] || "");
+  const [rightId, setRightId] = useState<string>(ids[1] || "");
 
   const left = reportMap[leftId];
   const right = reportMap[rightId];
