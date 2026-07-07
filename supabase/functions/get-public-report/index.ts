@@ -44,7 +44,7 @@ serve(async (req) => {
 
   // Fetch all report data in parallel
   const [interviewRes, reportRes, flagsRes, timelineRes, delaysRes] = await Promise.all([
-    supabase.from("interviews").select("*").eq("id", interviewId).single(),
+    supabase.from("interviews").select("id, candidate_name, position, scheduled_at, duration, status").eq("id", interviewId).single(),
     supabase.from("interview_reports").select("*").eq("interview_id", interviewId).maybeSingle(),
     supabase.from("interview_flags").select("*").eq("interview_id", interviewId).order("created_at", { ascending: true }),
     supabase.from("interview_timeline").select("*").eq("interview_id", interviewId).order("created_at", { ascending: true }),

@@ -11,6 +11,7 @@ import {
 import { useInterviews } from "@/hooks/useInterviews";
 import { useCompletedReports } from "@/hooks/useReport";
 import { getScoreColor } from "@/components/ScoreGauge";
+import { SCORE_LABELS } from "@/lib/scoreLabels";
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -179,7 +180,7 @@ const Analytics = () => {
           className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
         >
           <StatCard icon={Users} label="Total Interviews" value={stats.total} />
-          <StatCard icon={TrendingUp} label="Avg Authenticity Score" value={`${stats.avgScore}/100`} color={getScoreColor(stats.avgScore)} />
+          <StatCard icon={TrendingUp} label={`Avg ${SCORE_LABELS.overall}`} value={`${stats.avgScore}/100`} color={getScoreColor(stats.avgScore)} />
           <StatCard icon={CheckCircle2} label="Completion Rate" value={`${stats.completionRate}%`} sub={`${stats.completed} of ${stats.total} completed`} />
           <StatCard icon={Clock} label="This Month" value={stats.thisMonth} sub="interviews created" />
         </motion.div>

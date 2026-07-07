@@ -27,6 +27,9 @@ serve(async (req) => {
       })
     }
 
+    const safeName = name.replace(/[\r\n]/g, " ").trim()
+    const safeCompany = company.replace(/[\r\n]/g, " ").trim()
+
     const esc = (s: string) =>
       s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;")
 
@@ -59,9 +62,9 @@ serve(async (req) => {
       body: JSON.stringify({
         From: "hello@truevoicehq.com",
         To: "patrick@boxfordpartners.com",
-        Subject: `Demo request — ${name} at ${company}`,
+        Subject: `Demo request — ${safeName} at ${safeCompany}`,
         HtmlBody: htmlBody,
-        TextBody: `Demo request\n\nName: ${name}\nCompany: ${company}\nRole: ${role}\nInterviews/month: ${volume}${message ? `\nMessage: ${message}` : ""}`,
+        TextBody: `Demo request\n\nName: ${safeName}\nCompany: ${safeCompany}\nRole: ${role}\nInterviews/month: ${volume}${message ? `\nMessage: ${message}` : ""}`,
         MessageStream: "outbound",
       }),
     })

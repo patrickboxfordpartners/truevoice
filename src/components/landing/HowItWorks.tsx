@@ -6,7 +6,7 @@ const ease = [0.16, 1, 0.3, 1];
 const steps = [
   { num: "01", title: "Schedule", description: "Create an interview link in seconds. Share it with your candidate via email." },
   { num: "02", title: "Interview", description: "Run a normal video interview while our engine analyzes speech, visual, and browser behavior in real time." },
-  { num: "03", title: "Review", description: "Get a detailed authenticity report with score breakdowns and flagged moments, immediately after." },
+  { num: "03", title: "Review", description: "Get a full intelligence report with score breakdowns and behavioral signals — ready the moment the call ends." },
 ];
 
 const StepCard = ({ step, index }: { step: typeof steps[0]; index: number }) => {
