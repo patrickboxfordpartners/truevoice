@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from "framer-motion";
-import { Mic, Eye, Monitor } from "lucide-react";
+import { BarChart3, ArrowLeftRight, Shield } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
 
 const ease = [0.16, 1, 0.3, 1];
@@ -13,33 +13,27 @@ interface FeatureBlock {
 
 const blocks: FeatureBlock[] = [
   {
-    label: "Audio Analysis",
-    headline: "Every word tells a story",
-    icon: Mic,
+    label: "Scoring",
+    headline: "Structured data, every time",
+    icon: BarChart3,
     points: [
-      "Real-time speech pattern scoring across four dimensions: timing, flow, cadence, and linguistic authenticity.",
-      "AI-powered detection catches scripted responses, unnatural fluency, and rehearsed delivery patterns.",
-      "Continuous 20-second analysis intervals build a complete picture of candidate behavior over the full session.",
+      "Every interview scored across four dimensions — communication quality, thinking & engagement, interview presence, and response authenticity. Same framework, every candidate.",
     ],
   },
   {
-    label: "Visual Monitoring",
-    headline: "See what the camera sees",
-    icon: Eye,
+    label: "Comparison",
+    headline: "Compare candidates side by side",
+    icon: ArrowLeftRight,
     points: [
-      "Periodic webcam analysis detects off-camera gaze, screen-reading behavior, and secondary device usage.",
-      "Multi-face detection identifies unauthorized assistance in the room during the interview.",
-      "Full transparency: candidates are informed and consent before any visual analysis begins.",
+      "See who was most engaged, most consistent, most present. Radar charts and score timelines make the comparison visual and defensible.",
     ],
   },
   {
-    label: "Browser Tracking",
-    headline: "The full picture, every tab",
-    icon: Monitor,
+    label: "Reporting",
+    headline: "Defend every decision",
+    icon: Shield,
     points: [
-      "Tab switching and window focus monitoring captures every moment a candidate leaves the interview.",
-      "Clipboard paste detection flags copied answers from external sources.",
-      "Included in every plan at zero extra cost. No add-ons, no upsells.",
+      "Every hire backed by objective, timestamped data. Full report available to your whole hiring team the moment the call ends.",
     ],
   },
 ];
@@ -87,12 +81,12 @@ const Features = () => (
   <section id="features" className="py-24 sm:py-28 px-4 sm:px-6 bg-card">
     <div className="max-w-6xl mx-auto">
       <ScrollReveal className="text-center lg:text-left mb-16 sm:mb-20">
-        <p className="text-sm font-medium tracking-wide text-accent uppercase mb-3">Detection Layers</p>
+        <p className="text-sm font-medium tracking-wide text-accent uppercase mb-3">Interview Intelligence</p>
         <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground max-w-xl mx-auto lg:mx-0">
-          Three layers of authenticity detection
+          Structure, compare, and defend every hire
         </h2>
         <p className="text-muted-foreground text-lg max-w-xl mx-auto lg:mx-0 mt-4">
-          Audio, visual, and browser-level analysis work together to give you a complete, objective picture.
+          Consistent scoring across every interview gives hiring teams the data they need to make confident, defensible decisions.
         </p>
       </ScrollReveal>
 
