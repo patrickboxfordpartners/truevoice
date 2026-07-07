@@ -17,6 +17,7 @@ import {
 import { useReport } from "@/hooks/useReport";
 import { getScoreColor } from "@/components/ScoreGauge";
 import { usePanelists } from "@/hooks/usePanelists";
+import { SCORE_LABELS } from "@/lib/scoreLabels";
 
 const getDelayColor = (delay: number) => {
   if (delay < 1.5) return "hsl(0, 84%, 60%)";
@@ -362,10 +363,10 @@ const Report = () => {
             </h2>
             <div className="space-y-4">
               {[
-                { label: "Speech Patterns", score: report.speech_score, desc: "Natural cadence vs. scripted delivery" },
-                { label: "Response Timing", score: report.timing_score, desc: "Natural thinking pauses vs. instant recall" },
-                { label: "Conversational Flow", score: report.flow_score, desc: "Engaged dialogue vs. monologue" },
-                { label: "Linguistic Authenticity", score: report.linguistic_score, desc: "Spoken language vs. written/formal" },
+                { label: SCORE_LABELS.speech, score: report.speech_score, desc: "Natural cadence vs. scripted delivery" },
+                { label: SCORE_LABELS.timing, score: report.timing_score, desc: "Natural thinking pauses vs. instant recall" },
+                { label: SCORE_LABELS.flow, score: report.flow_score, desc: "Engaged dialogue vs. monologue" },
+                { label: SCORE_LABELS.linguistic, score: report.linguistic_score, desc: "Spoken language vs. written/formal" },
               ].map((dim) => (
                 <div key={dim.label}>
                   <div className="flex items-center justify-between mb-1.5">
