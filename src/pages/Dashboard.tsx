@@ -5,7 +5,7 @@ import {
   Plus, Search, Shield, LogOut, Moon, Sun, ArrowUp, ArrowDown,
   ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, Download,
   Mail, Table2, CalendarDays, Loader2, LayoutGrid, Settings, CheckCircle2, Users,
-  Upload, Lock,
+  Upload, Lock, BarChart3,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
@@ -20,6 +20,7 @@ import { InterviewCalendar } from "@/components/InterviewCalendar";
 import { InsightStrip } from "@/components/dashboard/InsightStrip";
 import { CandidateCard } from "@/components/dashboard/CandidateCard";
 import { PositionFilter } from "@/components/dashboard/PositionFilter";
+import { getScoreColor } from "@/components/ScoreGauge";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlan } from "@/hooks/usePlan";
 import { useInterviews } from "@/hooks/useInterviews";
@@ -44,7 +45,7 @@ const DarkModeToggle = () => {
   );
 };
 
-type ViewMode = "cards" | "table" | "calendar" | "candidates";
+type ViewMode = "cards" | "table" | "calendar" | "candidates" | "positions";
 type SortKey = "candidate" | "position" | "date" | "duration" | "score";
 type SortDir = "asc" | "desc";
 
@@ -173,6 +174,27 @@ const Dashboard = () => {
       score: i.score,
     }));
   }, [displayInterviews]);
+
+  const positionsData = useMemo(() => {
+    if (!completedReports) return []
+    const map = new Map<string, { scores: number[]; candidates: { name: string; score: number; id: string }[] }>()
+    completedReports.forEach((r: any) => {
+      if (!r) return
+      const pos = r.position || "Unknown Position"
+      if (!map.has(pos)) map.set(pos, { scores: [], candidates: [] })
+      const entry = map.get(pos)!
+      entry.scores.push(r.overall ?? 0)
+      entry.candidates.push({ name: r.candidate, score: r.overall ?? 0, id: r.id })
+    })
+    return Array.from(map.entries())
+      .map(([position, { scores, candidates }]) => ({
+        position,
+        count: scores.length,
+        avg: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length),
+        top3: [...candidates].sort((a, b) => b.score - a.score).slice(0, 3),
+      }))
+      .sort((a, b) => b.count - a.count)
+  }, [completedReports])
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -360,6 +382,15 @@ const Dashboard = () => {
               >
                 <Users className="h-3.5 w-3.5" />
                 Candidates
+              </Button>
+              <Button
+                variant={viewMode === "positions" ? "default" : "ghost"}
+                size="sm"
+                className="h-7 px-2.5 gap-1.5 text-xs"
+                onClick={() => setViewMode("positions")}
+              >
+                <BarChart3 className="h-3.5 w-3.5" />
+                Positions
               </Button>
             </div>
 
@@ -614,6 +645,39 @@ const Dashboard = () => {
                 }
               }}
             />
+          </motion.div>
+        ) : viewMode === "positions" ? (
+          /* Positions View */
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+            {positionsData.length === 0 ? (
+              <div className="text-center py-16 text-muted-foreground text-sm">
+                No completed interviews yet.
+              </div>
+            ) : positionsData.map((pos) => (
+              <div key={pos.position} className="glass-card rounded-xl p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-sm">{pos.position}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {pos.count} interview{pos.count !== 1 ? "s" : ""} &middot; avg score{" "}
+                      <span className={`font-semibold ${getScoreColor(pos.avg)}`}>{pos.avg}</span>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {pos.top3.map((c) => (
+                    <Link
+                      key={c.id}
+                      to={`/report/${c.id}`}
+                      className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-secondary hover:bg-accent/20 transition-colors"
+                    >
+                      <span className={`font-semibold tabular-nums ${getScoreColor(c.score)}`}>{c.score}</span>
+                      <span className="text-muted-foreground">{c.name}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
           </motion.div>
         ) : (
           /* Candidates View */
