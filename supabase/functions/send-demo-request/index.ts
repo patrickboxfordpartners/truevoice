@@ -20,12 +20,15 @@ serve(async (req) => {
   try {
     const { name, company, role, volume, message } = await req.json()
 
-    if (!name || !company || !role || !volume) {
+    if (!name?.trim() || !company?.trim() || !role?.trim() || !volume?.trim()) {
       return new Response(JSON.stringify({ error: "Missing required fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       })
     }
+
+    const esc = (s: string) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;")
 
     const postmarkKey = Deno.env.get("POSTMARK_API_KEY")
     if (!postmarkKey) {
@@ -38,11 +41,11 @@ serve(async (req) => {
     const htmlBody = `
       <h2>New TrueVoice HQ Demo Request</h2>
       <table style="border-collapse:collapse;width:100%;max-width:480px">
-        <tr><td style="padding:8px 0;color:#6b7280;font-size:13px">Name</td><td style="padding:8px 0;font-weight:600">${name}</td></tr>
-        <tr><td style="padding:8px 0;color:#6b7280;font-size:13px">Company</td><td style="padding:8px 0;font-weight:600">${company}</td></tr>
-        <tr><td style="padding:8px 0;color:#6b7280;font-size:13px">Role</td><td style="padding:8px 0;font-weight:600">${role}</td></tr>
-        <tr><td style="padding:8px 0;color:#6b7280;font-size:13px">Interviews/month</td><td style="padding:8px 0;font-weight:600">${volume}</td></tr>
-        ${message ? `<tr><td style="padding:8px 0;color:#6b7280;font-size:13px">Message</td><td style="padding:8px 0">${message}</td></tr>` : ""}
+        <tr><td style="padding:8px 0;color:#6b7280;font-size:13px">Name</td><td style="padding:8px 0;font-weight:600">${esc(name)}</td></tr>
+        <tr><td style="padding:8px 0;color:#6b7280;font-size:13px">Company</td><td style="padding:8px 0;font-weight:600">${esc(company)}</td></tr>
+        <tr><td style="padding:8px 0;color:#6b7280;font-size:13px">Role</td><td style="padding:8px 0;font-weight:600">${esc(role)}</td></tr>
+        <tr><td style="padding:8px 0;color:#6b7280;font-size:13px">Interviews/month</td><td style="padding:8px 0;font-weight:600">${esc(volume)}</td></tr>
+        ${message ? `<tr><td style="padding:8px 0;color:#6b7280;font-size:13px">Message</td><td style="padding:8px 0">${esc(message)}</td></tr>` : ""}
       </table>
     `
 
