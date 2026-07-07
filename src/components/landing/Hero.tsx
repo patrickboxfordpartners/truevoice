@@ -7,15 +7,6 @@ import { useRef } from "react"
 
 const ease = [0.16, 1, 0.3, 1]
 
-const WaveformBar = ({ height, delay }: { height: number; delay: number }) => (
-  <motion.div
-    className="w-1 rounded-full bg-accent/40"
-    style={{ height }}
-    animate={{ scaleY: [1, 0.5, 1.2, 0.7, 1] }}
-    transition={{ duration: 2.5, delay, repeat: Infinity, ease: "easeInOut" }}
-  />
-)
-
 const PulsingDot = () => (
   <motion.div
     className="w-2 h-2 rounded-full bg-accent"
