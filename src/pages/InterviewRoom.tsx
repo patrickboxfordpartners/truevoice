@@ -22,6 +22,7 @@ import {
 import { useLiveInterview } from "@/hooks/useLiveInterview";
 import { usePanelists, useJoinAsPanel, useUpdatePanelistNotes } from "@/hooks/usePanelists";
 import { supabase } from "@/lib/supabase";
+import { SCORE_LABELS } from "@/lib/scoreLabels";
 
 interface ScriptQuestion {
   id: string;
@@ -176,10 +177,10 @@ const InterviewRoom = () => {
   }
 
   const scoreCategories = [
-    { label: "Speech Patterns", score: interview.scores.speech, max: 25 },
-    { label: "Response Timing", score: interview.scores.timing, max: 25 },
-    { label: "Conversational Flow", score: interview.scores.flow, max: 25 },
-    { label: "Linguistic Auth.", score: interview.scores.linguistic, max: 25 },
+    { label: SCORE_LABELS.speech, score: interview.scores.speech, max: 25 },
+    { label: SCORE_LABELS.timing, score: interview.scores.timing, max: 25 },
+    { label: SCORE_LABELS.flow, score: interview.scores.flow, max: 25 },
+    { label: SCORE_LABELS.linguistic, score: interview.scores.linguistic, max: 25 },
   ];
 
   return (

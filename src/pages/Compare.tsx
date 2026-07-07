@@ -9,11 +9,31 @@ import { MiniRadar } from "@/components/dashboard/MiniRadar";
 import { getScoreColor } from "@/components/ScoreGauge";
 import { Progress } from "@/components/ui/progress";
 import { useCompletedReports } from "@/hooks/useReport";
-import { candidateReports, candidateList, type CandidateReport } from "@/data/mockCandidates";
+import { SCORE_LABELS } from "@/lib/scoreLabels";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
+
+interface CandidateReport {
+  id: string;
+  candidate: string;
+  position: string;
+  date: string;
+  duration: string;
+  interviewer: string;
+  overall: number;
+  speech: number;
+  timing: number;
+  flow: number;
+  linguistic: number;
+  engagement: number;
+  confidence: number;
+  flags: { time: string; pattern: string; severity: "low" | "medium" | "high" }[];
+  notes: string;
+  timeline: { min: string; score: number }[];
+  responseDelays: { question: string; delay: number; label: string }[];
+}
 
 const severityDot = (s: string) =>
   s === "high" ? "bg-destructive" : s === "medium" ? "bg-warning" : "bg-muted-foreground";
@@ -93,7 +113,7 @@ const Compare = () => {
       });
       return { reportMap: map, reportList: list };
     }
-    return { reportMap: candidateReports, reportList: candidateList };
+    return { reportMap: {} as Record<string, CandidateReport>, reportList: [] };
   }, [dbReports]);
 
   const ids = Object.keys(reportMap);
@@ -104,10 +124,10 @@ const Compare = () => {
   const right = reportMap[rightId];
 
   const radarData = left && right ? [
-    { subject: "Speech", A: (left.speech / 25) * 100, B: (right.speech / 25) * 100 },
-    { subject: "Timing", A: (left.timing / 25) * 100, B: (right.timing / 25) * 100 },
-    { subject: "Flow", A: (left.flow / 25) * 100, B: (right.flow / 25) * 100 },
-    { subject: "Linguistic", A: (left.linguistic / 25) * 100, B: (right.linguistic / 25) * 100 },
+    { subject: SCORE_LABELS.speech, A: (left.speech / 25) * 100, B: (right.speech / 25) * 100 },
+    { subject: SCORE_LABELS.timing, A: (left.timing / 25) * 100, B: (right.timing / 25) * 100 },
+    { subject: SCORE_LABELS.flow, A: (left.flow / 25) * 100, B: (right.flow / 25) * 100 },
+    { subject: SCORE_LABELS.linguistic, A: (left.linguistic / 25) * 100, B: (right.linguistic / 25) * 100 },
     { subject: "Engage", A: left.engagement, B: right.engagement },
     { subject: "Confid.", A: left.confidence, B: right.confidence },
   ] : [];
@@ -231,10 +251,10 @@ const Compare = () => {
                   </span>
                 </div>
                 <div className="space-y-4">
-                  <DimensionBar label="Speech Patterns" a={left.speech} b={right.speech} max={25} nameA={left.candidate} nameB={right.candidate} />
-                  <DimensionBar label="Response Timing" a={left.timing} b={right.timing} max={25} nameA={left.candidate} nameB={right.candidate} />
-                  <DimensionBar label="Conversational Flow" a={left.flow} b={right.flow} max={25} nameA={left.candidate} nameB={right.candidate} />
-                  <DimensionBar label="Linguistic Auth." a={left.linguistic} b={right.linguistic} max={25} nameA={left.candidate} nameB={right.candidate} />
+                  <DimensionBar label={SCORE_LABELS.speech} a={left.speech} b={right.speech} max={25} nameA={left.candidate} nameB={right.candidate} />
+                  <DimensionBar label={SCORE_LABELS.timing} a={left.timing} b={right.timing} max={25} nameA={left.candidate} nameB={right.candidate} />
+                  <DimensionBar label={SCORE_LABELS.flow} a={left.flow} b={right.flow} max={25} nameA={left.candidate} nameB={right.candidate} />
+                  <DimensionBar label={SCORE_LABELS.linguistic} a={left.linguistic} b={right.linguistic} max={25} nameA={left.candidate} nameB={right.candidate} />
                   <div className="pt-3 border-t border-border space-y-4">
                     <DimensionBar label="Engagement" a={left.engagement} b={right.engagement} max={100} nameA={left.candidate} nameB={right.candidate} />
                     <DimensionBar label="Confidence" a={left.confidence} b={right.confidence} max={100} nameA={left.candidate} nameB={right.candidate} />
