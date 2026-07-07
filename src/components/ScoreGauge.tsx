@@ -1,42 +1,40 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from "react"
+import { getGaugeLabel } from "@/lib/scoreLabels"
 
 interface ScoreGaugeProps {
-  score: number;
-  size?: number;
-  strokeWidth?: number;
-  showLabel?: boolean;
-  animated?: boolean;
+  score: number
+  size?: number
+  strokeWidth?: number
+  showLabel?: boolean
+  animated?: boolean
 }
 
-const getScoreColor = (score: number) => {
-  if (score >= 75) return "text-success";
-  if (score >= 50) return "text-warning";
-  return "text-destructive";
-};
+export const getScoreColor = (score: number) => {
+  if (score >= 75) return "text-success"
+  if (score >= 50) return "text-warning"
+  return "text-destructive"
+}
 
 const getScoreStroke = (score: number) => {
-  if (score >= 75) return "stroke-success";
-  if (score >= 50) return "stroke-warning";
-  return "stroke-destructive";
-};
+  if (score >= 75) return "stroke-success"
+  if (score >= 50) return "stroke-warning"
+  return "stroke-destructive"
+}
 
-const getScoreLabel = (score: number) => {
-  if (score >= 75) return "High Authenticity";
-  if (score >= 50) return "Moderate";
-  return "Low Authenticity";
-};
+// Re-exported for backwards compatibility with Report.tsx and Compare.tsx
+export const getScoreLabel = getGaugeLabel
 
 export const ScoreGauge = ({ score, size = 120, strokeWidth = 8, showLabel = true, animated = true }: ScoreGaugeProps) => {
-  const [displayScore, setDisplayScore] = useState(animated ? 0 : score);
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (displayScore / 100) * circumference;
+  const [displayScore, setDisplayScore] = useState(animated ? 0 : score)
+  const radius = (size - strokeWidth) / 2
+  const circumference = 2 * Math.PI * radius
+  const offset = circumference - (displayScore / 100) * circumference
 
   useEffect(() => {
-    if (!animated) return;
-    const timer = setTimeout(() => setDisplayScore(score), 100);
-    return () => clearTimeout(timer);
-  }, [score, animated]);
+    if (!animated) return
+    const timer = setTimeout(() => setDisplayScore(score), 100)
+    return () => clearTimeout(timer)
+  }, [score, animated])
 
   return (
     <div className="flex flex-col items-center gap-2">
@@ -70,11 +68,9 @@ export const ScoreGauge = ({ score, size = 120, strokeWidth = 8, showLabel = tru
       </div>
       {showLabel && (
         <span className={`text-sm font-medium ${getScoreColor(score)}`}>
-          {getScoreLabel(score)}
+          {getGaugeLabel(score)}
         </span>
       )}
     </div>
-  );
-};
-
-export { getScoreColor, getScoreLabel };
+  )
+}
