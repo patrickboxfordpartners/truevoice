@@ -24,6 +24,7 @@ import Analytics from "./pages/Analytics";
 import CandidateFeedback from "./pages/CandidateFeedback";
 import DemoRequest from "./pages/DemoRequest";
 import NotFound from "./pages/NotFound";
+import PublicReport from "./pages/PublicReport";
 import "@livekit/components-styles";
 
 const queryClient = new QueryClient();
@@ -46,6 +47,7 @@ const App = () => (
               <Route path="/feedback/:token" element={<CandidateFeedback />} />
               <Route path="/demo" element={<DemoRequest />} />
               <Route path="/video-test" element={<VideoTest />} />
+              <Route path="/r/:token" element={<PublicReport />} />
 
               {/* Protected routes */}
               <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
