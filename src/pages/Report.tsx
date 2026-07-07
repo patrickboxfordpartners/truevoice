@@ -2,7 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft, Download, Share2, Calendar, AlertTriangle, Clock,
+  ArrowLeft, Download, Calendar, AlertTriangle, Clock,
   Lightbulb, TrendingUp, BarChart3, Activity, Loader2, Eye, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   BarChart, Bar, CartesianGrid, Cell, ReferenceLine, ReferenceDot,
 } from "recharts";
 import { useReport } from "@/hooks/useReport";
+import { ShareReportButton } from "@/components/ShareReportButton";
 import { getScoreColor } from "@/components/ScoreGauge";
 import { usePanelists } from "@/hooks/usePanelists";
 import { SCORE_LABELS } from "@/lib/scoreLabels";
@@ -200,7 +201,7 @@ const Report = () => {
               >
                 <Download className="h-3.5 w-3.5" />PDF
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5"><Share2 className="h-3.5 w-3.5" />Share</Button>
+              {data?.interview?.id && <ShareReportButton interviewId={data.interview.id} />}
               {interview.candidate_id && (
                 <Link to={`/candidates/${interview.candidate_id}`}>
                   <Button variant="outline" size="sm" className="gap-1.5 w-full">
