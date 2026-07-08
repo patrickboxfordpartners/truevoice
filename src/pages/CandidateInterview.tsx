@@ -314,16 +314,16 @@ const CandidateInterview = () => {
               <h2 className="text-xl font-bold mb-4">Consent to Interview Analysis</h2>
               <div className="bg-muted/30 rounded-lg p-4 mb-6 text-sm space-y-3">
                 <p className="text-muted-foreground">
-                  This interview uses AI-powered authenticity analysis. By proceeding, you acknowledge
-                  that your microphone audio will be transcribed and analyzed by AI during the interview
-                  to evaluate speech patterns, response timing, conversational flow, and linguistic authenticity.
-                  Your webcam feed will also be periodically analyzed to assess visual engagement and attentiveness.
+                  This interview uses TrueVoice HQ, an AI-assisted platform. By proceeding, you acknowledge
+                  that your microphone audio will be transcribed and analyzed in real-time to evaluate
+                  communication patterns including speech, timing, conversational flow, and language.
+                  Your webcam feed will also be periodically analyzed to assess visual engagement.
                 </p>
                 <p className="font-medium text-foreground">What we analyze:</p>
                 <ul className="space-y-1 text-muted-foreground">
                   <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-success" /> Speech patterns and natural flow</li>
                   <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-success" /> Response timing and pauses</li>
-                  <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-success" /> Conversational authenticity markers</li>
+                  <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-success" /> Conversational engagement and flow</li>
                   <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-success" /> Linguistic patterns (spoken vs. scripted language)</li>
                   <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-success" /> Visual engagement (eye contact, attentiveness)</li>
                   <li className="flex items-center gap-2"><Check className="h-3.5 w-3.5 text-success" /> Tab and window focus during the session</li>
@@ -336,7 +336,7 @@ const CandidateInterview = () => {
                   <li className="flex items-center gap-2"><span className="text-destructive">✗</span> Make hiring decisions based solely on the score</li>
                 </ul>
                 <p className="text-xs text-muted-foreground mt-2">
-                  The authenticity score is one factor among many in the evaluation process. It is designed
+                  The intelligence report is one input among many in the evaluation process. It is designed
                   to ensure fairness by applying the same objective criteria to every candidate.
                 </p>
               </div>
@@ -451,7 +451,7 @@ const CandidateInterview = () => {
                 <p>Speak naturally and take your time thinking</p>
                 <p>It's perfectly fine to pause before answering</p>
                 <p>Look at the camera when speaking</p>
-                <p>Your authenticity is your strength</p>
+                <p>Be yourself — speak naturally and in your own words</p>
               </div>
               <div className="mt-4 text-xs text-muted-foreground text-center bg-muted/20 rounded-lg px-4 py-3 flex items-center justify-center gap-2">
                 <Shield className="h-3.5 w-3.5 shrink-0" />
