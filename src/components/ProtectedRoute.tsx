@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, company, loading } = useAuth();
+  const { user, company, profile, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -18,9 +18,14 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Redirect to onboarding if company name hasn't been set yet
-  // (skip if already on onboarding to avoid redirect loop)
-  if (company && !company.name && location.pathname !== "/onboarding") {
+  // Redirect to onboarding if:
+  // - company name not set yet, OR
+  // - user hasn't completed the onboarding wizard
+  const needsOnboarding =
+    (company && !company.name) ||
+    (profile && !profile.has_completed_onboarding);
+
+  if (needsOnboarding && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
 
