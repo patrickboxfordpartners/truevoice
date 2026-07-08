@@ -4,7 +4,7 @@ import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2, Video, Check, ArrowRight, Loader2, Copy, CheckCircle2,
-  Users, Briefcase,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,11 +34,6 @@ export default function Onboarding() {
 
   useEffect(() => { setTheme("light"); }, [setTheme]);
 
-  // If already onboarded, redirect immediately
-  if (profile?.has_completed_onboarding) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   const workspaceAlreadySet = !!(company?.name);
 
   // Start at step 1. Step 2 will be skipped if workspace is set.
@@ -48,6 +43,7 @@ export default function Onboarding() {
   const [companyName, setCompanyName] = useState(company?.name ?? "");
   const [industry, setIndustry] = useState(company?.industry ?? "technology");
   const [savingWorkspace, setSavingWorkspace] = useState(false);
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
 
   // Step 3 state
   const [position, setPosition] = useState("");
@@ -61,6 +57,11 @@ export default function Onboarding() {
   const [copied, setCopied] = useState(false);
   const [firstCandidateName, setFirstCandidateName] = useState("");
 
+  // If already onboarded, redirect immediately
+  if (profile?.has_completed_onboarding) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   const advanceFrom1 = useCallback(() => {
     if (workspaceAlreadySet) {
       setStep(3); // skip step 2
@@ -71,11 +72,14 @@ export default function Onboarding() {
 
   const handleSaveWorkspace = async () => {
     if (!companyName.trim()) return;
+    setWorkspaceError(null);
     setSavingWorkspace(true);
     try {
       await updateCompany.mutateAsync({ name: companyName.trim(), industry });
       await refreshProfile();
       setStep(3);
+    } catch (err) {
+      setWorkspaceError(err instanceof Error ? err.message : "Failed to save. Please try again.");
     } finally {
       setSavingWorkspace(false);
     }
@@ -287,6 +291,9 @@ export default function Onboarding() {
                     <option value="other">Other</option>
                   </select>
                 </div>
+                {workspaceError && (
+                  <p className="text-sm text-destructive">{workspaceError}</p>
+                )}
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
