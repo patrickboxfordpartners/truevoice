@@ -85,10 +85,15 @@ export function useCreateInterview() {
         candidate_id: candidateData?.id ?? null,
       });
     },
-    onSuccess: () => {
+    onSuccess: (interview) => {
       queryClient.invalidateQueries({ queryKey: ["interviews"] });
       queryClient.refetchQueries({ queryKey: ["interviews"] });
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
+
+      // Fire invitation email — non-blocking, silent fail (user can resend from dashboard)
+      supabase.functions.invoke("send-interview-email", {
+        body: { interview_id: interview.id, template_type: "invitation" },
+      }).catch(() => {});
     },
   });
 }
