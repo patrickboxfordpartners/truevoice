@@ -113,6 +113,7 @@ export interface Database {
           email: string;
           role: "owner" | "admin" | "editor" | "viewer";
           avatar_url: string | null;
+          has_completed_onboarding: boolean;
           drip_day3_sent_at: string | null;
           drip_day7_sent_at: string | null;
           created_at: string;
@@ -125,6 +126,7 @@ export interface Database {
           email: string;
           role?: "owner" | "admin" | "editor" | "viewer";
           avatar_url?: string | null;
+          has_completed_onboarding?: boolean;
           drip_day3_sent_at?: string | null;
           drip_day7_sent_at?: string | null;
           created_at?: string;
@@ -136,6 +138,7 @@ export interface Database {
           email?: string;
           role?: "owner" | "admin" | "editor" | "viewer";
           avatar_url?: string | null;
+          has_completed_onboarding?: boolean;
           drip_day3_sent_at?: string | null;
           drip_day7_sent_at?: string | null;
           updated_at?: string;

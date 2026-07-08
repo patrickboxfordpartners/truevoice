@@ -21,6 +21,9 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   // Redirect to onboarding if:
   // - company name not set yet, OR
   // - user hasn't completed the onboarding wizard
+  // Note: if profile is null (fetch failed), needsOnboarding is falsy for both arms
+  // and the user proceeds to the dashboard. Downstream components handle null profile
+  // gracefully. A more robust fix (error page on null profile) is tracked separately.
   const needsOnboarding =
     (company && !company.name) ||
     (profile && !profile.has_completed_onboarding);

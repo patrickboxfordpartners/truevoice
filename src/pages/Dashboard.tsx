@@ -460,7 +460,7 @@ const Dashboard = () => {
                 <Button
                   size="sm"
                   className="shrink-0 gap-1.5"
-                  onClick={() => navigate(`/room/${scheduledInterviews[0].id}`)}
+                  onClick={() => navigate(`/interviewer/${scheduledInterviews[0].id}`)}
                 >
                   Open Interview Room
                   <ArrowRight className="h-3.5 w-3.5" />

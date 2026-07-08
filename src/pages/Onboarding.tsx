@@ -56,6 +56,7 @@ export default function Onboarding() {
   const [candidateLink, setCandidateLink] = useState("");
   const [copied, setCopied] = useState(false);
   const [firstCandidateName, setFirstCandidateName] = useState("");
+  const [finishError, setFinishError] = useState<string | null>(null);
 
   // If already onboarded, redirect immediately
   if (profile?.has_completed_onboarding) {
@@ -120,10 +121,15 @@ export default function Onboarding() {
 
   const handleFinish = async () => {
     if (profile?.id) {
-      await supabase
+      const { error } = await supabase
         .from("profiles")
         .update({ has_completed_onboarding: true })
         .eq("id", profile.id);
+      if (error) {
+        setFinishError("Something went wrong. Please try again.");
+        return;
+      }
+      await refreshProfile();
     }
     navigate("/dashboard");
   };
@@ -142,7 +148,7 @@ export default function Onboarding() {
         <div className="flex items-center gap-3 mb-12">
           {STEP_META.map((s, i) => {
             const Icon = s.icon;
-            const isComplete = step > s.id || (s.id === 2 && isStep2Skipped && step >= 3);
+            const isComplete = step > s.id || (s.id === 2 && isStep2Skipped);
             const isActive = step === s.id;
             return (
               <div key={s.id} className="flex items-center gap-3">
@@ -177,7 +183,7 @@ export default function Onboarding() {
                 {i < STEP_META.length - 1 && (
                   <div
                     className={`w-12 sm:w-16 h-px mb-5 transition-colors duration-500 ${
-                      step > s.id || (s.id === 2 && isStep2Skipped && step >= 3)
+                      step > s.id || (s.id === 2 && isStep2Skipped)
                         ? "bg-accent"
                         : "bg-border"
                     }`}
@@ -457,6 +463,9 @@ export default function Onboarding() {
                 </div>
               </div>
 
+              {finishError && (
+                <p className="text-sm text-destructive mb-4">{finishError}</p>
+              )}
               <Button
                 className="w-full h-12 bg-foreground text-background hover:bg-accent transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated"
                 size="lg"
