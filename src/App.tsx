@@ -23,6 +23,8 @@ import CandidateProfile from "./pages/CandidateProfile";
 import Analytics from "./pages/Analytics";
 import CandidateFeedback from "./pages/CandidateFeedback";
 import DemoRequest from "./pages/DemoRequest";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import PublicReport from "./pages/PublicReport";
 import "@livekit/components-styles";
@@ -48,6 +50,8 @@ const App = () => (
               <Route path="/demo" element={<DemoRequest />} />
               <Route path="/video-test" element={<VideoTest />} />
               <Route path="/r/:token" element={<PublicReport />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
 
               {/* Protected routes */}
               <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
