@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Download, Calendar, AlertTriangle, Clock,
-  Lightbulb, TrendingUp, BarChart3, Activity, Loader2, Eye, Users, FileText,
+  Lightbulb, TrendingUp, BarChart3, Activity, Loader2, Eye, Users, FileText, Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScoreGauge } from "@/components/ScoreGauge";
@@ -338,18 +338,30 @@ const Report = () => {
             </h2>
             {flags.length > 0 ? (
               <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
-                {flags.map((flag) => (
-                  <div
-                    key={flag.id}
-                    className={`flex items-start gap-3 p-3 rounded-lg border ${severityBg(flag.severity)} transition-colors`}
-                  >
-                    <span className={`h-2 w-2 rounded-full flex-shrink-0 mt-1.5 ${severityIcon(flag.severity)}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm leading-relaxed">{flag.pattern}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{flag.time}</p>
+                {flags.map((flag) => {
+                  const isPhrase = (flag as any).flag_type === "phrase";
+                  return (
+                    <div
+                      key={flag.id}
+                      className={`flex items-start gap-3 p-3 rounded-lg border ${severityBg(flag.severity)} transition-colors`}
+                    >
+                      {isPhrase ? (
+                        <Tag className="h-3.5 w-3.5 text-warning flex-shrink-0 mt-1" strokeWidth={2} />
+                      ) : (
+                        <span className={`h-2 w-2 rounded-full flex-shrink-0 mt-1.5 ${severityIcon(flag.severity)}`} />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm leading-relaxed">{flag.pattern}</p>
+                          {isPhrase && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wide text-warning bg-warning/10 px-1.5 py-0.5 rounded shrink-0">phrase</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">{flag.time}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">No significant patterns detected.</p>

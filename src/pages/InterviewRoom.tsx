@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Shield, Mic, MicOff, Settings2, AlertTriangle, Clock,
   ChevronLeft, MessageSquare, StopCircle, Monitor, Radio,
-  ListChecks, ChevronDown, ChevronUp, Users,
+  ListChecks, ChevronDown, ChevronUp, Users, Tag, Flag,
 } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -67,7 +68,67 @@ const InterviewRoom = () => {
   const notesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scoreDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const interview = useLiveInterview(id || "");
+  const { profile, company } = useAuth();
+  const interview = useLiveInterview(id || "", company?.id);
+
+  // Phrase flagging state
+  const [phrasePopover, setPhrasePopover] = useState<{
+    text: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const [savingPhrase, setSavingPhrase] = useState(false);
+  const transcriptRef = useRef<HTMLDivElement>(null);
+
+  const handleTranscriptMouseUp = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) {
+      setPhrasePopover(null);
+      return;
+    }
+    const selected = selection.toString().trim();
+    if (selected.length < 2 || selected.length > 120) {
+      setPhrasePopover(null);
+      return;
+    }
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const containerRect = transcriptRef.current?.getBoundingClientRect();
+    if (!containerRect) return;
+    setPhrasePopover({
+      text: selected,
+      x: rect.left - containerRect.left + rect.width / 2,
+      y: rect.top - containerRect.top - 8,
+    });
+  }, []);
+
+  const handleFlagPhrase = useCallback(async () => {
+    if (!phrasePopover || !company?.id || !id) return;
+    setSavingPhrase(true);
+    try {
+      const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+      // Save to flagged_phrases memory for future interviews
+      await supabase.from("flagged_phrases").upsert({
+        company_id: company.id,
+        phrase: phrasePopover.text.toLowerCase(),
+        reason: "Manually flagged during interview",
+        flagged_by: profile?.id ?? null,
+        interview_id: id,
+      }, { onConflict: "company_id,phrase" });
+      // Also flag immediately on this interview
+      await supabase.from("interview_flags").insert({
+        interview_id: id,
+        time: formatTime(interview.elapsedSeconds),
+        pattern: `Flagged phrase: "${phrasePopover.text}"`,
+        severity: "medium",
+        flag_type: "phrase",
+      });
+      window.getSelection()?.removeAllRanges();
+      setPhrasePopover(null);
+    } finally {
+      setSavingPhrase(false);
+    }
+  }, [phrasePopover, company?.id, id, profile?.id, interview.elapsedSeconds]);
 
   const { data: panelists = [] } = usePanelists(id);
   const joinAsPanel = useJoinAsPanel(id);
@@ -306,12 +367,15 @@ const InterviewRoom = () => {
               </div>
 
               {/* Transcript panel */}
-              <div className="flex-1 glass-card rounded-xl p-6 overflow-y-auto">
-                <div className="flex items-center gap-2 mb-4">
-                  <MessageSquare className="h-4 w-4 text-muted-foreground" />
-                  <h3 className="text-sm font-semibold">Live Transcript</h3>
+              <div ref={transcriptRef} className="flex-1 glass-card rounded-xl p-6 overflow-y-auto relative" onMouseUp={handleTranscriptMouseUp}>
+                <div className="flex items-center justify-between gap-2 mb-4">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-muted-foreground" />
+                    <h3 className="text-sm font-semibold">Live Transcript</h3>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground select-none">Select text to flag a phrase</span>
                 </div>
-                <div className="space-y-2 text-sm leading-relaxed">
+                <div className="space-y-2 text-sm leading-relaxed select-text">
                   {interview.transcript ? (
                     <p>{interview.transcript}</p>
                   ) : (
@@ -323,6 +387,38 @@ const InterviewRoom = () => {
                     <p className="text-muted-foreground/60 italic">{interview.interimText}</p>
                   )}
                 </div>
+
+                {/* Phrase flag popover */}
+                <AnimatePresence>
+                  {phrasePopover && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                      transition={{ duration: 0.12 }}
+                      className="absolute z-20 -translate-x-1/2 -translate-y-full pointer-events-auto"
+                      style={{ left: phrasePopover.x, top: phrasePopover.y }}
+                    >
+                      <div className="bg-card border border-border rounded-lg shadow-lg px-3 py-2 flex items-center gap-2 text-xs whitespace-nowrap">
+                        <Flag className="h-3 w-3 text-warning shrink-0" />
+                        <span className="text-foreground font-medium max-w-[180px] truncate">"{phrasePopover.text}"</span>
+                        <button
+                          onClick={handleFlagPhrase}
+                          disabled={savingPhrase}
+                          className="ml-1 px-2 py-0.5 rounded bg-warning/10 text-warning font-semibold hover:bg-warning/20 transition-colors disabled:opacity-50"
+                        >
+                          {savingPhrase ? "Saving…" : "Flag"}
+                        </button>
+                        <button
+                          onClick={() => { window.getSelection()?.removeAllRanges(); setPhrasePopover(null); }}
+                          className="text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </>
           )}
@@ -377,22 +473,28 @@ const InterviewRoom = () => {
                 <p className="text-xs text-muted-foreground">No flags detected yet</p>
               ) : (
                 <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
-                  {interview.flags.map((flag, i) => (
-                    <motion.div
-                      key={flag.id || i}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className={`text-xs p-2.5 rounded-lg border ${severityBg(flag.severity)}`}
-                    >
-                      <div className="flex items-start gap-2">
-                        <span className={`h-2 w-2 rounded-full flex-shrink-0 mt-1 ${severityDot(flag.severity)}`} />
-                        <div className="min-w-0">
-                          <p className="leading-relaxed">{flag.pattern}</p>
-                          <p className="text-muted-foreground mt-0.5 font-mono">{flag.time}</p>
+                  {interview.flags.map((flag, i) => {
+                    const isPhrase = (flag as any).flag_type === "phrase";
+                    return (
+                      <motion.div
+                        key={flag.id || i}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className={`text-xs p-2.5 rounded-lg border ${severityBg(flag.severity)}`}
+                      >
+                        <div className="flex items-start gap-2">
+                          {isPhrase
+                            ? <Tag className="h-3 w-3 text-warning flex-shrink-0 mt-0.5" />
+                            : <span className={`h-2 w-2 rounded-full flex-shrink-0 mt-1 ${severityDot(flag.severity)}`} />
+                          }
+                          <div className="min-w-0">
+                            <p className="leading-relaxed">{flag.pattern}</p>
+                            <p className="text-muted-foreground mt-0.5 font-mono">{flag.time}</p>
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </div>

@@ -40,7 +40,7 @@ interface UseLiveInterviewReturn {
   triggerAnalysis: () => Promise<void>;
 }
 
-export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
+export function useLiveInterview(interviewId: string, companyId?: string): UseLiveInterviewReturn {
   const [isActive, setIsActive] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [scores, setScores] = useState<LiveScores>({ speech: 0, timing: 0, flow: 0, linguistic: 0 });
@@ -206,6 +206,7 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
           elapsed_seconds: elapsedSeconds,
           previous_scores: currentScores,
           response_delays: pendingDelays.length > 0 ? pendingDelays : undefined,
+          company_id: companyId,
         },
       });
 

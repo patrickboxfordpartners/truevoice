@@ -33,7 +33,7 @@ serve(async (req) => {
   }
 
   try {
-    const { interview_id, chunk_text, chunk_index, elapsed_seconds, previous_scores, response_delays } =
+    const { interview_id, chunk_text, chunk_index, elapsed_seconds, previous_scores, response_delays, company_id } =
       await req.json();
 
     const xaiKey = Deno.env.get("XAI_API_KEY");
@@ -43,6 +43,25 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Load company-specific flagged phrases for prompt injection
+    let companyPhrases: string[] = [];
+    if (company_id) {
+      const { data: phrases } = await supabase
+        .from("flagged_phrases")
+        .select("phrase")
+        .eq("company_id", company_id)
+        .limit(50);
+      companyPhrases = (phrases ?? []).map((p: { phrase: string }) => p.phrase);
+    }
+
+    const companyPhrasesSection = companyPhrases.length > 0
+      ? `\n\nThis company has also flagged these specific phrases as red flags from past interviews — flag them if they appear (severity: medium): ${companyPhrases.map((p) => `"${p}"`).join(", ")}`
+      : "";
 
     // Use grok-3-fast — non-reasoning model, reliable JSON output, lower latency
     const grokResponse = await fetch("https://api.x.ai/v1/chat/completions", {
@@ -63,10 +82,18 @@ serve(async (req) => {
 - flow: Conversational engagement (clarifying questions, back-and-forth) vs monologue delivery. Score 20-25 for engaged, 10-19 for mixed, 0-9 for pure monologue.
 - linguistic: Spoken language patterns (contractions, informal grammar, spoken fillers) vs written/formal language. Score 20-25 for natural spoken language, 10-19 for mixed, 0-9 for formal/written.
 
-Also detect any behavioral flags with severity (low/medium/high). Only flag real patterns, not normal speech.
+Also detect behavioral flags AND coached/AI-generated language flags. For phrases:
+- Flag overly structured openers: "Firstly... secondly... in conclusion", "That's a great question"
+- Flag AI tell phrases: "Certainly", "Absolutely", "I'd be happy to", "Great question"
+- Flag rehearsed corporate language used unnaturally: "synergize", "leverage", "holistic approach", "going forward"
+- Flag suspiciously precise statistics without citation: "studies show X%", "research indicates"
+- Flag unusually polished transitions that feel rehearsed
+Use flag type "phrase" and severity "medium" for language flags. Include the exact flagged phrase in the pattern field.${companyPhrasesSection}
+
+Only flag real patterns. Do not flag normal professional language.
 
 You MUST return ONLY valid JSON with no explanation, no markdown, no code fences:
-{"speech":20,"timing":18,"flow":15,"linguistic":22,"flags":[{"pattern":"description","severity":"low"}]}`,
+{"speech":20,"timing":18,"flow":15,"linguistic":22,"flags":[{"pattern":"description","severity":"low","flag_type":"behavior"}]}`,
           },
           {
             role: "user",
@@ -172,6 +199,7 @@ You MUST return ONLY valid JSON with no explanation, no markdown, no code fences
           time: timeStr,
           pattern: f.pattern,
           severity: f.severity || "low",
+          flag_type: (f as any).flag_type || "behavior",
         }))
       );
     }
