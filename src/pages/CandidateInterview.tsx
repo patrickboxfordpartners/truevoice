@@ -404,7 +404,7 @@ const CandidateInterview = () => {
               <p className="text-sm text-muted-foreground mb-6">A few quick tips to help you put your best foot forward:</p>
               <div className="space-y-4 mb-8">
                 {[
-                  { icon: "🎯", title: "Be yourself", desc: "Speak naturally and in your own words. Authenticity is what we're looking for." },
+                  { icon: "🎯", title: "Be yourself", desc: "Speak naturally and in your own words. Genuine responses are always the best." },
                   { icon: "⏸️", title: "Take your time", desc: "It's perfectly fine to pause and think before answering. Thoughtful responses are valued." },
                   { icon: "📷", title: "Look at the camera", desc: "Make eye contact by looking at the camera lens when speaking, not the screen." },
                   { icon: "🤔", title: "Ask questions", desc: "Don't hesitate to ask for clarification. It shows engagement and genuine interest." },
