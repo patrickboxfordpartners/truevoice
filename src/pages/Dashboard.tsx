@@ -5,7 +5,7 @@ import {
   Plus, Search, Shield, LogOut, Moon, Sun, ArrowUp, ArrowDown,
   ArrowUpDown, Filter, X, ChevronLeft, ChevronRight, Download,
   Mail, Table2, CalendarDays, Loader2, LayoutGrid, Settings, CheckCircle2, Users,
-  Upload, Lock, BarChart3,
+  Upload, Lock, BarChart3, Radio, ArrowRight,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useToast } from "@/hooks/use-toast";
@@ -149,6 +149,18 @@ const Dashboard = () => {
 
     return items;
   }, [interviews, search, positionFilter, reportLookup]);
+
+  const completedInterviews = useMemo(
+    () => (interviews ?? []).filter((i) => i.status === "completed"),
+    [interviews]
+  );
+
+  const scheduledInterviews = useMemo(
+    () => (interviews ?? []).filter(
+      (i) => i.status === "scheduled" || i.status === "in_progress"
+    ),
+    [interviews]
+  );
 
   // Table view logic (existing)
   const displayInterviews = useMemo(() => {
@@ -422,6 +434,64 @@ const Dashboard = () => {
             </Button>
           </div>
         </motion.div>
+
+        {/* First-run guidance — shown when no completed interviews yet */}
+        {!isLoading && !reportsLoading && completedInterviews.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6"
+          >
+            {scheduledInterviews.length > 0 ? (
+              /* Has a scheduled interview — guide them to run it */
+              <div className="glass-card rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Radio className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-sm text-foreground">
+                    Your first interview is ready.
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                    Share the candidate link and open the interview room when you're on the call.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  className="shrink-0 gap-1.5"
+                  onClick={() => navigate(`/room/${scheduledInterviews[0].id}`)}
+                >
+                  Open Interview Room
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ) : (
+              /* No interviews at all — prompt to create one */
+              <div className="glass-card rounded-xl p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <Plus className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold text-sm text-foreground">
+                    Create your first interview.
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                    Invite a candidate or colleague to experience TrueVoice's real-time analysis.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  className="shrink-0 gap-1.5"
+                  onClick={() => setShowCreate(true)}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  New Interview
+                </Button>
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* Main Content */}
         {isLoading || reportsLoading ? (
