@@ -6,7 +6,7 @@ export async function getFullReport(interviewId: string): Promise<FullReport> {
     await Promise.all([
       supabase
         .from("interviews")
-        .select("*")
+        .select("*, interviewer_notes")
         .eq("id", interviewId)
         .single(),
       supabase

@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   ArrowLeft, Download, Calendar, AlertTriangle, Clock,
-  Lightbulb, TrendingUp, BarChart3, Activity, Loader2, Eye, Users,
+  Lightbulb, TrendingUp, BarChart3, Activity, Loader2, Eye, Users, FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScoreGauge } from "@/components/ScoreGauge";
@@ -485,6 +485,17 @@ const Report = () => {
             )}
           </div>
         </motion.div>
+
+        {/* Interviewer Notes */}
+        {interview.interviewer_notes && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.38 }} className="glass-card rounded-xl p-6 mb-8">
+            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <FileText className="h-5 w-5 text-muted-foreground" />
+              Interviewer Notes
+            </h2>
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{interview.interviewer_notes}</p>
+          </motion.div>
+        )}
 
         {/* Panel Notes */}
         {panelists.length > 0 && panelists.some((p) => p.notes) && (

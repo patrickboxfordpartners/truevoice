@@ -46,10 +46,37 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
   const [scores, setScores] = useState<LiveScores>({ speech: 0, timing: 0, flow: 0, linguistic: 0 });
   const [flags, setFlags] = useState<InterviewFlag[]>([]);
   const [timeline, setTimeline] = useState<InterviewTimeline[]>([]);
-  const [notes, setNotes] = useState("");
+  const [notes, setNotesState] = useState("");
   const [audioError, setAudioError] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const egressIdRef = useRef<string | null>(null);
+  const notesDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Load saved interviewer notes on mount
+  useEffect(() => {
+    if (!interviewId) return;
+    supabase
+      .from("interviews")
+      .select("interviewer_notes")
+      .eq("id", interviewId)
+      .single()
+      .then(({ data }) => {
+        if (data?.interviewer_notes) setNotesState(data.interviewer_notes);
+      });
+  }, [interviewId]);
+
+  // Debounced live save of interviewer notes (1.5s)
+  const setNotes = useCallback((value: string) => {
+    setNotesState(value);
+    if (notesDebounceRef.current) clearTimeout(notesDebounceRef.current);
+    notesDebounceRef.current = setTimeout(() => {
+      supabase
+        .from("interviews")
+        .update({ interviewer_notes: value || null })
+        .eq("id", interviewId)
+        .then(() => {});
+    }, 1500);
+  }, [interviewId]);
 
   const deepgram = useDeepgramTranscription();
 
@@ -270,7 +297,6 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
       .update({
         status: "completed",
         transcript: fullTranscript,
-        notes: notes || null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", interviewId);
@@ -282,7 +308,7 @@ export function useLiveInterview(interviewId: string): UseLiveInterviewReturn {
     } catch {
       // Edge function not deployed yet, report generation skipped
     }
-  }, [deepgram, interviewId, notes, sendChunkForAnalysis]);
+  }, [deepgram, interviewId, sendChunkForAnalysis]);
 
   return {
     isActive,
