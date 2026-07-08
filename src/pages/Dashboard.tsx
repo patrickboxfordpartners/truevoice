@@ -28,6 +28,7 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useCompletedReports } from "@/hooks/useReport";
 import { useCandidates } from "@/hooks/useCandidates";
 import type { Interview } from "@/types";
+import { supabase } from "@/lib/supabase";
 
 const DarkModeToggle = () => {
   const { theme, setTheme } = useTheme();
@@ -557,6 +558,18 @@ const Dashboard = () => {
                       position={interview.position}
                       date={dateStr}
                       index={i}
+                      onResendInvitation={() => {
+                        supabase.functions.invoke("send-interview-email", {
+                          body: { interview_id: interview.id, template_type: "invitation" },
+                        }).then(() => {
+                          toast({
+                            title: "Invitation resent",
+                            description: `Sent to ${interview.candidate_email}`,
+                          });
+                        }).catch(() => {
+                          toast({ title: "Failed to resend invitation", variant: "destructive" });
+                        });
+                      }}
                     />
                   );
                 }
