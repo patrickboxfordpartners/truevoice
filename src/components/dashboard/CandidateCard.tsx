@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { AlertTriangle, ArrowRight, Clock, Radio } from "lucide-react";
+import { AlertTriangle, ArrowRight, Clock, Radio, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { MiniRadar } from "./MiniRadar";
 import { getScoreColor } from "@/components/ScoreGauge";
@@ -29,6 +29,7 @@ interface ScheduledCardProps {
   position: string;
   date: string;
   index?: number;
+  onResendInvitation?: () => void;
 }
 
 type CandidateCardProps = CompletedCardProps | ScheduledCardProps;
@@ -102,6 +103,7 @@ export const CandidateCard = (props: CandidateCardProps) => {
 
   // Scheduled / In Progress variant
   const isLive = props.type === "in_progress";
+  const { onResendInvitation } = props;
 
   return (
     <motion.div
@@ -130,12 +132,22 @@ export const CandidateCard = (props: CandidateCardProps) => {
 
       <p className="text-sm text-muted-foreground">{date}</p>
 
-      <Link to={`/room/${id}`} className="mt-auto">
+      <Link to={`/interviewer/${id}`} className="mt-auto">
         <Button size="sm" variant={isLive ? "default" : "outline"} className="w-full gap-1.5">
           {isLive ? "Join Interview" : "Start Interview"}
           <ArrowRight className="h-3.5 w-3.5" />
         </Button>
       </Link>
+
+      {onResendInvitation && (
+        <button
+          onClick={(e) => { e.preventDefault(); onResendInvitation(); }}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Mail className="h-3 w-3" />
+          Resend invitation
+        </button>
+      )}
     </motion.div>
   );
 };
