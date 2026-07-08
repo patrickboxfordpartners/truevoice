@@ -268,34 +268,34 @@ const CandidateInterview = () => {
               <div className="text-left bg-muted/30 rounded-lg p-4 mb-6 space-y-3">
                 <p className="text-sm font-medium text-foreground">What to expect:</p>
                 <p className="text-sm text-muted-foreground">
-                  This interview uses AI-powered analysis to evaluate response authenticity.
-                  Your speech patterns, response timing, conversational flow, and visual behavior
-                  will be analyzed in real-time to produce an authenticity score shared with {companyName}.
+                  This interview uses TrueVoice HQ, an AI-assisted platform that analyzes
+                  communication patterns in real-time. A structured intelligence report is
+                  shared with {companyName} after the interview. The same process applies to every candidate.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground mt-2">
                   <div className="flex items-start gap-2">
                     <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                       <Eye className="h-3 w-3 text-primary" />
                     </div>
-                    <span>AI analyzes speech patterns in real-time</span>
+                    <span>Join from any browser — no app required</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                       <Volume2 className="h-3 w-3 text-primary" />
                     </div>
-                    <span>Authenticity score shared with interviewer</span>
+                    <span>Intelligence report shared with {companyName} after the interview</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                       <Shield className="h-3 w-3 text-primary" />
                     </div>
-                    <span>No audio recordings are stored</span>
+                    <span>Audio is analyzed live — no recording is stored</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <div className="h-6 w-6 rounded-md bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                       <Check className="h-3 w-3 text-primary" />
                     </div>
-                    <span>Same process applied to all candidates</span>
+                    <span>The same process applies to every candidate</span>
                   </div>
                 </div>
               </div>
@@ -347,7 +347,7 @@ const CandidateInterview = () => {
                 </label>
                 <label className="flex items-start gap-3 cursor-pointer">
                   <Checkbox checked={consent2} onCheckedChange={(v) => setConsent2(v === true)} className="mt-0.5" />
-                  <span className="text-sm">I understand that an authenticity score and analysis summary will be shared with {companyName}</span>
+                  <span className="text-sm">I understand that an AI-assisted intelligence report will be shared with {companyName}</span>
                 </label>
               </div>
               <Button className="w-full" disabled={!consent1 || !consent2} onClick={handleConsent}>
