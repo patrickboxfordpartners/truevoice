@@ -361,10 +361,10 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
                 </div>
                 <p className="text-xs text-muted-foreground mt-3">Share this link with the candidate. It expires in 7 days.</p>
               </div>
-              <Button variant="outline" className="w-full gap-2">
-                <Mail className="h-4 w-4" />
-                Email Invitation
-              </Button>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground justify-center py-1">
+                <Mail className="h-3.5 w-3.5" />
+                Invitation email sent automatically
+              </div>
               <Button className="w-full" onClick={handleClose}>Done</Button>
             </div>
           </>

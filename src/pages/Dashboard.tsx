@@ -561,11 +561,15 @@ const Dashboard = () => {
                       onResendInvitation={() => {
                         supabase.functions.invoke("send-interview-email", {
                           body: { interview_id: interview.id, template_type: "invitation" },
-                        }).then(() => {
-                          toast({
-                            title: "Invitation resent",
-                            description: `Sent to ${interview.candidate_email}`,
-                          });
+                        }).then(({ error }) => {
+                          if (error) {
+                            toast({ title: "Failed to resend invitation", variant: "destructive" });
+                          } else {
+                            toast({
+                              title: "Invitation resent",
+                              description: `Sent to ${interview.candidate_email}`,
+                            });
+                          }
                         }).catch(() => {
                           toast({ title: "Failed to resend invitation", variant: "destructive" });
                         });

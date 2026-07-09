@@ -6,8 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Upload, AlertCircle, CheckCircle2, Loader2, ChevronRight, ArrowLeft } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useCreateInterview } from "@/hooks/useInterviews";
-import { supabase } from "@/lib/supabase";
-import { getSiteUrl } from "@/lib/config";
 
 interface ParsedRow {
   name: string;
@@ -126,13 +124,6 @@ export function BulkImportDialog({ open, onOpenChange }: BulkImportDialogProps) 
             }
           );
         });
-
-        // Fire-and-forget invitation email
-        supabase.functions
-          .invoke("send-interview-email", {
-            body: { interview_id: interview.id, template_type: "invitation" },
-          })
-          .catch((err) => console.warn("[bulk-import] email failed for", interview.id, err));
 
         created++;
       } catch (err: any) {

@@ -54,11 +54,20 @@ const INVITATION_HTML = `<!DOCTYPE html>
 
 const INVITATION_SUBJECT = "You're invited to interview with {{company_name}} — {{position}}";
 
-function substitute(template: string, vars: Record<string, string>): string {
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+}
+
+function substitute(template: string, vars: Record<string, string>, html = false): string {
   return Object.entries(vars).reduce(
-    (t, [k, v]) => t.replaceAll(`{{${k}}}`, v),
+    (t, [k, v]) => t.replaceAll(`{{${k}}}`, html ? escapeHtml(v) : v),
     template
-  );
+  )
 }
 
 serve(async (req) => {
@@ -98,6 +107,13 @@ serve(async (req) => {
     const siteUrl = Deno.env.get("SITE_URL") || "https://truevoicehq.com";
     const interviewLink = `${siteUrl}/interview/${interview.candidate_token}`;
 
+    if (!interview.candidate_email) {
+      return new Response(JSON.stringify({ error: "Interview has no candidate email" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      })
+    }
+
     const vars: Record<string, string> = {
       company_name: companyName,
       candidate_name: interview.candidate_name || "there",
@@ -112,13 +128,13 @@ serve(async (req) => {
     if (template_type === "invitation") {
       // Hardcoded invitation template — no DB lookup needed
       subject = substitute(INVITATION_SUBJECT, vars);
-      htmlBody = substitute(INVITATION_HTML, vars);
+      htmlBody = substitute(INVITATION_HTML, vars, true);
     } else {
       // Other template types: look up from DB or use custom
       subject = custom_subject || "";
       htmlBody = custom_body || "";
 
-      if (!subject && !htmlBody && template_type) {
+      if ((!subject || !htmlBody) && template_type) {
         const { data: template } = await supabase
           .from("email_templates")
           .select("subject, body")
@@ -128,7 +144,7 @@ serve(async (req) => {
 
         if (template) {
           subject = substitute(template.subject, vars);
-          htmlBody = substitute(template.body, vars);
+          htmlBody = substitute(template.body, vars, true);
         }
       }
     }

@@ -93,7 +93,9 @@ export function useCreateInterview() {
       // Fire invitation email — non-blocking, silent fail (user can resend from dashboard)
       supabase.functions.invoke("send-interview-email", {
         body: { interview_id: interview.id, template_type: "invitation" },
-      }).catch(() => {});
+      }).then(({ error }) => {
+        if (error) console.warn("[useCreateInterview] invitation email failed:", error.message);
+      }).catch(() => {}); // network-level fail only — HTTP errors handled above
     },
   });
 }

@@ -451,7 +451,7 @@ const CandidateInterview = () => {
                 <p>Speak naturally and take your time thinking</p>
                 <p>It's perfectly fine to pause before answering</p>
                 <p>Look at the camera when speaking</p>
-                <p>Be yourself — speak naturally and in your own words</p>
+                <p>Speak naturally — genuine responses make the best impression</p>
               </div>
               <div className="mt-4 text-xs text-muted-foreground text-center bg-muted/20 rounded-lg px-4 py-3 flex items-center justify-center gap-2">
                 <Shield className="h-3.5 w-3.5 shrink-0" />
