@@ -1,5 +1,5 @@
-import { motion, useReducedMotion } from "framer-motion";
-import { BarChart3, ArrowLeftRight, Shield } from "lucide-react";
+import { motion } from "framer-motion";
+import { BarChart3, ArrowLeftRight, Shield, CheckCircle2 } from "lucide-react";
 import ScrollReveal from "@/components/ScrollReveal";
 
 const ease = [0.16, 1, 0.3, 1];
@@ -7,7 +7,8 @@ const ease = [0.16, 1, 0.3, 1];
 interface FeatureBlock {
   label: string;
   headline: string;
-  points: string[];
+  description: string;
+  bullets: string[];
   icon: React.ElementType;
 }
 
@@ -15,64 +16,63 @@ const blocks: FeatureBlock[] = [
   {
     label: "Scoring",
     headline: "Structured data, every time",
+    description: "Every interview scored across the same four dimensions — so you're comparing apples to apples, not gut feelings to gut feelings.",
     icon: BarChart3,
-    points: [
-      "Every interview scored across four dimensions — communication quality, thinking & engagement, interview presence, and response authenticity. Same framework, every candidate.",
+    bullets: [
+      "Communication quality",
+      "Thinking & engagement",
+      "Interview presence",
+      "Response authenticity",
     ],
   },
   {
     label: "Comparison",
     headline: "Compare candidates side by side",
+    description: "Radar charts and score timelines make it immediately clear who performed strongest across every dimension.",
     icon: ArrowLeftRight,
-    points: [
-      "See who was most engaged, most consistent, most present. Radar charts and score timelines make the comparison visual and defensible.",
+    bullets: [
+      "Visual radar chart per candidate",
+      "Score timeline across the call",
+      "Dimension-by-dimension breakdown",
+      "Instant side-by-side view",
     ],
   },
   {
     label: "Reporting",
     headline: "Defend every decision",
+    description: "Every hire backed by objective, timestamped data. Full report available to your whole team the moment the call ends.",
     icon: Shield,
-    points: [
-      "Every hire backed by objective, timestamped data. Full report available to your whole hiring team the moment the call ends.",
+    bullets: [
+      "Timestamped scoring record",
+      "Shareable team report",
+      "Available instantly post-call",
+      "Audit-ready documentation",
     ],
   },
 ];
 
 const FeatureVisual = ({ block, index }: { block: FeatureBlock; index: number }) => {
   const Icon = block.icon;
-  const prefersReducedMotion = useReducedMotion();
 
   return (
     <motion.div
-      className="w-full max-w-sm mx-auto bg-card border border-border rounded-xl p-8 shadow-soft transition-shadow duration-300 hover:shadow-elevated"
-      whileHover={prefersReducedMotion ? {} : { y: -4, transition: { duration: 0.2 } }}
+      className="w-full max-w-sm mx-auto bg-background border border-border rounded-xl p-8 shadow-soft"
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay: index * 0.1, ease }}
     >
-      <motion.div
-        className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center mb-6"
-        whileHover={prefersReducedMotion ? {} : { scale: 1.1, rotate: -5, transition: { duration: 0.2 } }}
-      >
-        <Icon size={24} className="text-accent" />
-      </motion.div>
-      <div className="space-y-3">
-        {block.points.map((point, i) => (
-          <motion.div
-            key={i}
-            className="flex items-start gap-3"
-            initial={prefersReducedMotion ? undefined : { opacity: 0, x: 10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 * i + index * 0.15, ease }}
-          >
-            <motion.div
-              className="w-1.5 h-1.5 rounded-full bg-accent/40 mt-2 shrink-0"
-              whileInView={prefersReducedMotion ? {} : { scale: [0, 1.3, 1] }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: 0.1 * i + index * 0.15 + 0.2 }}
-            />
-            <p className="text-sm text-muted-foreground leading-relaxed">{point}</p>
-          </motion.div>
-        ))}
+      <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center mb-6">
+        <Icon size={22} className="text-accent" />
       </div>
+      <ul className="space-y-3">
+        {block.bullets.map((bullet, i) => (
+          <li key={i} className="flex items-center gap-3 text-sm text-muted-foreground">
+            <CheckCircle2 size={15} className="text-accent shrink-0" />
+            {bullet}
+          </li>
+        ))}
+      </ul>
     </motion.div>
   );
 };
@@ -100,16 +100,12 @@ const Features = () => (
                   <p className="text-xs font-semibold tracking-widest text-accent uppercase mb-3">
                     {block.label}
                   </p>
-                  <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-6">
+                  <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-4">
                     {block.headline}
                   </h3>
-                  <div className="space-y-4">
-                    {block.points.map((point, j) => (
-                      <p key={j} className="text-muted-foreground leading-relaxed max-w-lg mx-auto lg:mx-0">
-                        {point}
-                      </p>
-                    ))}
-                  </div>
+                  <p className="text-muted-foreground leading-relaxed max-w-lg mx-auto lg:mx-0">
+                    {block.description}
+                  </p>
                 </ScrollReveal>
               </div>
               <div className={flipped ? "lg:order-1" : ""}>

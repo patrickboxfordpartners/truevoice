@@ -110,7 +110,7 @@ const Hero = () => {
         }
 
   return (
-    <section className="relative min-h-[90vh] flex items-center overflow-hidden pt-32 pb-20">
+    <section className="relative lg:min-h-[90vh] flex items-center overflow-hidden pt-24 pb-16 sm:pt-32 sm:pb-20">
       <div className="max-w-6xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         <div className="text-center lg:text-left">
           <motion.p
