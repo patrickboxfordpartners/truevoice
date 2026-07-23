@@ -1,0 +1,38 @@
+# TrueVoice HQ
+> Real-time speech, visual, and behavioral analysis for video interviews. Detects scripted and AI-assisted responses to help hiring teams make better decisions.
+
+## What is TrueVoice HQ?
+TrueVoice HQ is an AI-powered interview analysis platform that runs during live video interviews. It analyzes speech patterns, facial expressions, and behavioral signals in real-time to help hiring managers identify authentic responses versus scripted or AI-assisted answers.
+
+## Who is it for?
+- HR departments and hiring managers
+- Recruiting agencies conducting high-volume interviews
+- Enterprise talent acquisition teams
+- Any organization that needs to verify candidate authenticity
+
+## What problems does it solve?
+- Candidates increasingly use AI tools to generate answers during interviews
+- Scripted responses are difficult to distinguish from authentic ones in real-time
+- Interview assessment is subjective and inconsistent across interviewers
+- Post-interview analysis is time-consuming and often forgotten
+- Remote interviews make it harder to read body language and authenticity signals
+
+## Key Features
+- **Live Analysis** — Real-time speech and behavioral analysis during video interviews
+- **Authenticity Scoring** — Detects patterns consistent with scripted or AI-generated responses
+- **Speech Pattern Analysis** — Measures response timing, filler words, confidence markers
+- **Visual Behavioral Analysis** — Eye tracking, facial expression analysis, gesture patterns
+- **Interview Transcription** — Full transcript with highlighted sections of concern
+- **Assessment Reports** — Post-interview summary with authenticity metrics
+
+## Company
+TrueVoice HQ is built by Boxford Partners, an embedded operations consulting firm based in San Francisco.
+
+## Contact
+- Website: https://truevoicehq.com
+- Email: hello@truevoicehq.com
+- Parent company: https://boxfordpartners.com
+
+## Sitemap
+- / — Homepage with product overview and demo
+- /blog — Articles about hiring, AI in interviews, and candidate assessment
