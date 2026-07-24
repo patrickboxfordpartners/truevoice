@@ -4,7 +4,6 @@
 
 TrueVoice HQ is a comprehensive video interview platform that combines real-time video conferencing with advanced AI analysis to help hiring teams conduct and evaluate interviews more effectively. Built with modern web technologies and powered by cutting-edge AI services.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ## Features
 
@@ -231,7 +230,7 @@ Set environment variables in your deployment platform matching `.env.example`.
 
 ## License
 
-This project is licensed under the MIT License.
+Source-available. You may read and fork this code for personal or educational use. Commercial use, redistribution, or deployment in a competing product is not permitted without written permission from Boxford Partners.
 
 ## Support
 
