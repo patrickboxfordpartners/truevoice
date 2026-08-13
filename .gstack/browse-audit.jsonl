@@ -1,0 +1,14 @@
+{"ts":"2026-07-19T00:07:14.608Z","cmd":"goto","args":"https://truevoicehq.com","origin":"https://truevoicehq.com/","durationMs":2141,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:07:19.617Z","cmd":"screenshot","args":"/tmp/tv-hero-fixed.png --viewport","origin":"https://truevoicehq.com/","durationMs":340,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:07:20.405Z","cmd":"js","args":"window.scrollTo(0, 844)","origin":"https://truevoicehq.com/","durationMs":27,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:07:22.468Z","cmd":"screenshot","args":"/tmp/tv-features-fixed.png --viewport","origin":"https://truevoicehq.com/","durationMs":136,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:07:23.466Z","cmd":"js","args":"window.scrollTo(0, document.body.scrollHeight)","origin":"about:blank","durationMs":212,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:07:24.843Z","cmd":"screenshot","args":"/tmp/tv-footer-fixed.png --viewport","origin":"about:blank","durationMs":91,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:08:17.180Z","cmd":"viewport","args":"390x844 --scale 2","origin":"about:blank","durationMs":289,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:08:18.753Z","cmd":"goto","args":"https://truevoicehq.com","origin":"https://truevoicehq.com/","durationMs":1201,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:08:22.312Z","cmd":"screenshot","args":"/tmp/tv-mobile-hero.png --viewport","origin":"https://truevoicehq.com/","durationMs":218,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:08:22.564Z","cmd":"js","args":"window.scrollTo(0, 900)","origin":"https://truevoicehq.com/","durationMs":2,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:08:24.179Z","cmd":"screenshot","args":"/tmp/tv-mobile-features.png --viewport","origin":"https://truevoicehq.com/","durationMs":232,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:08:24.432Z","cmd":"js","args":"window.scrollTo(0, document.body.scrollHeight)","origin":"https://truevoicehq.com/","durationMs":2,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:08:25.920Z","cmd":"screenshot","args":"/tmp/tv-mobile-footer.png --viewport","origin":"https://truevoicehq.com/","durationMs":222,"status":"ok","hasCookies":false,"mode":"launched"}
+{"ts":"2026-07-19T00:44:28.483Z","cmd":"viewport","args":"390x844 --scale 2","origin":"about:blank","durationMs":507,"status":"ok","hasCookies":false,"mode":"launched"}

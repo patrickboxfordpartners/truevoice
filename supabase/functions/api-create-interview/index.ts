@@ -1,10 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { checkRateLimit } from "../_shared/rate-limit.ts";
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -14,8 +11,10 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return handleCorsOptions(req);
   }
 
   if (req.method !== "POST") {
@@ -28,6 +27,18 @@ serve(async (req) => {
     const apiKey = authHeader.replace(/^Bearer\s+/i, "").trim();
     if (!apiKey) {
       return jsonResponse({ error: "Missing Authorization header" }, 401);
+    }
+
+    // Rate limiting: 30 requests per minute per API key
+    const rateLimit = await checkRateLimit(`api-create:${apiKey}`, 30, 60);
+    if (!rateLimit.allowed) {
+      return jsonResponse(
+        {
+          error: "Rate limit exceeded",
+          reset_at: rateLimit.resetAt.toISOString(),
+        },
+        429
+      );
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;

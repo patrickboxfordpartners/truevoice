@@ -1,15 +1,31 @@
 // supabase/functions/get-public-report/index.ts
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-}
+import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { checkRateLimit, getRateLimitKey } from "../_shared/rate-limit.ts";
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders })
+    return handleCorsOptions(req);
+  }
+
+  // Rate limiting: 100 requests per minute per IP (public endpoint)
+  const rateLimitKey = getRateLimitKey(req, "public-report");
+  const rateLimit = await checkRateLimit(rateLimitKey, 100, 60);
+
+  if (!rateLimit.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: "Rate limit exceeded",
+        reset_at: rateLimit.resetAt.toISOString(),
+      }),
+      {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
 
   const url = new URL(req.url)
@@ -17,6 +33,15 @@ serve(async (req) => {
 
   if (!token) {
     return new Response(JSON.stringify({ error: "Missing token" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    })
+  }
+
+  // Validate token format (UUID)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (!uuidRegex.test(token)) {
+    return new Response(JSON.stringify({ error: "Invalid token format" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     })

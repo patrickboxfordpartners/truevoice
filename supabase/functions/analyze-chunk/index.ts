@@ -1,10 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { checkRateLimit, getRateLimitKey } from "../_shared/rate-limit.ts";
 
 /** Strip <think>...</think> reasoning blocks and extract the last JSON object. */
 function extractJson(raw: string): string | null {
@@ -28,13 +25,129 @@ function extractJson(raw: string): string | null {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return handleCorsOptions(req);
   }
 
   try {
-    const { interview_id, chunk_text, chunk_index, elapsed_seconds, previous_scores, response_delays, company_id } =
-      await req.json();
+    // Rate limiting: 60 requests per minute (1 per second for real-time analysis)
+    const rateLimitKey = getRateLimitKey(req, "analyze-chunk");
+    const rateLimit = await checkRateLimit(rateLimitKey, 60, 60);
+
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({
+          error: "Rate limit exceeded",
+          reset_at: rateLimit.resetAt.toISOString(),
+        }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Parse and validate request body
+    let body: any;
+    try {
+      body = await req.json();
+    } catch {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON body" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const { interview_id, chunk_text, chunk_index, elapsed_seconds, previous_scores, response_delays, company_id } = body;
+
+    // Input validation
+    if (!interview_id || typeof interview_id !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid field: interview_id" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (!chunk_text || typeof chunk_text !== "string") {
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid field: chunk_text" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Validate chunk size (5KB max = ~1250 words, prevents cost abuse)
+    if (chunk_text.length > 5000) {
+      return new Response(
+        JSON.stringify({ error: "chunk_text too large (max 5000 characters)" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Sanitize chunk_text to prevent XSS/injection
+    const sanitizedText = chunk_text
+      .replace(/<script[^>]*>.*?<\/script>/gi, "") // Remove script tags
+      .replace(/<[^>]+>/g, "") // Remove all HTML tags
+      .replace(/[^\w\s.,!?'-]/g, "") // Remove special chars except basic punctuation
+      .trim();
+
+    if (!sanitizedText) {
+      return new Response(
+        JSON.stringify({ error: "chunk_text contains no valid content after sanitization" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (typeof chunk_index !== "number" || chunk_index < 0) {
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid field: chunk_index (must be non-negative number)" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    if (typeof elapsed_seconds !== "number" || elapsed_seconds < 0) {
+      return new Response(
+        JSON.stringify({ error: "Missing or invalid field: elapsed_seconds (must be non-negative number)" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Validate UUID format for interview_id
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(interview_id)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid interview_id format" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Use sanitized text for analysis (original chunk_text becomes sanitizedText)
+    const chunk_text_safe = sanitizedText;
 
     const xaiKey = Deno.env.get("XAI_API_KEY");
     if (!xaiKey) {
@@ -109,7 +222,7 @@ You MUST return ONLY valid JSON with no explanation, no markdown, no code fences
                     }))
                   )}\n- "instant" responses (<1.5s) may indicate memorized/scripted answers\n- "normal" responses (1.5-4s) indicate natural thinking time\n- "delayed" responses (>4s) may indicate uncertainty or searching for answers`
                 : null,
-              `Transcript chunk to analyze: "${chunk_text}"`,
+              `Transcript chunk to analyze: "${chunk_text_safe}"`,
             ]
               .filter(Boolean)
               .join("\n"),
@@ -175,7 +288,7 @@ You MUST return ONLY valid JSON with no explanation, no markdown, no code fences
     await supabase.from("transcript_chunks").insert({
       interview_id,
       chunk_index,
-      text: chunk_text,
+      text: chunk_text_safe,
       elapsed_seconds,
       speech_score: scores.speech,
       timing_score: scores.timing,

@@ -21,7 +21,7 @@ interface UseDeepgramReturn {
   transcript: string;
   interimText: string;
   results: TranscriptResult[];
-  connect: (language?: string) => Promise<MediaStream>;
+  connect: (language?: string, interviewId?: string, candidateToken?: string) => Promise<MediaStream>;
   disconnect: () => void;
 }
 
@@ -35,11 +35,39 @@ export function useDeepgramTranscription(): UseDeepgramReturn {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  const connect = useCallback(async (language: string = "en") => {
-    const apiKey = import.meta.env.VITE_DEEPGRAM_API_KEY;
-    if (!apiKey) {
-      throw new Error("Missing VITE_DEEPGRAM_API_KEY");
+  const connect = useCallback(async (language: string = "en", interviewId?: string, candidateToken?: string) => {
+    // Fetch temporary Deepgram token from secure edge function
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error("Missing Supabase configuration");
     }
+
+    if (!interviewId) {
+      throw new Error("Missing interviewId for Deepgram token generation");
+    }
+
+    const tokenResponse = await fetch(`${supabaseUrl}/functions/v1/deepgram-token`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": supabaseAnonKey,
+        ...(candidateToken ? {} : { "Authorization": `Bearer ${supabaseAnonKey}` }),
+      },
+      body: JSON.stringify({
+        interview_id: interviewId,
+        ...(candidateToken ? { candidate_token: candidateToken } : {}),
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const error = await tokenResponse.json();
+      throw new Error(error.error || "Failed to obtain Deepgram token");
+    }
+
+    const { token: apiKey, expires_at } = await tokenResponse.json();
+    console.log(`[deepgram] Obtained temporary token, expires at ${expires_at}`);
 
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
