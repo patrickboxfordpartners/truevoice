@@ -82,32 +82,34 @@ true-voice-insights/
 
 ## Getting Started
 
+### Quick Start (Recommended)
+
+Run our interactive setup wizard that adapts to your skill level:
+
+```bash
+npm install
+npm run setup
+```
+
+The wizard will:
+- Assess your technical experience
+- Guide you through configuration
+- Recommend installation options (DIY, Guided, or White Glove)
+- Automate common setup tasks
+
+### Manual Installation
+
+**Not sure if you can handle the technical setup?** See [Installation Services](INSTALLATION-SERVICES.md) for guided and white-glove setup options ($499-$1,500).
+
+**Experienced developer?** See the complete [Installation Guide](INSTALLATION.md) for detailed step-by-step instructions (45-60 minutes).
+
 ### Prerequisites
 - **Node.js** 18+ or **Bun** runtime
 - **Supabase** account and project
 - **LiveKit** account and project
 - **Deepgram** API key
+- **XAI/Grok** API key
 - **Stripe** account (for billing)
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/patrickboxfordpartners/true-voice-insights.git
-cd true-voice-insights
-```
-
-2. Install dependencies:
-```bash
-npm install
-# or
-bun install
-```
-
-3. Set up environment variables:
-```bash
-cp .env.example .env
-```
 
 Edit `.env` with your credentials:
 ```env
