@@ -14,24 +14,24 @@ interface FeatureBlock {
 
 const blocks: FeatureBlock[] = [
   {
-    label: "Scoring",
-    headline: "Structured data, every time",
-    description: "Every interview scored across the same four dimensions — so you're comparing apples to apples, not gut feelings to gut feelings.",
+    label: "Detection",
+    headline: "Spot what humans miss",
+    description: "Real-time analysis of speech patterns, response timing, conversational flow, and linguistic markers catches AI-assisted answers, scripted delivery, and rehearsed responses that even experienced interviewers overlook.",
     icon: BarChart3,
     bullets: [
-      "Communication quality",
-      "Thinking & engagement",
-      "Interview presence",
-      "Response authenticity",
+      "AI-assisted answer detection",
+      "Script and teleprompter reading signals",
+      "Response timing analysis",
+      "Linguistic pattern scoring",
     ],
   },
   {
     label: "Comparison",
-    headline: "Compare candidates side by side",
-    description: "Radar charts and score timelines make it immediately clear who performed strongest across every dimension.",
+    headline: "Compare candidates on substance",
+    description: "Radar charts and score timelines show exactly where each candidate was genuine and where they relied on preparation. No more gut-feel debates.",
     icon: ArrowLeftRight,
     bullets: [
-      "Visual radar chart per candidate",
+      "Authenticity radar per candidate",
       "Score timeline across the call",
       "Dimension-by-dimension breakdown",
       "Instant side-by-side view",
@@ -40,12 +40,12 @@ const blocks: FeatureBlock[] = [
   {
     label: "Reporting",
     headline: "Defend every decision",
-    description: "Every hire backed by objective, timestamped data. Full report available to your whole team the moment the call ends.",
+    description: "Every hire backed by objective, timestamped authenticity data. Full report available to your whole team the moment the call ends.",
     icon: Shield,
     bullets: [
-      "Timestamped scoring record",
+      "Timestamped authenticity record",
       "Shareable team report",
-      "Available instantly post-call",
+      "Behavioral flag evidence",
       "Audit-ready documentation",
     ],
   },
@@ -81,12 +81,12 @@ const Features = () => (
   <section id="features" className="py-24 sm:py-28 px-4 sm:px-6 bg-card">
     <div className="max-w-6xl mx-auto">
       <ScrollReveal className="text-center lg:text-left mb-16 sm:mb-20">
-        <p className="text-sm font-medium tracking-wide text-accent uppercase mb-3">Interview Intelligence</p>
+        <p className="text-sm font-medium tracking-wide text-accent uppercase mb-3">Interview Authenticity</p>
         <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground max-w-xl mx-auto lg:mx-0">
-          Structure, compare, and defend every hire
+          Detect, compare, and verify every candidate
         </h2>
         <p className="text-muted-foreground text-lg max-w-xl mx-auto lg:mx-0 mt-4">
-          Consistent scoring across every interview gives hiring teams the data they need to make confident, defensible decisions.
+          Real-time authenticity scoring tells you which candidates are genuine and which are performing. Hire with confidence, not hope.
         </p>
       </ScrollReveal>
 

@@ -19,7 +19,7 @@ const Footer = () => {
 
           {/* Tagline */}
           <p style={{ fontSize: "0.875rem", color: MUTED, maxWidth: 360, lineHeight: 1.6, fontWeight: 300 }}>
-            Real-time AI interview analysis for hiring teams.
+            Real-time interview authenticity detection for hiring teams.
           </p>
 
           {/* Boxford badge */}

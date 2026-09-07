@@ -117,23 +117,22 @@ const Hero = () => {
             className="text-sm font-medium tracking-wide text-muted-foreground uppercase mb-5"
             {...anim(0)}
           >
-            Interview Intelligence Platform
+            Interview Authenticity Platform
           </motion.p>
 
           <motion.h1
             className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-[-0.03em] leading-[1.08] text-foreground mb-6"
             {...anim(0.1)}
           >
-            Every interview,{" "}
-            <span className="text-accent">analyzed.</span>
+            Know what's{" "}
+            <span className="text-accent">real.</span>
           </motion.h1>
 
           <motion.p
             className="text-lg text-muted-foreground leading-relaxed max-w-lg mx-auto lg:mx-0 mb-8"
             {...anim(0.2)}
           >
-            TrueVoice gives hiring teams structured, comparable data from every
-            conversation — so decisions are easier to make and easier to defend.
+            TrueVoice detects scripted answers, AI-assisted responses, and rehearsed delivery in real time, so you hire based on what candidates actually know.
           </motion.p>
 
           <motion.div
@@ -145,9 +144,19 @@ const Hero = () => {
               asChild
               className="rounded-md bg-foreground text-background hover:bg-accent transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated"
             >
+              <Link to="/signup">
+                Start Free Trial
+                <ArrowRight size={16} className="ml-2" />
+              </Link>
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              asChild
+              className="rounded-md"
+            >
               <a href="https://cal.com/boxfordpartners/truevoice-demo" target="_blank" rel="noopener noreferrer">
                 Book a Demo
-                <ArrowRight size={16} className="ml-2" />
               </a>
             </Button>
           </motion.div>
@@ -160,21 +169,21 @@ const Hero = () => {
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
         >
-          <MockPanel title="Intelligence Score" className="relative z-10" delay={0.4}>
+          <MockPanel title="Authenticity Score" className="relative z-10" delay={0.4}>
             <div className="flex items-center gap-4 mb-3">
               <div className="text-4xl font-bold text-accent tabular-nums">87</div>
               <div className="flex-1 space-y-2">
-                <ScoreRow label="Communication Quality" value="22/25" pct={88} delay={0.8} />
-                <ScoreRow label="Interview Presence" value="21/25" pct={84} delay={0.9} />
+                <ScoreRow label="Speech Patterns" value="22/25" pct={88} delay={0.8} />
+                <ScoreRow label="Response Timing" value="21/25" pct={84} delay={0.9} />
               </div>
             </div>
           </MockPanel>
 
-          <MockPanel title="Behavioral Signals" className="relative z-20 -mt-3 ml-8" delay={0.55}>
+          <MockPanel title="Detection Signals" className="relative z-20 -mt-3 ml-8" delay={0.55}>
             <div className="space-y-1.5">
-              <LogLine label="Tab focus" value="Active" accent delay={1.0} />
-              <LogLine label="Response timing" value="Natural" accent delay={1.1} />
-              <LogLine label="Consistency" value="High" accent delay={1.2} />
+              <LogLine label="AI-assisted phrasing" value="None" accent delay={1.0} />
+              <LogLine label="Script reading" value="Not detected" accent delay={1.1} />
+              <LogLine label="Response spontaneity" value="High" accent delay={1.2} />
             </div>
           </MockPanel>
 
