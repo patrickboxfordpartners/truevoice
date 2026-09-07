@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -9,40 +10,47 @@ import { convex } from "@/lib/convex";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
-import Pricing from "./pages/Pricing";
-import Dashboard from "./pages/Dashboard";
-import Report from "./pages/Report";
-import { FieldReport } from "./pages/FieldReport";
-import Settings from "./pages/Settings";
-import CandidateInterview from "./pages/CandidateInterview";
-import Compare from "./pages/Compare";
-import InterviewRoom from "./pages/InterviewRoom";
-import InterviewerRoom from "./pages/InterviewerRoom";
-import VideoTest from "./pages/VideoTest";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import Onboarding from "./pages/Onboarding";
-import CandidateProfile from "./pages/CandidateProfile";
-import Analytics from "./pages/Analytics";
-import CandidateFeedback from "./pages/CandidateFeedback";
-import DemoRequest from "./pages/DemoRequest";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import NotFound from "./pages/NotFound";
-import PublicReport from "./pages/PublicReport";
-import PublicBrief from "./pages/PublicBrief";
-import JoanPipeline from "./pages/JoanPipeline";
-import JoanDemo from "./pages/JoanDemo";
-import JoanCandidateDetail from "./pages/JoanCandidateDetail";
-import QuestionBank from "./pages/QuestionBank";
-import JoanCompare from "./pages/JoanCompare";
-import JoanOrbit from "./pages/JoanOrbit";
-import JoanDashboard from "./pages/JoanDashboard";
-import JoanDigest from "./pages/JoanDigest";
-import AsyncInterview from "./pages/AsyncInterview";
 import "@livekit/components-styles";
 
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Report = lazy(() => import("./pages/Report"));
+const FieldReport = lazy(() => import("./pages/FieldReport").then(m => ({ default: m.FieldReport })));
+const Settings = lazy(() => import("./pages/Settings"));
+const CandidateInterview = lazy(() => import("./pages/CandidateInterview"));
+const Compare = lazy(() => import("./pages/Compare"));
+const InterviewRoom = lazy(() => import("./pages/InterviewRoom"));
+const InterviewerRoom = lazy(() => import("./pages/InterviewerRoom"));
+const VideoTest = lazy(() => import("./pages/VideoTest"));
+const Login = lazy(() => import("./pages/Login"));
+const Signup = lazy(() => import("./pages/Signup"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
+const CandidateProfile = lazy(() => import("./pages/CandidateProfile"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const CandidateFeedback = lazy(() => import("./pages/CandidateFeedback"));
+const DemoRequest = lazy(() => import("./pages/DemoRequest"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const PublicReport = lazy(() => import("./pages/PublicReport"));
+const PublicBrief = lazy(() => import("./pages/PublicBrief"));
+const JoanPipeline = lazy(() => import("./pages/JoanPipeline"));
+const JoanDemo = lazy(() => import("./pages/JoanDemo"));
+const JoanCandidateDetail = lazy(() => import("./pages/JoanCandidateDetail"));
+const QuestionBank = lazy(() => import("./pages/QuestionBank"));
+const JoanCompare = lazy(() => import("./pages/JoanCompare"));
+const JoanOrbit = lazy(() => import("./pages/JoanOrbit"));
+const JoanDashboard = lazy(() => import("./pages/JoanDashboard"));
+const JoanDigest = lazy(() => import("./pages/JoanDigest"));
+const AsyncInterview = lazy(() => import("./pages/AsyncInterview"));
+
 const queryClient = new QueryClient();
+
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -53,6 +61,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+            <Suspense fallback={<LoadingSpinner />}>
             <Routes>
               {/* Public routes */}
               <Route path="/" element={<Index />} />
@@ -69,15 +78,15 @@ const App = () => (
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
 
-              {/* Joan hackathon demo routes - public for judges */}
-              <Route path="/joan-pipeline" element={<JoanPipeline />} />
-              <Route path="/joan-candidate/:id" element={<JoanCandidateDetail />} />
-              <Route path="/joan-demo" element={<JoanDemo />} />
-              <Route path="/question-bank" element={<QuestionBank />} />
-              <Route path="/joan-compare" element={<JoanCompare />} />
-              <Route path="/joan-orbit" element={<JoanOrbit />} />
-              <Route path="/joan-dashboard" element={<JoanDashboard />} />
-              <Route path="/joan-digest" element={<JoanDigest />} />
+              {/* Joan routes - protected */}
+              <Route path="/joan-pipeline" element={<ProtectedRoute><JoanPipeline /></ProtectedRoute>} />
+              <Route path="/joan-candidate/:id" element={<ProtectedRoute><JoanCandidateDetail /></ProtectedRoute>} />
+              <Route path="/joan-demo" element={<ProtectedRoute><JoanDemo /></ProtectedRoute>} />
+              <Route path="/question-bank" element={<ProtectedRoute><QuestionBank /></ProtectedRoute>} />
+              <Route path="/joan-compare" element={<ProtectedRoute><JoanCompare /></ProtectedRoute>} />
+              <Route path="/joan-orbit" element={<ProtectedRoute><JoanOrbit /></ProtectedRoute>} />
+              <Route path="/joan-dashboard" element={<ProtectedRoute><JoanDashboard /></ProtectedRoute>} />
+              <Route path="/joan-digest" element={<ProtectedRoute><JoanDigest /></ProtectedRoute>} />
 
               {/* Protected routes */}
               <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
@@ -93,6 +102,7 @@ const App = () => (
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>

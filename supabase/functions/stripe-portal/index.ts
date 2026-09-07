@@ -1,15 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.14.0?target=deno";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return handleCorsOptions(req);
   }
 
   try {
@@ -81,7 +79,22 @@ serve(async (req) => {
     try {
       const body = await req.json();
       if (body?.returnUrl) {
-        returnUrl = body.returnUrl;
+        const allowedHosts = ["truevoicehq.com", "www.truevoicehq.com", "localhost"];
+        try {
+          const parsed = new URL(body.returnUrl);
+          if (!allowedHosts.includes(parsed.hostname)) {
+            return new Response(JSON.stringify({ error: "Invalid return URL" }), {
+              status: 400,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          returnUrl = body.returnUrl;
+        } catch {
+          return new Response(JSON.stringify({ error: "Invalid return URL" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
       }
     } catch {
       // No body or invalid JSON is fine, use default

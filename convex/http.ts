@@ -17,9 +17,10 @@ http.route({
   method: "POST",
   handler: httpAction(async (ctx, request) => {
     try {
-      // Verify AgentMail signature (security)
+      // Verify AgentMail webhook signature
       const signature = request.headers.get("x-agentmail-signature");
       const timestamp = request.headers.get("x-agentmail-timestamp");
+      const webhookSecret = process.env.AGENTMAIL_WEBHOOK_SECRET;
 
       if (!signature || !timestamp) {
         return new Response(JSON.stringify({ error: "Missing signature" }), {
@@ -28,8 +29,47 @@ http.route({
         });
       }
 
-      // Parse webhook payload
-      const payload = await request.json();
+      if (!webhookSecret) {
+        console.error("AGENTMAIL_WEBHOOK_SECRET not configured");
+        return new Response(JSON.stringify({ error: "Webhook not configured" }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Reject stale timestamps (5 minute window)
+      const timestampAge = Math.abs(Date.now() - Number(timestamp));
+      if (isNaN(timestampAge) || timestampAge > 300_000) {
+        return new Response(JSON.stringify({ error: "Stale timestamp" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Verify HMAC signature
+      const rawBody = await request.text();
+      const encoder = new TextEncoder();
+      const key = await crypto.subtle.importKey(
+        "raw",
+        encoder.encode(webhookSecret),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+      const mac = await crypto.subtle.sign("HMAC", key, encoder.encode(`${timestamp}.${rawBody}`));
+      const expectedSignature = Array.from(new Uint8Array(mac))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
+      if (signature !== expectedSignature) {
+        return new Response(JSON.stringify({ error: "Invalid signature" }), {
+          status: 401,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+
+      // Parse webhook payload (from rawBody since stream was consumed for signature check)
+      const payload = JSON.parse(rawBody);
 
       const {
         messageId,
@@ -166,8 +206,16 @@ async function routeEmailToCandidate(
   requiresAction: boolean;
   suggestedActionItem?: string;
 }> {
-  // Default to first company (in production, extract from subdomain or custom domain)
-  const companyId = "default-company";
+  // Resolve company from env or reject -- hardcoded default breaks multi-tenancy
+  const companyId = process.env.DEFAULT_COMPANY_ID;
+  if (!companyId) {
+    return {
+      companyId: "unknown",
+      confidence: 0,
+      reason: "DEFAULT_COMPANY_ID not configured",
+      requiresAction: false,
+    };
+  }
 
   // Strategy 1: Direct email match
   // Look for candidate with matching email address
@@ -329,6 +377,23 @@ http.route({
         return new Response(
           JSON.stringify({ error: "Missing or invalid Authorization header" }),
           { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const atsWebhookSecret = process.env.ATS_WEBHOOK_SECRET;
+      if (!atsWebhookSecret) {
+        console.error("ATS_WEBHOOK_SECRET not configured");
+        return new Response(
+          JSON.stringify({ error: "Webhook not configured" }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const token = authHeader.slice(7);
+      if (token !== atsWebhookSecret) {
+        return new Response(
+          JSON.stringify({ error: "Invalid token" }),
+          { status: 403, headers: { "Content-Type": "application/json" } }
         );
       }
 
