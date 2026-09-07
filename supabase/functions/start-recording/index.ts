@@ -108,11 +108,11 @@ serve(async (req) => {
 
     const token = await generateLiveKitApiToken(apiKey, apiSecret);
 
-    // Build the egress request — use S3 output if AWS creds are present, otherwise omit file output
-    const awsAccessKey = Deno.env.get("AWS_ACCESS_KEY_ID");
-    const awsSecretKey = Deno.env.get("AWS_SECRET_ACCESS_KEY");
-    const awsRegion = Deno.env.get("AWS_REGION") || "us-east-1";
-    const awsBucket = Deno.env.get("RECORDINGS_S3_BUCKET");
+    // Build the egress request — use Supabase Storage (S3-compatible) for file output
+    const storageAccessKey = Deno.env.get("SUPABASE_S3_ACCESS_KEY");
+    const storageSecretKey = Deno.env.get("SUPABASE_S3_SECRET_KEY");
+    const storageBucket = "interview-recordings";
+    const storageEndpoint = supabaseUrl ? `${supabaseUrl}/storage/v1/s3` : null;
 
     const egressBody: Record<string, unknown> = {
       room_name: room_name,
@@ -121,24 +121,24 @@ serve(async (req) => {
       video_only: false,
     };
 
-    if (awsAccessKey && awsSecretKey && awsBucket) {
+    if (storageAccessKey && storageSecretKey && storageEndpoint) {
       egressBody["file_outputs"] = [
         {
           file_type: "MP4",
           filepath: `recordings/${interview_id}/{time}.mp4`,
           s3: {
-            access_key: awsAccessKey,
-            secret: awsSecretKey,
-            region: awsRegion,
-            bucket: awsBucket,
+            access_key: storageAccessKey,
+            secret: storageSecretKey,
+            region: "us-east-1",
+            bucket: storageBucket,
+            endpoint: storageEndpoint,
+            force_path_style: true,
           },
         },
       ];
-      console.log("[start-recording] Using S3 output:", awsBucket);
+      console.log("[start-recording] Using Supabase Storage output:", storageBucket);
     } else {
-      // No S3 creds — start egress without a file output destination.
-      // The egress_id is still saved; a webhook or manual stop will finalize.
-      console.log("[start-recording] No AWS creds found — starting egress without file output");
+      console.log("[start-recording] No storage creds found — starting egress without file output");
     }
 
     const egressRes = await fetch(
