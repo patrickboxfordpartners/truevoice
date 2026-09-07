@@ -1,11 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import Stripe from "https://esm.sh/stripe@14.14.0?target=deno";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 
 /** Map a Stripe price ID to a subscription tier name. */
 function getTierFromPrice(priceId: string): string {
@@ -39,8 +35,10 @@ function mapSubscriptionStatus(stripeStatus: string): string {
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return handleCorsOptions(req);
   }
 
   try {
