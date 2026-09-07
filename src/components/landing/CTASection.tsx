@@ -14,7 +14,7 @@ const CTASection = () => (
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
         <Button size="lg" asChild className="rounded-md bg-foreground text-background hover:bg-accent transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated">
-          <Link to="/signup">
+          <Link to="/signup?plan=starter">
             Start Free Trial
             <ArrowRight size={16} className="ml-2" />
           </Link>

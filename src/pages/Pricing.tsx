@@ -27,7 +27,7 @@ const TIERS = [
       "Email support",
     ],
     cta: "Start Free Trial",
-    href: "/signup",
+    href: "/signup?plan=starter",
     popular: false,
   },
   {
@@ -47,7 +47,7 @@ const TIERS = [
       "Priority support",
     ],
     cta: "Start Free Trial",
-    href: "/signup",
+    href: "/signup?plan=pro",
     popular: true,
   },
   {
@@ -67,7 +67,7 @@ const TIERS = [
       "Dedicated onboarding",
     ],
     cta: "Start Free Trial",
-    href: "/signup",
+    href: "/signup?plan=scale",
     popular: false,
   },
 ]
