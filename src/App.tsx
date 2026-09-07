@@ -5,9 +5,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { ConvexProvider } from "convex/react";
+import { ConvexProviderWithAuth } from "convex/react";
 import { convex } from "@/lib/convex";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { useConvexAuth } from "@/lib/convexAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import "@livekit/components-styles";
@@ -54,9 +55,9 @@ const LoadingSpinner = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ConvexProvider client={convex}>
-      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-        <AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <AuthProvider>
+        <ConvexProviderWithAuth client={convex} useAuth={useConvexAuth}>
           <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -105,9 +106,9 @@ const App = () => (
             </Suspense>
           </BrowserRouter>
         </TooltipProvider>
+        </ConvexProviderWithAuth>
       </AuthProvider>
     </ThemeProvider>
-    </ConvexProvider>
   </QueryClientProvider>
 );
 

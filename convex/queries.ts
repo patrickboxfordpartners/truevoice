@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, internalQuery } from "./_generated/server";
+import { requireAuth } from "./lib/requireAuth";
 
 /**
  * Query functions for TrueVoice + Joan
@@ -46,6 +47,7 @@ export const getCandidateById = query({
     v.null()
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db.get(args.candidateId);
   },
 });
@@ -87,6 +89,7 @@ export const getCandidateByInterview = query({
     v.null()
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db
       .query("hiring_pipeline")
       .withIndex("by_interview", (q) => q.eq("interviewId", args.interviewId))
@@ -116,6 +119,7 @@ export const getCandidatesByCompany = query({
     })
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const candidates = await ctx.db
       .query("hiring_pipeline")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -155,6 +159,7 @@ export const getCandidatesByStage = query({
   },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const allCandidates = await ctx.db
       .query("hiring_pipeline")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -172,6 +177,7 @@ export const getActionItemsByCandidate = query({
   args: { candidateId: v.id("hiring_pipeline") },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db
       .query("action_items")
       .withIndex("by_candidate", (q) => q.eq("candidateId", args.candidateId))
@@ -183,6 +189,7 @@ export const getPendingActionItems = query({
   args: { companyId: v.string() },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const allItems = await ctx.db
       .query("action_items")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -200,6 +207,7 @@ export const getLiveSessionsByInterview = query({
   args: { interviewId: v.string() },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const allSessions = await ctx.db
       .query("live_sessions")
       .withIndex("by_interview", (q) => q.eq("interviewId", args.interviewId))
@@ -217,6 +225,7 @@ export const getSharedNotesByInterview = query({
   args: { interviewId: v.string() },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db
       .query("shared_notes")
       .withIndex("by_interview", (q) => q.eq("interviewId", args.interviewId))
@@ -228,6 +237,7 @@ export const getInterviewScores = query({
   args: { interviewId: v.string() },
   returns: v.union(v.any(), v.null()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db
       .query("interview_scores")
       .withIndex("by_interview", (q) => q.eq("interviewId", args.interviewId))
@@ -268,6 +278,7 @@ export const getJoanSettings = query({
     v.null()
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db
       .query("joan_settings")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -282,6 +293,7 @@ export const getJoanActivity = query({
   },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const activities = await ctx.db
       .query("joan_activity")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -331,6 +343,7 @@ export const getEmailThreadsByCandidate = query({
   args: { candidateId: v.string() },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const emails = await ctx.db
       .query("email_threads")
       .withIndex("by_candidate", (q) => q.eq("candidateId", args.candidateId))
@@ -372,6 +385,7 @@ export const getQuestion = query({
   args: { questionId: v.id("interview_questions") },
   returns: v.union(v.any(), v.null()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db.get(args.questionId);
   },
 });
@@ -380,6 +394,7 @@ export const getResponsesByInterview = query({
   args: { interviewId: v.string() },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const responses = await ctx.db
       .query("candidate_responses")
       .withIndex("by_interview", (q) => q.eq("interviewId", args.interviewId))
@@ -396,6 +411,7 @@ export const getResponseByInterviewAndQuestion = query({
   },
   returns: v.union(v.any(), v.null()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db
       .query("candidate_responses")
       .withIndex("by_interview_question", (q) =>
@@ -409,6 +425,7 @@ export const getResponsesByCandidate = query({
   args: { candidateId: v.string() },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const responses = await ctx.db
       .query("candidate_responses")
       .withIndex("by_candidate", (q) => q.eq("candidateId", args.candidateId))
@@ -426,6 +443,7 @@ export const getIntelligenceBrief = query({
   args: { briefId: v.id("intelligence_briefs") },
   returns: v.union(v.any(), v.null()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db.get(args.briefId);
   },
 });
@@ -434,6 +452,7 @@ export const getBriefByCandidate = query({
   args: { candidateId: v.id("hiring_pipeline") },
   returns: v.union(v.any(), v.null()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db
       .query("intelligence_briefs")
       .withIndex("by_candidate", (q) => q.eq("candidateId", args.candidateId))
@@ -446,6 +465,7 @@ export const getBriefsByCompany = query({
   args: { companyId: v.string() },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db
       .query("intelligence_briefs")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -462,6 +482,7 @@ export const getAutopilotItem = query({
   args: { itemId: v.id("autopilot_queue") },
   returns: v.union(v.any(), v.null()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db.get(args.itemId);
   },
 });
@@ -470,6 +491,7 @@ export const getPendingAutopilotItems = query({
   args: { companyId: v.string() },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db
       .query("autopilot_queue")
       .withIndex("by_company_status", (q) =>
@@ -484,6 +506,7 @@ export const getCompletedBriefsWithoutAutopilot = query({
   args: {},
   returns: v.array(v.any()),
   handler: async (ctx) => {
+    await requireAuth(ctx);
     const completedBriefs = await ctx.db
       .query("intelligence_briefs")
       .withIndex("by_status", (q) => q.eq("status", "complete"))
@@ -508,6 +531,7 @@ export const getAutopilotItemByCandidate = query({
   args: { candidateId: v.id("hiring_pipeline") },
   returns: v.union(v.any(), v.null()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db
       .query("autopilot_queue")
       .withIndex("by_candidate", (q) => q.eq("candidateId", args.candidateId))
@@ -535,6 +559,7 @@ export const getAutopilotAnalytics = query({
     }),
   }),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const items = await ctx.db
       .query("autopilot_queue")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -658,6 +683,7 @@ export const getRecentSuggestedQuestions = query({
     })
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const maxBriefs = args.limit ?? 5;
 
     const briefs = await ctx.db
@@ -713,6 +739,7 @@ export const getPipelineFunnelStats = query({
     total: v.number(),
   }),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const candidates = await ctx.db
       .query("hiring_pipeline")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -747,6 +774,7 @@ export const getEmailTemplates = query({
     })
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const templates = await ctx.db
       .query("email_templates")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -784,6 +812,7 @@ export const getRecentJoanNotifications = query({
     })
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const activities = await ctx.db
       .query("joan_activity")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -829,6 +858,7 @@ export const getCandidatesWithBriefs = query({
     })
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const candidates = await ctx.db
       .query("hiring_pipeline")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -888,6 +918,7 @@ export const getStageRules = query({
     })
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const rules = await ctx.db
       .query("stage_rules")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -929,6 +960,7 @@ export const getPipelineExportData = query({
     })
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const candidates = await ctx.db
       .query("hiring_pipeline")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -979,6 +1011,7 @@ export const getCandidateNotes = query({
     })
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const notes = await ctx.db
       .query("candidate_notes")
       .withIndex("by_candidate", (q) => q.eq("candidateId", args.candidateId))
@@ -1025,6 +1058,7 @@ export const getDashboardStats = query({
     }),
   }),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const candidates = await ctx.db
       .query("hiring_pipeline")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -1095,6 +1129,7 @@ export const getCandidateTags = query({
     })
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const tags = await ctx.db
       .query("candidate_tags")
       .withIndex("by_candidate", (q) => q.eq("candidateId", args.candidateId))
@@ -1113,6 +1148,7 @@ export const getAllCompanyTags = query({
   args: { companyId: v.string() },
   returns: v.array(v.object({ tag: v.string(), color: v.string(), count: v.number() })),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const allTags = await ctx.db
       .query("candidate_tags")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -1130,6 +1166,7 @@ export const getCandidateActivity = query({
   args: { candidateId: v.string(), limit: v.optional(v.number()) },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const activities = await ctx.db
       .query("joan_activity")
       .withIndex("by_company")
@@ -1145,6 +1182,7 @@ export const getInterviewFeedbackByCandidate = query({
   args: { candidateId: v.id("hiring_pipeline") },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db
       .query("interview_feedback")
       .withIndex("by_candidate", (q) => q.eq("candidateId", args.candidateId))
@@ -1167,6 +1205,7 @@ export const searchCandidates = query({
     })
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const candidates = await ctx.db
       .query("hiring_pipeline")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
@@ -1206,6 +1245,7 @@ export const getSimilarCandidates = query({
     })
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const target = await ctx.db.get(args.candidateId);
     if (!target) return [];
 
@@ -1261,6 +1301,7 @@ export const getScoreBreakdown = query({
     v.null()
   ),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     let score = null;
     if (args.candidateId) {
       score = await ctx.db

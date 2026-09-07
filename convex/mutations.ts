@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation } from "./_generated/server";
 import { api, internal } from "./_generated/api";
+import { requireAuth } from "./lib/requireAuth";
 
 /**
  * Mutation functions for TrueVoice + Joan
@@ -102,6 +103,7 @@ export const moveCandidateStage = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const candidate = await ctx.db.get(args.candidateId);
     if (!candidate) throw new Error("Candidate not found");
 
@@ -139,6 +141,7 @@ export const enrichCandidate = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     await ctx.db.patch(args.candidateId, {
       linkedinUrl: args.linkedinUrl,
       githubUrl: args.githubUrl,
@@ -180,6 +183,7 @@ export const createActionItem = mutation({
   },
   returns: v.id("action_items"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
     const actionItemId = await ctx.db.insert("action_items", {
       interviewId: args.interviewId,
@@ -227,6 +231,7 @@ export const updateActionItemStatus = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const item = await ctx.db.get(args.actionItemId);
     if (!item) throw new Error("Action item not found");
 
@@ -259,6 +264,7 @@ export const markReminderSent = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     await ctx.db.patch(args.actionItemId, {
       reminderSent: true,
       reminderSentAt: Date.now(),
@@ -299,6 +305,7 @@ export const createEmailThread = mutation({
   },
   returns: v.id("email_threads"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
     return await ctx.db.insert("email_threads", {
       candidateId: args.candidateId,
@@ -339,6 +346,7 @@ export const joinLiveSession = mutation({
   },
   returns: v.id("live_sessions"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
     return await ctx.db.insert("live_sessions", {
       interviewId: args.interviewId,
@@ -359,6 +367,7 @@ export const updateHeartbeat = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     await ctx.db.patch(args.sessionId, {
       status: "active",
       lastHeartbeat: Date.now(),
@@ -372,6 +381,7 @@ export const leaveLiveSession = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     await ctx.db.patch(args.sessionId, {
       status: "disconnected",
       leftAt: Date.now(),
@@ -399,6 +409,7 @@ export const createSharedNote = mutation({
   },
   returns: v.id("shared_notes"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
     return await ctx.db.insert("shared_notes", {
       interviewId: args.interviewId,
@@ -441,6 +452,7 @@ export const updateInterviewScores = mutation({
   },
   returns: v.union(v.id("interview_scores"), v.null()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
 
     // Check if scores already exist
@@ -515,6 +527,7 @@ export const logJoanActivity = mutation({
   },
   returns: v.id("joan_activity"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db.insert("joan_activity", {
       companyId: args.companyId,
       interviewId: args.interviewId,
@@ -540,6 +553,7 @@ export const createIntelligenceBrief = mutation({
   },
   returns: v.id("intelligence_briefs"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
     return await ctx.db.insert("intelligence_briefs", {
       candidateId: args.candidateId,
@@ -611,6 +625,7 @@ export const updateIntelligenceBrief = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const { briefId, ...updates } = args;
     const filtered: Record<string, unknown> = { updatedAt: Date.now() };
     for (const [k, val] of Object.entries(updates)) {
@@ -641,6 +656,7 @@ export const createAutopilotItem = mutation({
   },
   returns: v.id("autopilot_queue"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
     return await ctx.db.insert("autopilot_queue", {
       candidateId: args.candidateId,
@@ -671,6 +687,7 @@ export const resolveAutopilotItem = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
     await ctx.db.patch(args.itemId, {
       status: args.status,
@@ -716,6 +733,7 @@ export const upsertJoanSettings = mutation({
   },
   returns: v.id("joan_settings"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
     const existing = await ctx.db
       .query("joan_settings")
@@ -758,6 +776,7 @@ export const createSharedBrief = mutation({
   },
   returns: v.string(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const brief = await ctx.db.get(args.briefId);
     if (!brief || brief.status !== "complete") {
       throw new Error("Intelligence brief not found or not complete");
@@ -820,6 +839,7 @@ export const createInterviewQuestion = mutation({
   },
   returns: v.id("interview_questions"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
     return await ctx.db.insert("interview_questions", {
       text: args.text,
@@ -851,6 +871,7 @@ export const updateInterviewQuestion = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const updates: any = {
       updatedAt: Date.now(),
     };
@@ -871,6 +892,7 @@ export const deleteInterviewQuestion = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     await ctx.db.delete(args.questionId);
   },
 });
@@ -920,6 +942,7 @@ export const updateCandidateResponse = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const updates: any = {};
 
     if (args.videoUrl !== undefined) updates.videoUrl = args.videoUrl;
@@ -956,6 +979,7 @@ export const saveEmailTemplate = mutation({
   },
   returns: v.id("email_templates"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
 
     if (args.templateId) {
@@ -987,6 +1011,7 @@ export const deleteEmailTemplate = mutation({
   args: { templateId: v.id("email_templates") },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     await ctx.db.delete(args.templateId);
   },
 });
@@ -1003,6 +1028,7 @@ export const updateCandidateResume = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     await ctx.db.patch(args.candidateId, {
       resumeText: args.resumeText,
       resumeUrl: args.resumeUrl,
@@ -1050,6 +1076,7 @@ export const saveStageRule = mutation({
   },
   returns: v.id("stage_rules"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
 
     if (args.ruleId) {
@@ -1081,6 +1108,7 @@ export const deleteStageRule = mutation({
   args: { ruleId: v.id("stage_rules") },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     await ctx.db.delete(args.ruleId);
   },
 });
@@ -1089,6 +1117,7 @@ export const toggleStageRule = mutation({
   args: { ruleId: v.id("stage_rules") },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const rule = await ctx.db.get(args.ruleId);
     if (rule) {
       await ctx.db.patch(args.ruleId, {
@@ -1117,6 +1146,7 @@ export const bulkMoveCandidates = mutation({
   },
   returns: v.object({ moved: v.number() }),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     let moved = 0;
     const now = Date.now();
 
@@ -1152,6 +1182,7 @@ export const addTagToCandidate = mutation({
   },
   returns: v.id("candidate_tags"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const existing = await ctx.db
       .query("candidate_tags")
       .withIndex("by_candidate", (q) => q.eq("candidateId", args.candidateId))
@@ -1174,6 +1205,7 @@ export const removeTagFromCandidate = mutation({
   args: { tagId: v.id("candidate_tags") },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     await ctx.db.delete(args.tagId);
     return null;
   },
@@ -1211,6 +1243,7 @@ export const submitInterviewFeedback = mutation({
   },
   returns: v.id("interview_feedback"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
     return await ctx.db.insert("interview_feedback", {
       candidateId: args.candidateId,
@@ -1239,6 +1272,7 @@ export const addCandidateNote = mutation({
   },
   returns: v.id("candidate_notes"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
     return await ctx.db.insert("candidate_notes", {
       candidateId: args.candidateId,
@@ -1257,6 +1291,7 @@ export const togglePinNote = mutation({
   args: { noteId: v.id("candidate_notes") },
   returns: v.boolean(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const note = await ctx.db.get(args.noteId);
     if (!note) return false;
     await ctx.db.patch(args.noteId, { isPinned: !note.isPinned, updatedAt: Date.now() });
@@ -1268,6 +1303,7 @@ export const deleteCandidateNote = mutation({
   args: { noteId: v.id("candidate_notes") },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     await ctx.db.delete(args.noteId);
     return null;
   },

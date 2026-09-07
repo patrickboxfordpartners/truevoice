@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { api } from "./_generated/api";
+import { requireAuth } from "./lib/requireAuth";
 
 /**
  * Peer Review System
@@ -23,6 +24,7 @@ export const requestPeerReview = mutation({
   },
   returns: v.id("peer_reviews"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     // Get candidate to extract companyId
     const candidate = await ctx.db.get(args.candidateId);
     if (!candidate) {
@@ -78,6 +80,7 @@ export const submitPeerReview = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const review = await ctx.db.get(args.reviewId);
     if (!review) {
       throw new Error("Review not found");
@@ -128,6 +131,7 @@ export const declinePeerReview = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const review = await ctx.db.get(args.reviewId);
     if (!review) {
       throw new Error("Review not found");
@@ -150,6 +154,7 @@ export const getPeerReviewsByCandidate = query({
   args: { candidateId: v.id("hiring_pipeline") },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db
       .query("peer_reviews")
       .withIndex("by_candidate", (q) => q.eq("candidateId", args.candidateId))
@@ -161,6 +166,7 @@ export const getPendingReviewsForUser = query({
   args: { reviewerId: v.string() },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const allReviews = await ctx.db
       .query("peer_reviews")
       .withIndex("by_reviewer", (q) => q.eq("reviewerId", args.reviewerId))
@@ -175,6 +181,7 @@ export const getPeerReviewById = query({
   args: { reviewId: v.id("peer_reviews") },
   returns: v.union(v.any(), v.null()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     return await ctx.db.get(args.reviewId);
   },
 });
