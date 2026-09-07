@@ -23,7 +23,7 @@ interface UseVideoInterviewReturn {
  * Captures audio via Deepgram, analyzes every 20 seconds
  * Syncs scores via Supabase realtime
  */
-export function useVideoInterview(interviewId: string): UseVideoInterviewReturn {
+export function useVideoInterview(interviewId: string, mode?: string): UseVideoInterviewReturn {
   const [scores, setScores] = useState<LiveScores>({ speech: 0, timing: 0, flow: 0, linguistic: 0 });
   const [flags, setFlags] = useState<InterviewFlag[]>([]);
   const [timeline, setTimeline] = useState<InterviewTimeline[]>([]);
@@ -147,6 +147,7 @@ export function useVideoInterview(interviewId: string): UseVideoInterviewReturn 
           chunk_index: chunkIndexRef.current,
           elapsed_seconds: currentElapsed,
           previous_scores: currentScores,
+          mode: mode || "interview",
         },
       });
 

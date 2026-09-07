@@ -3,25 +3,45 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { checkRateLimit, getRateLimitKey } from "../_shared/rate-limit.ts";
 
-/** Strip <think>...</think> reasoning blocks and extract the last JSON object. */
+/** Strip <think>...</think> reasoning blocks and extract the outermost JSON object. */
 function extractJson(raw: string): string | null {
-  // Remove reasoning model thinking blocks
   const stripped = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-  // Find all {...} blocks and take the last one (most likely the actual output)
-  const matches = [...stripped.matchAll(/\{[\s\S]*?\}/g)];
-  if (matches.length === 0) return null;
-  // Try from last to first until one parses cleanly
-  for (let i = matches.length - 1; i >= 0; i--) {
+
+  // Find the outermost balanced { ... } using bracket-depth tracking
+  const candidates: string[] = [];
+  for (let i = 0; i < stripped.length; i++) {
+    if (stripped[i] !== "{") continue;
+    let depth = 0;
+    let inString = false;
+    let escape = false;
+    for (let j = i; j < stripped.length; j++) {
+      const ch = stripped[j];
+      if (escape) { escape = false; continue; }
+      if (ch === "\\") { escape = true; continue; }
+      if (ch === '"') { inString = !inString; continue; }
+      if (inString) continue;
+      if (ch === "{") depth++;
+      else if (ch === "}") {
+        depth--;
+        if (depth === 0) {
+          candidates.push(stripped.slice(i, j + 1));
+          break;
+        }
+      }
+    }
+  }
+
+  // Try largest candidate first (outermost object with nested flags)
+  candidates.sort((a, b) => b.length - a.length);
+  for (const c of candidates) {
     try {
-      JSON.parse(matches[i][0]);
-      return matches[i][0];
+      JSON.parse(c);
+      return c;
     } catch {
       continue;
     }
   }
-  // Fall back to greedy match on stripped content
-  const greedy = stripped.match(/\{[\s\S]*\}/);
-  return greedy ? greedy[0] : null;
+  return null;
 }
 
 serve(async (req) => {
@@ -63,7 +83,7 @@ serve(async (req) => {
       );
     }
 
-    const { interview_id, chunk_text, chunk_index, elapsed_seconds, previous_scores, response_delays, company_id } = body;
+    const { interview_id, chunk_text, chunk_index, elapsed_seconds, previous_scores, response_delays, company_id, mode } = body;
 
     // Input validation
     if (!interview_id || typeof interview_id !== "string") {
@@ -149,13 +169,16 @@ serve(async (req) => {
     // Use sanitized text for analysis (original chunk_text becomes sanitizedText)
     const chunk_text_safe = sanitizedText;
 
-    const xaiKey = Deno.env.get("XAI_API_KEY");
+    const proxyKey = Deno.env.get("AI_PROXY_KEY");
+    const proxyUrl = Deno.env.get("AI_PROXY_URL");
+    const xaiKey = proxyKey || Deno.env.get("XAI_API_KEY");
     if (!xaiKey) {
-      return new Response(JSON.stringify({ error: "XAI_API_KEY not set" }), {
+      return new Response(JSON.stringify({ error: "XAI_API_KEY or AI_PROXY_KEY not set" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const xaiBaseUrl = proxyUrl || "https://api.x.ai";
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -176,19 +199,28 @@ serve(async (req) => {
       ? `\n\nThis company has also flagged these specific phrases as red flags from past interviews — flag them if they appear (severity: medium): ${companyPhrases.map((p) => `"${p}"`).join(", ")}`
       : "";
 
-    // Use grok-3-fast — non-reasoning model, reliable JSON output, lower latency
-    const grokResponse = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${xaiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "grok-3-fast",
-        messages: [
-          {
-            role: "system",
-            content: `You are an interview authenticity analyst. Analyze the following transcript chunk from a live interview and score it on 4 dimensions (each 0-25):
+    // Determine system prompt based on mode
+    const interviewMode = mode || "interview"; // default to 'interview' if not provided
+    const isFieldMode = interviewMode === "field";
+
+    const systemPrompt = isFieldMode
+      ? `You are a contextual research analyst. Analyze this transcript chunk from a field research session (POV capture with smart glasses) and score it on 4 dimensions (each 0-25):
+
+- context: Environmental richness (mentions of surroundings, objects, physical actions) vs. abstract discussion. Score 20-25 for rich context, 10-19 for mixed, 0-9 for context-free.
+- engagement: Participant engagement (demonstrating, showing, interacting) vs. passive describing. Score 20-25 for highly engaged, 10-19 for mixed, 0-9 for passive.
+- insights: Implicit pain points, workarounds, or friction detected vs. surface-level responses. Score 20-25 for deep insights, 10-19 for moderate, 0-9 for shallow.
+- clarity: Clear expression of needs/problems vs. vague or confused communication. Score 20-25 for very clear, 10-19 for adequate, 0-9 for unclear.
+
+Also detect research flags:
+- Flag frustration signals: sighs, pauses, "this is annoying", "I wish", "I have to..."
+- Flag workaround mentions: "I usually just...", "I work around it by...", "I figured out..."
+- Flag competitor mentions: brand names, "I used to use...", "we switched from..."
+- Flag environment cues: "as you can see here", "this is where I...", visual references
+Use flag type "insight" for pain points/workarounds, "competitor" for competitor mentions, "environment" for visual/spatial context.
+
+You MUST return ONLY valid JSON with no explanation, no markdown, no code fences:
+{"context":20,"engagement":18,"insights":15,"clarity":22,"flags":[{"pattern":"description","severity":"low","flag_type":"insight"}]}`
+      : `You are an interview authenticity analyst. Analyze the following transcript chunk from a live interview and score it on 4 dimensions (each 0-25):
 
 - speech: Natural speech patterns (filler words, self-corrections, vocal variety) vs reading/scripted cadence. Score 20-25 for highly natural, 10-19 for mixed, 0-9 for clearly scripted.
 - timing: Natural thinking time based on MEASURED response delays. Use the provided timing data to score authentically: mostly "normal" delays = 20-25, mix = 12-19, mostly "instant" or "delayed" = 0-11. If no timing data is provided, infer from speech patterns in the text.
@@ -206,7 +238,21 @@ Use flag type "phrase" and severity "medium" for language flags. Include the exa
 Only flag real patterns. Do not flag normal professional language.
 
 You MUST return ONLY valid JSON with no explanation, no markdown, no code fences:
-{"speech":20,"timing":18,"flow":15,"linguistic":22,"flags":[{"pattern":"description","severity":"low","flag_type":"behavior"}]}`,
+{"speech":20,"timing":18,"flow":15,"linguistic":22,"flags":[{"pattern":"description","severity":"low","flag_type":"behavior"}]}`;
+
+    // Use grok-3-fast — non-reasoning model, reliable JSON output, lower latency
+    const grokResponse = await fetch(`${xaiBaseUrl}/v1/chat/completions`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${xaiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "grok-3-fast",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
           },
           {
             role: "user",
@@ -268,22 +314,25 @@ You MUST return ONLY valid JSON with no explanation, no markdown, no code fences
     }
 
     // Use nullish coalescing so a legitimate 0 score from Grok is preserved
-    const scores = {
-      speech: Math.min(25, Math.max(0, analysis.speech ?? 15)),
-      timing: Math.min(25, Math.max(0, analysis.timing ?? 15)),
-      flow: Math.min(25, Math.max(0, analysis.flow ?? 15)),
-      linguistic: Math.min(25, Math.max(0, analysis.linguistic ?? 15)),
-    };
+    // Map Field mode scores to Interview mode fields for database compatibility
+    const scores = isFieldMode
+      ? {
+          speech: Math.min(25, Math.max(0, (analysis as any).context ?? 15)),
+          timing: Math.min(25, Math.max(0, (analysis as any).engagement ?? 15)),
+          flow: Math.min(25, Math.max(0, (analysis as any).insights ?? 15)),
+          linguistic: Math.min(25, Math.max(0, (analysis as any).clarity ?? 15)),
+        }
+      : {
+          speech: Math.min(25, Math.max(0, analysis.speech ?? 15)),
+          timing: Math.min(25, Math.max(0, analysis.timing ?? 15)),
+          flow: Math.min(25, Math.max(0, analysis.flow ?? 15)),
+          linguistic: Math.min(25, Math.max(0, analysis.linguistic ?? 15)),
+        };
 
     const overall = scores.speech + scores.timing + scores.flow + scores.linguistic;
     const flags = (analysis.flags as Array<{ pattern: string; severity?: string }>) || [];
 
     console.log("[analyze-chunk] Final scores:", JSON.stringify(scores), "overall:", overall);
-
-    // Save to Supabase
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
 
     await supabase.from("transcript_chunks").insert({
       interview_id,
@@ -326,6 +375,25 @@ You MUST return ONLY valid JSON with no explanation, no markdown, no code fences
           label: d.label,
         }))
       );
+    }
+
+    // Extract and save field moments for Field mode
+    if (isFieldMode && flags.length > 0) {
+      const fieldMoments = flags
+        .filter((f: any) => ["insight", "competitor", "environment"].includes(f.flag_type))
+        .map((f: any) => ({
+          interview_id,
+          elapsed_seconds,
+          scene_description: f.flag_type === "environment" ? f.pattern : null,
+          emotional_cue: f.flag_type === "insight" && f.pattern.toLowerCase().includes("frustrat") ? "frustration" : null,
+          quote: chunk_text_safe.slice(0, 200), // First 200 chars as context
+          significance_score: f.severity === "high" ? 80 : f.severity === "medium" ? 60 : 40,
+          tags: [f.flag_type, ...(f.severity === "high" ? ["high_priority"] : [])],
+        }));
+
+      if (fieldMoments.length > 0) {
+        await supabase.from("field_moments").insert(fieldMoments);
+      }
     }
 
     return new Response(

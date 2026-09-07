@@ -88,6 +88,7 @@ export function useLiveInterview(interviewId: string, companyId?: string): UseLi
   const scoresRef = useRef<LiveScores>(scores);
   const responseDelaysRef = useRef<ResponseDelay[]>([]);
   const lastResultIndexRef = useRef(0);
+  const elapsedSecondsRef = useRef(0);
 
   const overallScore = scores.speech + scores.timing + scores.flow + scores.linguistic;
 
@@ -99,6 +100,10 @@ export function useLiveInterview(interviewId: string, companyId?: string): UseLi
   useEffect(() => {
     scoresRef.current = scores;
   }, [scores]);
+
+  useEffect(() => {
+    elapsedSecondsRef.current = elapsedSeconds;
+  }, [elapsedSeconds]);
 
   // Silence gap detection, runs whenever Deepgram appends a new final result
   useEffect(() => {
@@ -203,7 +208,7 @@ export function useLiveInterview(interviewId: string, companyId?: string): UseLi
           interview_id: interviewId,
           chunk_text: newText,
           chunk_index: currentChunk,
-          elapsed_seconds: elapsedSeconds,
+          elapsed_seconds: elapsedSecondsRef.current,
           previous_scores: currentScores,
           response_delays: pendingDelays.length > 0 ? pendingDelays : undefined,
           company_id: companyId,
@@ -218,7 +223,7 @@ export function useLiveInterview(interviewId: string, companyId?: string): UseLi
     } catch (err) {
       console.error("[analysis] Exception:", err);
     }
-  }, [interviewId, elapsedSeconds]);
+  }, [interviewId, companyId]);
 
   const start = useCallback(async () => {
     try {
@@ -230,7 +235,7 @@ export function useLiveInterview(interviewId: string, companyId?: string): UseLi
         .eq("id", interviewId);
 
       const language = localStorage.getItem("interview_language") || "en";
-      await deepgram.connect(language);
+      await deepgram.connect(language, interviewId);
       setIsActive(true);
 
       chunkTimerRef.current = setInterval(() => {

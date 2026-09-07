@@ -145,10 +145,10 @@ const Hero = () => {
               asChild
               className="rounded-md bg-foreground text-background hover:bg-accent transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated"
             >
-              <Link to="/demo">
+              <a href="https://cal.com/boxfordpartners/truevoice-demo" target="_blank" rel="noopener noreferrer">
                 Book a Demo
                 <ArrowRight size={16} className="ml-2" />
-              </Link>
+              </a>
             </Button>
           </motion.div>
         </div>

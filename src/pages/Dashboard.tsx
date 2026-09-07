@@ -18,6 +18,7 @@ import { EmailTemplateDialog } from "@/components/EmailTemplateDialog";
 import { BulkImportDialog } from "@/components/BulkImportDialog";
 import { InterviewCalendar } from "@/components/InterviewCalendar";
 import { InsightStrip } from "@/components/dashboard/InsightStrip";
+import { JoanInsightStrip } from "@/components/dashboard/JoanInsightStrip";
 import { CandidateCard } from "@/components/dashboard/CandidateCard";
 import { PositionFilter } from "@/components/dashboard/PositionFilter";
 import { getScoreColor } from "@/components/ScoreGauge";
@@ -331,6 +332,11 @@ const Dashboard = () => {
         {/* Insight Strip */}
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
           <InsightStrip interviews={interviews} completedReports={completedReports as any} />
+        </motion.div>
+
+        {/* Joan Pipeline Strip */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}>
+          <JoanInsightStrip />
         </motion.div>
 
         {/* Controls Row */}
@@ -660,7 +666,7 @@ const Dashboard = () => {
                       </td>
                       <td className="px-6 py-4">
                         {interview.status === "completed" ? (
-                          <Link to={`/report/${interview.id}`}>
+                          <Link to={interview.mode === "field" ? `/field-report/${interview.id}` : `/report/${interview.id}`}>
                             <Button variant="ghost" size="sm">View Report</Button>
                           </Link>
                         ) : interview.status === "scheduled" || interview.status === "waiting_for_interviewer" ? (

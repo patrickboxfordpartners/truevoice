@@ -13,15 +13,18 @@ serve(async (req) => {
   try {
     const { interview_id, image_base64, elapsed_seconds } = await req.json();
 
-    const xaiKey = Deno.env.get("XAI_API_KEY");
+    const proxyKey = Deno.env.get("AI_PROXY_KEY");
+    const proxyUrl = Deno.env.get("AI_PROXY_URL");
+    const xaiKey = proxyKey || Deno.env.get("XAI_API_KEY");
     if (!xaiKey) {
-      return new Response(JSON.stringify({ error: "XAI_API_KEY not set" }), {
+      return new Response(JSON.stringify({ error: "Neither AI_PROXY_KEY nor XAI_API_KEY is set" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const xaiBaseUrl = proxyUrl || "https://api.x.ai";
 
-    const grokResponse = await fetch("https://api.x.ai/v1/chat/completions", {
+    const grokResponse = await fetch(`${xaiBaseUrl}/v1/chat/completions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${xaiKey}`,

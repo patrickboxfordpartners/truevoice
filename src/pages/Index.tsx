@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/landing/Footer";
 import Hero from "@/components/landing/Hero";
 import Features from "@/components/landing/Features";
+import InteractiveDemo from "@/components/landing/InteractiveDemo";
 import HowItWorks from "@/components/landing/HowItWorks";
 import CTASection from "@/components/landing/CTASection";
 
@@ -16,6 +17,7 @@ const Index = () => {
       <Navbar />
       <Hero />
       <Features />
+      <InteractiveDemo />
       <HowItWorks />
       <CTASection />
       <Footer />

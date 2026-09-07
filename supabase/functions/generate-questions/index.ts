@@ -46,19 +46,22 @@ serve(async (req) => {
       });
     }
 
-    const xaiKey = Deno.env.get("XAI_API_KEY");
+    const proxyKey = Deno.env.get("AI_PROXY_KEY");
+    const proxyUrl = Deno.env.get("AI_PROXY_URL");
+    const xaiKey = proxyKey || Deno.env.get("XAI_API_KEY");
     if (!xaiKey) {
-      return new Response(JSON.stringify({ error: "XAI_API_KEY not set" }), {
+      return new Response(JSON.stringify({ error: "Neither AI_PROXY_KEY nor XAI_API_KEY is set" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const xaiBaseUrl = proxyUrl || "https://api.x.ai";
 
     const contextParts: string[] = [`Position: ${position}`];
     if (company_name) contextParts.push(`Company: ${company_name}`);
     if (job_description) contextParts.push(`Job Description:\n${job_description}`);
 
-    const grokResponse = await fetch("https://api.x.ai/v1/chat/completions", {
+    const grokResponse = await fetch(`${xaiBaseUrl}/v1/chat/completions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${xaiKey}`,

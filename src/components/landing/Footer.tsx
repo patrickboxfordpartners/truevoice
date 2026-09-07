@@ -46,7 +46,7 @@ const Footer = () => {
             {[
               { label: "Features", to: "/#features", internal: true },
               { label: "How It Works", to: "/#how-it-works", internal: true },
-              { label: "Book a Demo", to: "/demo", internal: true },
+              { label: "Book a Demo", href: "https://cal.com/boxfordpartners/truevoice-demo" },
               { label: "LinkedIn", href: "https://www.linkedin.com/company/boxfordpartners" },
               { label: "Boxford Partners", href: "https://boxfordpartners.com" },
               { label: "Contact", href: "mailto:hello@truevoicehq.com" },

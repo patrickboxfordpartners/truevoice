@@ -40,6 +40,7 @@ const schema = z.object({
   candidateName: z.string().min(1, "Candidate name is required"),
   candidateEmail: z.string().email("Valid email required"),
   position: z.string().min(1, "Position is required"),
+  mode: z.enum(["interview", "field", "panel"]).default("interview"),
   scheduledAt: z.string().optional(),
   notes: z.string().optional(),
 });
@@ -56,6 +57,7 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
   const [copied, setCopied] = useState(false);
   const [generatedToken, setGeneratedToken] = useState("");
   const [language, setLanguage] = useState("default");
+  const [mode, setMode] = useState<"interview" | "field" | "panel">("interview");
 
   // AI question generation state
   const [jdExpanded, setJdExpanded] = useState(false);
@@ -130,6 +132,7 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
         candidate_name: data.candidateName,
         candidate_email: data.candidateEmail,
         position: data.position,
+        mode: mode,
         scheduled_at: data.scheduledAt || null,
         notes: notesValue,
         language: language !== "default" ? language : null,
@@ -161,6 +164,7 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
     setStep("form");
     setGeneratedToken("");
     setLanguage("default");
+    setMode("interview");
     setJdExpanded(false);
     setJobDescription("");
     setGeneratedQuestions([]);
@@ -192,6 +196,33 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
                 <Label htmlFor="position">Position / Role *</Label>
                 <Input id="position" placeholder="e.g. Senior Engineer" {...register("position")} />
                 {errors.position && <p className="text-xs text-destructive">{errors.position.message}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Interview Mode</Label>
+                <Select value={mode} onValueChange={(value) => setMode(value as typeof mode)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="interview">
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">Interview</span>
+                        <span className="text-xs text-muted-foreground">Standard video interview</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="field">
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">Field Research</span>
+                        <span className="text-xs text-muted-foreground">POV capture with smart glasses</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="panel">
+                      <div className="flex flex-col items-start">
+                        <span className="font-medium">Remote Panel</span>
+                        <span className="text-xs text-muted-foreground">Multi-viewer with POV</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* AI Question Generation */}
