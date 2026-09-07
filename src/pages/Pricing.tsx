@@ -201,12 +201,55 @@ const Pricing = () => {
           </p>
         </motion.div>
 
+        {/* FAQ */}
+        <motion.div
+          className="mb-14"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5, ease }}
+        >
+          <h2 className="text-2xl font-bold text-foreground text-center mb-8">Frequently asked questions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {[
+              {
+                q: "What's included in the free trial?",
+                a: "Every plan starts with 3 free interviews using audio-only analysis. No credit card required. You'll see real authenticity scores and detection signals from your actual interviews.",
+              },
+              {
+                q: "How does TrueVoice detect AI-assisted answers?",
+                a: "We analyze speech patterns, response timing, linguistic markers, and behavioral signals in real time. Our models detect scripted delivery, AI-generated phrasing, and rehearsed responses.",
+              },
+              {
+                q: "Can candidates tell they're being analyzed?",
+                a: "TrueVoice runs alongside your standard video interview. Candidates see a normal interview experience. We recommend disclosing the use of analysis tools in your interview process.",
+              },
+              {
+                q: "What's the difference between Starter and Pro?",
+                a: "Starter provides audio-only analysis (speech patterns, timing, linguistic scoring). Pro adds video analysis: gaze tracking, multi-face detection, phone detection, and script reading signals.",
+              },
+              {
+                q: "Can I switch plans later?",
+                a: "Yes. Upgrade or downgrade anytime from your account settings. Changes take effect on your next billing cycle. No cancellation fees.",
+              },
+              {
+                q: "Do you offer annual billing?",
+                a: "Yes. Annual billing saves 20% on all plans. Toggle the billing switch above to see annual pricing.",
+              },
+            ].map((faq) => (
+              <div key={faq.q} className="bg-card border border-border rounded-xl p-5">
+                <h3 className="text-sm font-semibold text-foreground mb-2">{faq.q}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
         {/* Bottom note */}
         <motion.div
           className="text-center"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.5, ease }}
+          transition={{ duration: 0.5, delay: 0.6, ease }}
         >
           <p className="text-sm text-muted-foreground">
             Need more than 50 interviews per month or custom integrations?{" "}

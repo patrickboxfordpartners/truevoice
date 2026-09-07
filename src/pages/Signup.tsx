@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+
+const PHOTOS = [
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=2074&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=2070&auto=format&fit=crop",
+];
 
 const Signup = () => {
   const { signUp } = useAuth();
@@ -14,10 +20,20 @@ const Signup = () => {
   const { setTheme } = useTheme();
   useEffect(() => { setTheme("light"); }, [setTheme]);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const plan = searchParams.get("plan");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPhotoIndex((i) => (i + 1) % PHOTOS.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +44,7 @@ const Signup = () => {
         title: "Account created",
         description: "Check your email to confirm your account, then sign in.",
       });
-      navigate("/onboarding");
+      navigate(plan ? `/onboarding?plan=${plan}` : "/onboarding");
     } catch (err: any) {
       toast({
         title: "Signup failed",
@@ -44,117 +60,105 @@ const Signup = () => {
     <div className="min-h-screen flex">
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white">
-        <div className="w-full max-w-md">
-          {/* Logo */}
-          <Link to="/" className="inline-block mb-12">
-            <img src="/truevoice-logo.png" alt="TrueVoice HQ" className="h-10 w-auto" />
-          </Link>
+        <div className="w-full max-w-[400px] mx-auto">
+          {/* Logo — centered */}
+          <div className="flex justify-center mb-14">
+            <Link to="/">
+              <img src="/truevoice-logo.png" alt="TrueVoice HQ" className="h-9 w-auto" />
+            </Link>
+          </div>
 
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-semibold text-gray-900 mb-2">
-              Welcome to TrueVoice
+          <div className="mb-10">
+            <h1 className="text-[32px] font-bold text-gray-900 tracking-tight mb-2">
+              Get started
             </h1>
-            <p className="text-gray-600">
-              Interview fraud detection built for scale.
+            <p className="text-gray-500 text-[15px]">
+              3 free interviews. No credit card required.
             </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="fullName" className="text-sm font-medium text-gray-700">
-                Your name
-              </Label>
-              <Input
-                id="fullName"
-                placeholder="Patrick Mitchell"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-                className="h-12 px-4 bg-gray-50 border-gray-200 focus:bg-white"
-              />
-            </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              id="fullName"
+              placeholder="Your name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              className="h-12 px-4 bg-gray-50 border-gray-200 rounded-lg text-[15px] placeholder:text-gray-400 focus:bg-white focus:border-gray-300"
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                Email address
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="h-12 px-4 bg-gray-50 border-gray-200 focus:bg-white"
-              />
-            </div>
+            <Input
+              id="email"
+              type="email"
+              placeholder="Work email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="h-12 px-4 bg-gray-50 border-gray-200 rounded-lg text-[15px] placeholder:text-gray-400 focus:bg-white focus:border-gray-300"
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                Password
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="At least 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="h-12 px-4 bg-gray-50 border-gray-200 focus:bg-white"
-              />
-            </div>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Create a password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className="h-12 px-4 bg-gray-50 border-gray-200 rounded-lg text-[15px] placeholder:text-gray-400 focus:bg-white focus:border-gray-300"
+            />
 
             <Button
               type="submit"
-              className="w-full h-12 text-base font-medium"
+              className="w-full h-12 text-[15px] font-medium bg-gray-900 text-white hover:bg-gray-800 rounded-lg"
               disabled={loading}
             >
               {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {loading ? "Creating account..." : "Continue"}
+              {loading ? "Creating account..." : "Create account"}
             </Button>
           </form>
 
-          {/* Footer */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600">
+          {/* Divider */}
+          <div className="flex items-center gap-4 my-6">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400 uppercase tracking-wider">or</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          {/* Sign in link */}
+          <div className="text-center">
+            <p className="text-sm text-gray-500">
               Already have an account?{" "}
-              <Link to="/login" className="text-primary hover:underline font-medium">
+              <Link to="/login" className="text-gray-900 font-medium hover:underline">
                 Sign in
               </Link>
             </p>
           </div>
 
-          {/* Terms */}
-          <div className="mt-8">
-            <p className="text-xs text-gray-500 text-center">
-              By continuing, you agree to our{" "}
-              <Link to="/terms" className="underline hover:text-gray-700">
-                Terms of Service
-              </Link>{" "}
-              and{" "}
-              <Link to="/privacy" className="underline hover:text-gray-700">
-                Privacy Policy
-              </Link>
-              .
-            </p>
-          </div>
+          {/* Legal footer */}
+          <p className="mt-10 text-xs text-gray-400 text-center">
+            By continuing, you agree to our{" "}
+            <Link to="/privacy" className="underline hover:text-gray-600">Privacy Policy</Link>
+            {" "}and{" "}
+            <Link to="/terms" className="underline hover:text-gray-600">Terms of Service</Link>.
+          </p>
         </div>
       </div>
 
-      {/* Right side - Image */}
-      <div className="hidden lg:block flex-1 relative">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: "url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')",
-          }}
-        >
-          {/* Gradient overlay matching TrueVoice brand (teal/green/blue tones) */}
-          <div className="absolute inset-0 bg-gradient-to-br from-teal-900/50 via-emerald-800/40 to-cyan-900/50" />
-        </div>
+      {/* Right side - Rotating photos */}
+      <div className="hidden lg:block flex-1 relative overflow-hidden">
+        {PHOTOS.map((src, i) => (
+          <div
+            key={src}
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out"
+            style={{
+              backgroundImage: `url('${src}')`,
+              opacity: i === photoIndex ? 1 : 0,
+            }}
+          />
+        ))}
       </div>
     </div>
   );

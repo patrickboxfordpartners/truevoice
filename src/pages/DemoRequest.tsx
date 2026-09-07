@@ -1,12 +1,9 @@
-// src/pages/DemoRequest.tsx
-import { useState } from "react"
-import { motion } from "framer-motion"
+import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
-import { ArrowLeft, CheckCircle2, Loader2 } from "lucide-react"
+import { CheckCircle2, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
 import {
   Select,
   SelectContent,
@@ -15,10 +12,13 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { supabase } from "@/lib/supabase"
-import Navbar from "@/components/Navbar"
-import Footer from "@/components/landing/Footer"
 
-const ease = [0.16, 1, 0.3, 1]
+const PHOTOS = [
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=2074&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=2070&auto=format&fit=crop",
+]
 
 const DemoRequest = () => {
   const [name, setName] = useState("")
@@ -29,6 +29,14 @@ const DemoRequest = () => {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [photoIndex, setPhotoIndex] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPhotoIndex((i) => (i + 1) % PHOTOS.length)
+    }, 6000)
+    return () => clearInterval(timer)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -40,7 +48,7 @@ const DemoRequest = () => {
       })
       if (fnError) throw fnError
       setSubmitted(true)
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please email us directly at hello@truevoicehq.com")
     } finally {
       setSubmitting(false)
@@ -48,129 +56,134 @@ const DemoRequest = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <div className="max-w-lg mx-auto px-6 pt-32 pb-20">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease }}
-        >
-          <Link
-            to="/"
-            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8"
-          >
-            <ArrowLeft size={14} /> Back
-          </Link>
+    <div className="min-h-screen flex">
+      {/* Left side - Form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-white">
+        <div className="w-full max-w-[400px] mx-auto">
+          {/* Logo — centered */}
+          <div className="flex justify-center mb-14">
+            <Link to="/">
+              <img src="/truevoice-logo.png" alt="TrueVoice HQ" className="h-9 w-auto" />
+            </Link>
+          </div>
 
           {submitted ? (
-            <div className="text-center py-12">
-              <div className="h-16 w-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-5">
-                <CheckCircle2 className="h-8 w-8 text-success" strokeWidth={1.5} />
+            <div className="text-center py-8">
+              <div className="h-16 w-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-5">
+                <CheckCircle2 className="h-8 w-8 text-green-600" strokeWidth={1.5} />
               </div>
-              <h1 className="text-2xl font-bold text-foreground mb-3">We'll be in touch</h1>
-              <p className="text-muted-foreground leading-relaxed">
+              <h1 className="text-[32px] font-bold text-gray-900 tracking-tight mb-3">We'll be in touch</h1>
+              <p className="text-gray-500 text-[15px] leading-relaxed">
                 Thanks, {name.split(" ")[0]}. Expect to hear from us within 24 hours.
               </p>
             </div>
           ) : (
             <>
-              <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">Book a Demo</h1>
-              <p className="text-muted-foreground mb-8 leading-relaxed">
-                Tell us a bit about your team and we'll set up a personalized walkthrough.
-              </p>
+              {/* Header */}
+              <div className="mb-10">
+                <h1 className="text-[32px] font-bold text-gray-900 tracking-tight mb-2">
+                  Book a demo
+                </h1>
+                <p className="text-gray-500 text-[15px]">
+                  Tell us about your team and we'll set up a personalized walkthrough.
+                </p>
+              </div>
 
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-1.5">
-                  <Label htmlFor="name">Full name</Label>
-                  <Input
-                    id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    placeholder="Jordan Smith"
-                    className="h-10"
-                  />
-                </div>
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <Input
+                  id="name"
+                  placeholder="Full name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="h-12 px-4 bg-gray-50 border-gray-200 rounded-lg text-[15px] placeholder:text-gray-400 focus:bg-white focus:border-gray-300"
+                />
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="company">Company</Label>
-                  <Input
-                    id="company"
-                    value={company}
-                    onChange={(e) => setCompany(e.target.value)}
-                    required
-                    placeholder="Acme Corp"
-                    className="h-10"
-                  />
-                </div>
+                <Input
+                  id="company"
+                  placeholder="Company"
+                  value={company}
+                  onChange={(e) => setCompany(e.target.value)}
+                  required
+                  className="h-12 px-4 bg-gray-50 border-gray-200 rounded-lg text-[15px] placeholder:text-gray-400 focus:bg-white focus:border-gray-300"
+                />
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="role">Your role</Label>
-                  <Input
-                    id="role"
-                    value={role}
-                    onChange={(e) => setRole(e.target.value)}
-                    required
-                    placeholder="VP of Talent, Head of People, etc."
-                    className="h-10"
-                  />
-                </div>
+                <Input
+                  id="role"
+                  placeholder="Your role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  required
+                  className="h-12 px-4 bg-gray-50 border-gray-200 rounded-lg text-[15px] placeholder:text-gray-400 focus:bg-white focus:border-gray-300"
+                />
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="volume">Estimated interviews per month</Label>
-                  <Select value={volume} onValueChange={setVolume} required>
-                    <SelectTrigger id="volume" className="h-10">
-                      <SelectValue placeholder="Select a range" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="<10">Fewer than 10</SelectItem>
-                      <SelectItem value="10-50">10 – 50</SelectItem>
-                      <SelectItem value="50-200">50 – 200</SelectItem>
-                      <SelectItem value="200+">More than 200</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select value={volume} onValueChange={setVolume} required>
+                  <SelectTrigger className="h-12 px-4 bg-gray-50 border-gray-200 rounded-lg text-[15px] data-[placeholder]:text-gray-400 focus:bg-white focus:border-gray-300">
+                    <SelectValue placeholder="Interviews per month" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="<10">Fewer than 10</SelectItem>
+                    <SelectItem value="10-50">10 - 50</SelectItem>
+                    <SelectItem value="50-200">50 - 200</SelectItem>
+                    <SelectItem value="200+">More than 200</SelectItem>
+                  </SelectContent>
+                </Select>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="message">
-                    Anything else? <span className="text-muted-foreground font-normal">(optional)</span>
-                  </Label>
-                  <Textarea
-                    id="message"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    placeholder="Tell us about your hiring process, current pain points, or specific questions."
-                    rows={3}
-                    className="resize-none"
-                  />
-                </div>
+                <Textarea
+                  id="message"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Anything else? (optional)"
+                  rows={3}
+                  className="px-4 py-3 bg-gray-50 border-gray-200 rounded-lg text-[15px] placeholder:text-gray-400 focus:bg-white focus:border-gray-300 resize-none"
+                />
 
                 {error && (
-                  <p className="text-sm text-destructive">{error}</p>
+                  <p className="text-sm text-red-600">{error}</p>
                 )}
 
                 <Button
                   type="submit"
-                  size="lg"
+                  className="w-full h-12 text-[15px] font-medium bg-gray-900 text-white hover:bg-gray-800 rounded-lg"
                   disabled={submitting || !volume}
-                  className="w-full"
                 >
                   {submitting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Sending…
+                      Sending...
                     </>
                   ) : (
-                    "Request Demo"
+                    "Request demo"
                   )}
                 </Button>
               </form>
             </>
           )}
-        </motion.div>
+
+          {/* Legal footer */}
+          <p className="mt-10 text-xs text-gray-400 text-center">
+            By submitting, you agree to our{" "}
+            <Link to="/privacy" className="underline hover:text-gray-600">Privacy Policy</Link>
+            {" "}and{" "}
+            <Link to="/terms" className="underline hover:text-gray-600">Terms of Service</Link>.
+          </p>
+        </div>
       </div>
-      <Footer />
+
+      {/* Right side - Rotating photos */}
+      <div className="hidden lg:block flex-1 relative overflow-hidden">
+        {PHOTOS.map((src, i) => (
+          <div
+            key={src}
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out"
+            style={{
+              backgroundImage: `url('${src}')`,
+              opacity: i === photoIndex ? 1 : 0,
+            }}
+          />
+        ))}
+      </div>
     </div>
   )
 }
