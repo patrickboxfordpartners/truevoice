@@ -21,15 +21,21 @@ import type * as actions_parseResumeEmail from "../actions/parseResumeEmail.js";
 import type * as actions_sendDeadlineReminders from "../actions/sendDeadlineReminders.js";
 import type * as actions_sendStageChangeEmail from "../actions/sendStageChangeEmail.js";
 import type * as actions_slackNotify from "../actions/slackNotify.js";
+import type * as auth from "../auth.js";
 import type * as clearDemoData from "../clearDemoData.js";
 import type * as crons from "../crons.js";
 import type * as http from "../http.js";
+import type * as interviewData from "../interviewData.js";
+import type * as interviews from "../interviews.js";
 import type * as lib_emailService from "../lib/emailService.js";
 import type * as lib_emailTemplates from "../lib/emailTemplates.js";
+import type * as lib_requireAuth from "../lib/requireAuth.js";
 import type * as mutations from "../mutations.js";
 import type * as peerReviews from "../peerReviews.js";
 import type * as queries from "../queries.js";
+import type * as reportTokens from "../reportTokens.js";
 import type * as seedData from "../seedData.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -51,15 +57,21 @@ declare const fullApi: ApiFromModules<{
   "actions/sendDeadlineReminders": typeof actions_sendDeadlineReminders;
   "actions/sendStageChangeEmail": typeof actions_sendStageChangeEmail;
   "actions/slackNotify": typeof actions_slackNotify;
+  auth: typeof auth;
   clearDemoData: typeof clearDemoData;
   crons: typeof crons;
   http: typeof http;
+  interviewData: typeof interviewData;
+  interviews: typeof interviews;
   "lib/emailService": typeof lib_emailService;
   "lib/emailTemplates": typeof lib_emailTemplates;
+  "lib/requireAuth": typeof lib_requireAuth;
   mutations: typeof mutations;
   peerReviews: typeof peerReviews;
   queries: typeof queries;
+  reportTokens: typeof reportTokens;
   seedData: typeof seedData;
+  users: typeof users;
 }>;
 
 /**

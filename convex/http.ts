@@ -449,6 +449,10 @@ http.route({
   }),
 });
 
+// Auth routes (sign-in, sign-out, OIDC discovery)
+import { auth } from "./auth";
+auth.addHttpRoutes(http);
+
 // Register static hosting routes (serves built React app)
 registerStaticRoutes(http, components.staticHosting);
 

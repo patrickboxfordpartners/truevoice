@@ -1,134 +1,62 @@
-import { supabase } from "@/lib/supabase";
-import type { FullReport } from "@/types";
+// Convex API - reports
+// Inside components, prefer useQuery(api.interviewData.getFullReport) directly.
+
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../convex/_generated/api";
+
+const client = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
+
+export interface FullReport {
+  interview: any;
+  report: any;
+  flags: any[];
+  timeline: any[];
+  responseDelays: any[];
+  interviewer: any;
+}
 
 export async function getFullReport(interviewId: string): Promise<FullReport> {
-  const [interviewRes, reportRes, flagsRes, timelineRes, delaysRes] =
-    await Promise.all([
-      supabase
-        .from("interviews")
-        .select("*, interviewer_notes")
-        .eq("id", interviewId)
-        .single(),
-      supabase
-        .from("interview_reports")
-        .select("*")
-        .eq("interview_id", interviewId)
-        .maybeSingle(),
-      supabase
-        .from("interview_flags")
-        .select("*")
-        .eq("interview_id", interviewId)
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("interview_timeline")
-        .select("*")
-        .eq("interview_id", interviewId)
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("response_delays")
-        .select("*")
-        .eq("interview_id", interviewId)
-        .order("created_at", { ascending: true }),
-    ]);
-
-  if (interviewRes.error) throw interviewRes.error;
-  if (reportRes.error) throw reportRes.error;
-
-  // Fetch interviewer profile
-  let interviewer = null;
-  if (interviewRes.data.created_by) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", interviewRes.data.created_by)
-      .single();
-    interviewer = data;
-  }
-
-  return {
-    interview: interviewRes.data,
-    report: reportRes.data,
-    flags: flagsRes.data ?? [],
-    timeline: timelineRes.data ?? [],
-    responseDelays: delaysRes.data ?? [],
-    interviewer,
-  };
+  const result = await client.query(api.interviewData.getFullReport, { interviewId });
+  if (!result) throw new Error("Report not found");
+  return result;
 }
 
 export async function getCompletedReports(companyId: string) {
-  const { data: interviews, error } = await supabase
-    .from("interviews")
-    .select("id, candidate_name, position, scheduled_at, duration, status")
-    .eq("company_id", companyId)
-    .eq("status", "completed")
-    .order("created_at", { ascending: false });
+  const interviews = await client.query(api.interviews.getByCompany, { companyId });
+  if (!interviews) return [];
 
-  if (error) throw error;
+  const completed = interviews.filter((i: any) => i.status === "completed");
 
   const reports = await Promise.all(
-    (interviews ?? []).map(async (interview) => {
-      const { data: report } = await supabase
-        .from("interview_reports")
-        .select("*")
-        .eq("interview_id", interview.id)
-        .maybeSingle();
-
-      const { data: flags } = await supabase
-        .from("interview_flags")
-        .select("*")
-        .eq("interview_id", interview.id)
-        .order("created_at", { ascending: true });
-
-      const { data: timeline } = await supabase
-        .from("interview_timeline")
-        .select("*")
-        .eq("interview_id", interview.id)
-        .order("created_at", { ascending: true });
-
-      const { data: delays } = await supabase
-        .from("response_delays")
-        .select("*")
-        .eq("interview_id", interview.id)
-        .order("created_at", { ascending: true });
-
+    completed.map(async (interview: any) => {
+      const report = await client.query(api.interviewData.getReport, { interviewId: interview._id });
       if (!report) return null;
 
+      const flags = await client.query(api.interviewData.getFlags, { interviewId: interview._id });
+      const timeline = await client.query(api.interviewData.getTimeline, { interviewId: interview._id });
+      const delays = await client.query(api.interviewData.getDelays, { interviewId: interview._id });
+
       return {
-        id: interview.id,
-        candidate: interview.candidate_name,
+        id: interview._id,
+        candidate: interview.candidateName,
         position: interview.position,
-        date: interview.scheduled_at
-          ? new Date(interview.scheduled_at).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
+        date: interview.scheduledAt
+          ? new Date(interview.scheduledAt).toLocaleDateString("en-US", {
+              month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
             })
           : "",
         duration: interview.duration ?? "",
-        overall: report.overall_score,
-        speech: report.speech_score,
-        timing: report.timing_score,
-        flow: report.flow_score,
-        linguistic: report.linguistic_score,
+        overall: report.overallScore,
+        speech: report.speechScore,
+        timing: report.timingScore,
+        flow: report.flowScore,
+        linguistic: report.linguisticScore,
         engagement: report.engagement,
         confidence: report.confidence,
         summary: report.summary ?? "",
-        flags: (flags ?? []).map((f) => ({
-          time: f.time,
-          pattern: f.pattern,
-          severity: f.severity as "low" | "medium" | "high",
-        })),
-        timeline: (timeline ?? []).map((t) => ({
-          min: t.minute,
-          score: t.score,
-        })),
-        responseDelays: (delays ?? []).map((d) => ({
-          question: d.question,
-          delay: d.delay,
-          label: d.label,
-        })),
+        flags: (flags ?? []).map((f: any) => ({ time: f.time, pattern: f.pattern, severity: f.severity })),
+        timeline: (timeline ?? []).map((t: any) => ({ min: t.minute, score: t.score })),
+        responseDelays: (delays ?? []).map((d: any) => ({ question: d.question, delay: d.delay, label: d.label })),
       };
     })
   );

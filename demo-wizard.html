@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TrueVoice HQ - Setup Wizard</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --true-green: #A8E34A;
+      --voicehq-green: #0A5C36;
+      --accent: #10B981;
+      --background: #FAFAF8;
+      --card: #FFFFFF;
+      --border: #E8E8E4;
+      --text-primary: #2A2A2E;
+      --text-secondary: #64748B;
+      --text-muted: #9CA3AF;
+      --shadow-soft: 0 4px 24px -4px rgba(0, 0, 0, 0.06);
+      --shadow-elevated: 0 12px 40px -8px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--background);
+      min-height: 100vh;
+      padding: 40px 20px;
+      color: var(--text-primary);
+      line-height: 1.7;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 48px;
+    }
+
+    .logo img {
+      height: 40px;
+      width: auto;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 48px;
+      box-shadow: var(--shadow-soft);
+      margin-bottom: 24px;
+      animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .section-title {
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 28px;
+      margin-bottom: 12px;
+      letter-spacing: -0.025em;
+    }
+
+    .section-subtitle {
+      color: var(--text-secondary);
+      font-size: 16px;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .question {
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 18px;
+      margin-bottom: 24px;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .option {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .option:hover {
+      border-color: var(--true-green);
+      box-shadow: 0 4px 16px rgba(168, 227, 74, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .option.selected {
+      border-color: var(--true-green);
+      background: rgba(168, 227, 74, 0.05);
+      box-shadow: 0 4px 16px rgba(168, 227, 74, 0.15);
+    }
+
+    .option.selected::before {
+      content: '✓';
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 28px;
+      height: 28px;
+      background: var(--true-green);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .option-title {
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+
+    .option-desc {
+      color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+      font-family: 'Geist', sans-serif;
+    }
+
+    .button:hover:not(:disabled) {
+      background: #0d9668;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .result-card {
+      background: linear-gradient(135deg, rgba(168, 227, 74, 0.08) 0%, rgba(168, 227, 74, 0.02) 100%);
+      border: 1px solid var(--true-green);
+      border-left: 4px solid var(--true-green);
+      padding: 24px;
+      border-radius: 12px;
+      margin-bottom: 32px;
+    }
+
+    .result-title {
+      color: var(--text-primary);
+      font-weight: 700;
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+
+    .result-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .result-row:last-child {
+      border-bottom: none;
+    }
+
+    .result-label {
+      color: var(--text-secondary);
+      font-size: 15px;
+    }
+
+    .result-value {
+      color: var(--text-primary);
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+
+    .service-card {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 32px;
+      margin: 16px 0;
+      transition: all 0.3s;
+    }
+
+    .service-card:hover {
+      box-shadow: var(--shadow-elevated);
+      transform: translateY(-4px);
+    }
+
+    .service-card.recommended {
+      border-color: var(--true-green);
+      position: relative;
+    }
+
+    .recommended-badge {
+      position: absolute;
+      top: -12px;
+      right: 24px;
+      background: var(--true-green);
+      color: white;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      box-shadow: 0 4px 12px rgba(168, 227, 74, 0.3);
+    }
+
+    .service-header {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+
+    .service-price {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--voicehq-green);
+      margin-bottom: 16px;
+    }
+
+    .service-features {
+      color: var(--text-secondary);
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    .service-features li {
+      margin: 8px 0;
+      padding-left: 24px;
+      position: relative;
+    }
+
+    .service-features li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--true-green);
+      font-weight: 700;
+    }
+
+    .contact-box {
+      background: rgba(10, 92, 54, 0.05);
+      border: 1px solid var(--voicehq-green);
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 24px;
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    .contact-box strong {
+      color: var(--voicehq-green);
+    }
+
+    .calendly-button {
+      background: var(--voicehq-green);
+      color: white;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+      font-family: 'Geist', sans-serif;
+      margin-top: 16px;
+      display: inline-block;
+      text-decoration: none;
+    }
+
+    .calendly-button:hover {
+      background: #084029;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(10, 92, 54, 0.3);
+    }
+
+    .calendly-inline-widget {
+      min-height: 630px;
+      width: 100%;
+      margin-top: 24px;
+    }
+
+    .checklist-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--text-muted);
+      padding: 20px;
+      margin: 12px 0;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .checklist-item:hover {
+      border-left-color: var(--true-green);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .checklist-item strong {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    .progress-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 40px;
+    }
+
+    .progress-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: all 0.3s;
+    }
+
+    .progress-dot.active {
+      background: var(--true-green);
+      width: 32px;
+      border-radius: 5px;
+    }
+
+    .progress-dot.complete {
+      background: var(--voicehq-green);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .intro-text {
+      color: var(--text-secondary);
+      font-size: 16px;
+      margin-bottom: 32px;
+    }
+
+    .command-box {
+      background: #f8f9fa;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+      font-size: 14px;
+      color: var(--voicehq-green);
+      margin-top: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .card {
+        padding: 32px 24px;
+      }
+
+      .section-title {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="public/truevoice-logo.png" alt="TrueVoice HQ">
+    </div>
+
+    <div class="progress-indicator">
+      <div class="progress-dot" id="dot1"></div>
+      <div class="progress-dot" id="dot2"></div>
+      <div class="progress-dot" id="dot3"></div>
+      <div class="progress-dot" id="dot4"></div>
+    </div>
+
+    <!-- Step 1: Skill Level -->
+    <div id="step1" class="card">
+      <div class="section-title">Setup Wizard</div>
+      <p class="intro-text">
+        Welcome! This interactive wizard will guide you through setting up TrueVoice HQ based on your technical experience and deployment needs.
+      </p>
+
+      <div class="question">What's your technical skill level?</div>
+
+      <div class="options">
+        <div class="option" data-value="beginner" onclick="selectSkill('beginner')">
+          <div class="option-title">Beginner</div>
+          <div class="option-desc">New to cloud services and need step-by-step guidance through the setup process.</div>
+        </div>
+        <div class="option" data-value="intermediate" onclick="selectSkill('intermediate')">
+          <div class="option-title">Intermediate</div>
+          <div class="option-desc">Comfortable with APIs and cloud platforms, but could use some help along the way.</div>
+        </div>
+        <div class="option" data-value="expert" onclick="selectSkill('expert')">
+          <div class="option-title">Expert</div>
+          <div class="option-desc">Know what I'm doing — just give me the checklist and let me work.</div>
+        </div>
+      </div>
+
+      <button class="button" onclick="nextStep(2)" id="btn1" disabled>Continue</button>
+    </div>
+
+    <!-- Step 2: Use Case -->
+    <div id="step2" class="card hidden">
+      <div class="section-title">Deployment Type</div>
+      <div class="question">What environment are you setting up?</div>
+
+      <div class="options">
+        <div class="option" data-value="development" onclick="selectUseCase('development')">
+          <div class="option-title">Development</div>
+          <div class="option-desc">Local testing environment using free tiers for prototyping and development.</div>
+        </div>
+        <div class="option" data-value="staging" onclick="selectUseCase('staging')">
+          <div class="option-title">Staging</div>
+          <div class="option-desc">Pre-production environment for testing with production-like configuration.</div>
+        </div>
+        <div class="option" data-value="production" onclick="selectUseCase('production')">
+          <div class="option-title">Production</div>
+          <div class="option-desc">Live customer-facing deployment with full features and integrations.</div>
+        </div>
+      </div>
+
+      <button class="button" onclick="nextStep(3)" id="btn2" disabled>Continue</button>
+    </div>
+
+    <!-- Step 3: Results & Recommendation -->
+    <div id="step3" class="card hidden">
+      <div class="section-title">Setup Analysis</div>
+
+      <div class="result-card">
+        <div class="result-title">Your Configuration</div>
+        <div class="result-row">
+          <span class="result-label">Skill Level</span>
+          <span class="result-value" id="resultSkill"></span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Deployment Type</span>
+          <span class="result-value" id="resultUseCase"></span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Estimated Time</span>
+          <span class="result-value" id="resultTime"></span>
+        </div>
+        <div class="result-row">
+          <span class="result-label">Complexity</span>
+          <span class="result-value" id="resultComplexity"></span>
+        </div>
+      </div>
+
+      <div class="section-title" style="margin-top: 48px;">Installation Options</div>
+      <div class="section-subtitle">Based on your configuration, here are your recommended options:</div>
+
+      <div id="servicesContainer"></div>
+
+      <button class="button" onclick="nextStep(4)">Continue with DIY Setup</button>
+    </div>
+
+    <!-- Step 4: Final -->
+    <div id="step4" class="card hidden">
+      <div class="section-title">Ready to Install</div>
+      <p class="intro-text">
+        Run the actual CLI wizard to begin automated setup:
+      </p>
+
+      <div class="command-box">$ npm run setup</div>
+
+      <div class="section-subtitle" style="margin-top: 32px;">
+        Or continue with the manual installation guide in <strong>INSTALLATION.md</strong>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let answers = { skillLevel: null, useCase: null };
+    let currentStep = 1;
+
+    function updateProgress() {
+      for (let i = 1; i <= 4; i++) {
+        const dot = document.getElementById(`dot${i}`);
+        if (i < currentStep) {
+          dot.classList.add('complete');
+          dot.classList.remove('active');
+        } else if (i === currentStep) {
+          dot.classList.add('active');
+          dot.classList.remove('complete');
+        } else {
+          dot.classList.remove('active', 'complete');
+        }
+      }
+    }
+
+    function selectSkill(value) {
+      answers.skillLevel = value;
+      document.querySelectorAll('#step1 .option').forEach(el => el.classList.remove('selected'));
+      document.querySelector(`#step1 .option[data-value="${value}"]`).classList.add('selected');
+      document.getElementById('btn1').disabled = false;
+    }
+
+    function selectUseCase(value) {
+      answers.useCase = value;
+      document.querySelectorAll('#step2 .option').forEach(el => el.classList.remove('selected'));
+      document.querySelector(`#step2 .option[data-value="${value}"]`).classList.add('selected');
+      document.getElementById('btn2').disabled = false;
+    }
+
+    function nextStep(step) {
+      document.getElementById(`step${step - 1}`).classList.add('hidden');
+      document.getElementById(`step${step}`).classList.remove('hidden');
+      currentStep = step;
+      updateProgress();
+
+      if (step === 3) {
+        showResults();
+      }
+    }
+
+    function showResults() {
+      document.getElementById('resultSkill').textContent = answers.skillLevel;
+      document.getElementById('resultUseCase').textContent = answers.useCase;
+
+      let minutes = 15;
+      if (answers.skillLevel === 'beginner') minutes += 30;
+      if (answers.skillLevel === 'intermediate') minutes += 15;
+      if (answers.useCase === 'production') minutes += 20;
+
+      document.getElementById('resultTime').textContent = `${minutes}-${minutes + 15} minutes`;
+
+      let complexity = 'LOW';
+      if (answers.skillLevel === 'beginner' || answers.useCase === 'production') {
+        complexity = 'HIGH';
+      } else if (answers.skillLevel === 'intermediate') {
+        complexity = 'MEDIUM';
+      }
+
+      document.getElementById('resultComplexity').textContent = complexity;
+      showServices();
+    }
+
+    function showServices() {
+      const container = document.getElementById('servicesContainer');
+      const shouldOffer = answers.skillLevel === 'beginner' ||
+                          answers.useCase === 'production' ||
+                          document.getElementById('resultComplexity').textContent === 'HIGH';
+
+      if (!shouldOffer) {
+        container.innerHTML = `
+          <div class="service-card">
+            <div class="service-header">DIY Installation</div>
+            <div class="service-price">Free</div>
+            <div class="service-features">
+              Perfect for your skill level! Follow our comprehensive documentation and automated setup wizard to get up and running quickly.
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      let recommended = '';
+      if (answers.useCase === 'production') {
+        recommended = `
+          <div class="service-card recommended">
+            <div class="recommended-badge">Recommended</div>
+            <div class="service-header">White Glove Setup</div>
+            <div class="service-price">$1,500 one-time</div>
+            <ul class="service-features">
+              <li>Complete done-for-you setup by our team</li>
+              <li>2-hour interactive setup call with screen share</li>
+              <li>All services configured and tested end-to-end</li>
+              <li>Custom domain and SSL certificate setup</li>
+              <li>Team training session (up to 5 people)</li>
+              <li>30 days of priority email and Slack support</li>
+              <li>Setup completed within 1 business day</li>
+            </ul>
+            <a href="https://cal.com/boxfordpartners/truevoice-setup" target="_blank" rel="noopener noreferrer" class="calendly-button">Schedule Setup Consultation</a>
+          </div>
+        `;
+      } else {
+        recommended = `
+          <div class="service-card recommended">
+            <div class="recommended-badge">Recommended</div>
+            <div class="service-header">Guided Setup</div>
+            <div class="service-price">$499 one-time</div>
+            <ul class="service-features">
+              <li>1-hour guided setup call with an expert</li>
+              <li>Walk-through of each configuration step</li>
+              <li>Help creating and configuring service accounts</li>
+              <li>Environment variable verification</li>
+              <li>14 days of email support after setup</li>
+            </ul>
+            <a href="https://cal.com/boxfordpartners/truevoice-setup" target="_blank" rel="noopener noreferrer" class="calendly-button">Schedule Setup Consultation</a>
+          </div>
+        `;
+      }
+
+      container.innerHTML = recommended + `
+        <div class="service-card">
+          <div class="service-header">DIY Installation</div>
+          <div class="service-price">Free</div>
+          <div class="service-features">
+            Follow our comprehensive documentation and automated setup wizard. Estimated time: ${document.getElementById('resultTime').textContent}.
+          </div>
+        </div>
+
+        <div class="contact-box">
+          <strong>Questions about professional setup?</strong><br>
+          Email: sales@boxfordpartners.com
+        </div>
+      `;
+    }
+
+    updateProgress();
+  </script>
+</body>
+</html>

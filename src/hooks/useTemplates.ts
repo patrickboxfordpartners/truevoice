@@ -1,28 +1,38 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getTemplates, upsertTemplate } from "@/lib/api/templates";
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { useAuth } from "@/contexts/AuthContext";
-import type { Database } from "@/types/supabase";
-
-type TemplateInsert = Database["public"]["Tables"]["email_templates"]["Insert"];
 
 export function useTemplates() {
   const { company } = useAuth();
-  return useQuery({
-    queryKey: ["templates", company?.id],
-    queryFn: () => getTemplates(company!.id),
-    enabled: !!company?.id,
-  });
+  const companyId = company?.id;
+  const data = useQuery(api.queries.getEmailTemplates, companyId ? { companyId } : "skip");
+  return {
+    data: data ?? [],
+    isLoading: data === undefined && !!companyId,
+    error: null,
+  };
 }
 
 export function useUpsertTemplate() {
-  const queryClient = useQueryClient();
   const { company } = useAuth();
+  const save = useMutation(api.mutations.saveEmailTemplate);
 
-  return useMutation({
-    mutationFn: (input: Omit<TemplateInsert, "company_id">) =>
-      upsertTemplate({ ...input, company_id: company!.id }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["templates"] });
+  return {
+    mutateAsync: async (input: {
+      template_type: string;
+      name: string;
+      subject: string;
+      body: string;
+    }) => {
+      if (!company?.id) throw new Error("No company");
+      await save({
+        companyId: company.id,
+        name: input.name,
+        type: input.template_type as any,
+        subject: input.subject,
+        body: input.body,
+      });
     },
-  });
+    isPending: false,
+  };
 }

@@ -1,3 +1,4 @@
+// TODO: Phase 3 - migrate stripe-checkout and stripe-portal to Convex actions
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";

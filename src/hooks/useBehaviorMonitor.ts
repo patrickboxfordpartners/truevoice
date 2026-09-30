@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 interface BehaviorEvent {
   type: "tab_switch" | "tab_return" | "paste" | "window_blur" | "window_focus";
@@ -14,15 +15,6 @@ interface UseBehaviorMonitorOptions {
   elapsedSeconds: number;
 }
 
-/**
- * Monitors candidate behavior during an interview:
- * - Tab/window visibility changes (switching to another app/tab)
- * - Clipboard paste events
- * - Tracks time spent away from the interview tab
- *
- * Flags are written directly to the interview_flags table so
- * the interviewer sees them in real-time via their Supabase subscription.
- */
 export function useBehaviorMonitor({ interviewId, enabled, elapsedSeconds }: UseBehaviorMonitorOptions) {
   const eventsRef = useRef<BehaviorEvent[]>([]);
   const leaveTimeRef = useRef<number | null>(null);
@@ -30,7 +22,8 @@ export function useBehaviorMonitor({ interviewId, enabled, elapsedSeconds }: Use
   const pasteCountRef = useRef(0);
   const elapsedRef = useRef(elapsedSeconds);
 
-  // Keep elapsed ref current for callbacks
+  const insertFlags = useMutation(api.interviewData.insertFlags);
+
   useEffect(() => {
     elapsedRef.current = elapsedSeconds;
   }, [elapsedSeconds]);
@@ -44,18 +37,15 @@ export function useBehaviorMonitor({ interviewId, enabled, elapsedSeconds }: Use
   const sendFlag = useCallback(async (pattern: string, severity: "low" | "medium" | "high") => {
     if (!interviewId) return;
     const time = formatTime(elapsedRef.current);
-    await supabase.from("interview_flags").insert({
-      interview_id: interviewId,
-      time,
-      pattern,
-      severity,
+    await insertFlags({
+      interviewId,
+      flags: [{ time, pattern, severity }],
     });
-  }, [interviewId, formatTime]);
+  }, [interviewId, formatTime, insertFlags]);
 
   useEffect(() => {
     if (!enabled || !interviewId) return;
 
-    // --- Tab visibility ---
     const handleVisibilityChange = () => {
       const now = Date.now();
 
@@ -64,7 +54,6 @@ export function useBehaviorMonitor({ interviewId, enabled, elapsedSeconds }: Use
         tabSwitchCountRef.current++;
         eventsRef.current.push({ type: "tab_switch", timestamp: now });
 
-        // First tab switch is low severity, repeated switches escalate
         const count = tabSwitchCountRef.current;
         if (count === 1) {
           sendFlag("Candidate switched away from interview tab", "low");
@@ -87,10 +76,8 @@ export function useBehaviorMonitor({ interviewId, enabled, elapsedSeconds }: Use
       }
     };
 
-    // --- Window blur/focus (catches alt-tab to other apps) ---
     const handleBlur = () => {
       if (!document.hidden) {
-        // Window lost focus but tab is still visible (e.g. floating window scenario)
         leaveTimeRef.current = leaveTimeRef.current || Date.now();
         eventsRef.current.push({ type: "window_blur", timestamp: Date.now() });
       }
@@ -104,7 +91,6 @@ export function useBehaviorMonitor({ interviewId, enabled, elapsedSeconds }: Use
       }
     };
 
-    // --- Clipboard paste detection ---
     const handlePaste = (e: ClipboardEvent) => {
       pasteCountRef.current++;
       const textLength = e.clipboardData?.getData("text")?.length || 0;

@@ -1,56 +1,36 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "@/types/supabase";
+// Convex API - interviews
+// These are imperative wrappers for use outside React component trees.
+// Inside components, prefer useQuery(api.interviews.*) and useMutation(api.interviews.*) directly.
 
-type InterviewInsert = Database["public"]["Tables"]["interviews"]["Insert"];
-type InterviewUpdate = Database["public"]["Tables"]["interviews"]["Update"];
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../convex/_generated/api";
+
+const client = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
 
 export async function getInterviews(companyId: string) {
-  const { data, error } = await supabase
-    .from("interviews")
-    .select("*")
-    .eq("company_id", companyId)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data;
+  return client.query(api.interviews.getByCompany, { companyId });
 }
 
 export async function getInterview(id: string) {
-  const { data, error } = await supabase
-    .from("interviews")
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (error) throw error;
-  return data;
+  return client.query(api.interviews.getById, { interviewId: id });
 }
 
 export async function getInterviewByToken(token: string) {
-  const { data, error } = await supabase
-    .from("interviews")
-    .select("*, companies(name, subscription_tier, subscription_status)")
-    .eq("candidate_token", token)
-    .single();
-  if (error) throw error;
-  return data;
+  return client.query(api.interviews.getByToken, { token });
 }
 
-export async function createInterview(interview: InterviewInsert) {
-  const { data, error } = await supabase
-    .from("interviews")
-    .insert(interview)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+export async function createInterview(interview: {
+  companyId: string;
+  createdBy: string;
+  candidateName: string;
+  candidateEmail: string;
+  position: string;
+  scheduledAt?: number;
+  duration?: string;
+}) {
+  return client.mutation(api.interviews.create, interview);
 }
 
-export async function updateInterview(id: string, updates: InterviewUpdate) {
-  const { data, error } = await supabase
-    .from("interviews")
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+export async function updateInterview(id: string, updates: Record<string, any>) {
+  return client.mutation(api.interviews.update, { interviewId: id, ...updates });
 }

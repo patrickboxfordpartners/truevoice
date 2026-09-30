@@ -5,13 +5,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
-import { ConvexProviderWithAuth } from "convex/react";
-import { convex } from "@/lib/convex";
+import { ConvexAuthProvider } from "@convex-dev/auth/react";
+import { ConvexReactClient } from "convex/react";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { useConvexAuth } from "@/lib/convexAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import "@livekit/components-styles";
+
+const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL);
 
 const Pricing = lazy(() => import("./pages/Pricing"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
@@ -56,8 +57,8 @@ const LoadingSpinner = () => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-      <AuthProvider>
-        <ConvexProviderWithAuth client={convex} useAuth={useConvexAuth}>
+      <ConvexAuthProvider client={convex}>
+        <AuthProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -106,8 +107,8 @@ const App = () => (
             </Suspense>
           </BrowserRouter>
         </TooltipProvider>
-        </ConvexProviderWithAuth>
-      </AuthProvider>
+        </AuthProvider>
+      </ConvexAuthProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

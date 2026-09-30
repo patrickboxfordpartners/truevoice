@@ -1,3 +1,4 @@
+// TODO: Phase 3 - migrate candidates table to Convex (needs its own table, not hiring_pipeline)
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/contexts/AuthContext";

@@ -1,8 +1,7 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "@/types/supabase";
+// TODO: Phase 3 - migrate to Convex (Joan already has email_templates table)
+// For now, keeping Supabase for email templates
 
-type TemplateInsert = Database["public"]["Tables"]["email_templates"]["Insert"];
-type TemplateUpdate = Database["public"]["Tables"]["email_templates"]["Update"];
+import { supabase } from "@/lib/supabase";
 
 export async function getTemplates(companyId: string) {
   const { data, error } = await supabase
@@ -14,8 +13,13 @@ export async function getTemplates(companyId: string) {
   return data;
 }
 
-export async function upsertTemplate(template: TemplateInsert) {
-  // Check if a template of this type already exists for this company
+export async function upsertTemplate(template: {
+  company_id: string;
+  template_type: string;
+  name: string;
+  subject: string;
+  body: string;
+}) {
   const { data: existing } = await supabase
     .from("email_templates")
     .select("id")
@@ -31,7 +35,7 @@ export async function upsertTemplate(template: TemplateInsert) {
         subject: template.subject,
         body: template.body,
         updated_at: new Date().toISOString(),
-      } satisfies TemplateUpdate)
+      })
       .eq("id", existing.id)
       .select()
       .single();

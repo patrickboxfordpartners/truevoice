@@ -92,7 +92,24 @@ serve(async (req) => {
       return new Response(JSON.stringify({ report: savedReport }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const grokResponse = await fetch(`${xaiBaseUrl}/v1/chat/completions`, {
+    const interviewContext = `Interview: ${interview.candidate_name} for ${interview.position}
+Chunk-level analyses (${chunks.length} chunks): ${JSON.stringify(
+      chunks.map((c: any) => ({
+        speech: c.speech_score,
+        timing: c.timing_score,
+        flow: c.flow_score,
+        linguistic: c.linguistic_score,
+      }))
+    )}
+Flags detected (${existingFlags.length}): ${JSON.stringify(
+      existingFlags.map((f: any) => ({ time: f.time, pattern: f.pattern, severity: f.severity }))
+    )}
+Full transcript: "${fullTranscript.slice(0, 8000)}"`;
+
+    // Run Grok scoring and AssemblyAI LLM Gateway summary in parallel
+    const assemblyaiKey = Deno.env.get("ASSEMBLYAI_API_KEY");
+
+    const grokPromise = fetch(`${xaiBaseUrl}/v1/chat/completions`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${xaiKey}`,
@@ -121,26 +138,55 @@ Also provide:
 You MUST return ONLY valid JSON with no explanation, no markdown, no code fences:
 {"speech":20,"timing":18,"flow":15,"linguistic":22,"engagement":75,"confidence":70,"summary":"...","recommendations":["...","..."]}`,
           },
-          {
-            role: "user",
-            content: `Interview: ${interview.candidate_name} for ${interview.position}
-Chunk-level analyses (${chunks.length} chunks): ${JSON.stringify(
-              chunks.map((c: any) => ({
-                speech: c.speech_score,
-                timing: c.timing_score,
-                flow: c.flow_score,
-                linguistic: c.linguistic_score,
-              }))
-            )}
-Flags detected (${existingFlags.length}): ${JSON.stringify(
-              existingFlags.map((f: any) => ({ time: f.time, pattern: f.pattern, severity: f.severity }))
-            )}
-Full transcript: "${fullTranscript.slice(0, 8000)}"`,
-          },
+          { role: "user", content: interviewContext },
         ],
         temperature: 0.3,
       }),
     });
+
+    const gatewayPromise = assemblyaiKey
+      ? fetch("https://llm-gateway.assemblyai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            authorization: assemblyaiKey,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-6",
+            messages: [
+              {
+                role: "system",
+                content: `You are a senior hiring advisor. Given an interview transcript with chunk-level authenticity scores and detected flags, produce a structured hiring summary.
+
+Return ONLY valid JSON:
+{
+  "hiring_recommendation": "strong_yes" | "yes" | "maybe" | "no" | "strong_no",
+  "strengths": ["...", "..."],
+  "concerns": ["...", "..."],
+  "red_flags": ["...", "..."],
+  "follow_up_questions": ["...", "..."],
+  "executive_summary": "2-3 sentence assessment for hiring manager"
+}`,
+              },
+              { role: "user", content: interviewContext },
+            ],
+            temperature: 0.3,
+          }),
+        })
+          .then(async (res) => {
+            if (!res.ok) {
+              console.error("[generate-final-report] LLM Gateway error:", res.status);
+              return null;
+            }
+            return res.json();
+          })
+          .catch((e) => {
+            console.warn("[generate-final-report] LLM Gateway failed (non-fatal):", e);
+            return null;
+          })
+      : Promise.resolve(null);
+
+    const [grokResponse, gatewayData] = await Promise.all([grokPromise, gatewayPromise]);
 
     const grokData = await grokResponse.json();
     console.log("[generate-final-report] Grok API status:", grokResponse.status);
@@ -151,6 +197,21 @@ Full transcript: "${fullTranscript.slice(0, 8000)}"`,
 
     const rawContent = grokData.choices?.[0]?.message?.content || "";
     console.log("[generate-final-report] Raw content:", rawContent.slice(0, 300));
+
+    // Parse LLM Gateway summary
+    let gatewaySummary: any = null;
+    if (gatewayData) {
+      try {
+        const gwContent = gatewayData.choices?.[0]?.message?.content || "";
+        const gwJson = extractJson(gwContent);
+        if (gwJson) {
+          gatewaySummary = JSON.parse(gwJson);
+          console.log("[generate-final-report] LLM Gateway summary parsed");
+        }
+      } catch (e) {
+        console.warn("[generate-final-report] LLM Gateway parse failed (non-fatal):", e);
+      }
+    }
 
     let report: any;
     try {
@@ -202,6 +263,16 @@ Full transcript: "${fullTranscript.slice(0, 8000)}"`,
         confidence: Math.min(100, Math.max(0, report.confidence ?? 70)),
         summary: report.summary || null,
         recommendations: report.recommendations || null,
+        ...(gatewaySummary
+          ? {
+              hiring_recommendation: gatewaySummary.hiring_recommendation || null,
+              strengths: gatewaySummary.strengths || null,
+              concerns: gatewaySummary.concerns || null,
+              red_flags: gatewaySummary.red_flags || null,
+              follow_up_questions: gatewaySummary.follow_up_questions || null,
+              executive_summary: gatewaySummary.executive_summary || null,
+            }
+          : {}),
       })
       .select()
       .single();

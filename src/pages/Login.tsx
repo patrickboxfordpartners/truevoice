@@ -4,8 +4,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/lib/supabase";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useConvexAuth } from "convex/react";
 import { useToast } from "@/hooks/use-toast";
 
 const PHOTOS = [
@@ -16,7 +16,8 @@ const PHOTOS = [
 ];
 
 const Login = () => {
-  const { signIn } = useAuth();
+  const { signIn } = useAuthActions();
+  const { isAuthenticated } = useConvexAuth();
   const { toast } = useToast();
   const { setTheme } = useTheme();
   useEffect(() => { setTheme("light"); }, [setTheme]);
@@ -26,12 +27,15 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [photoIndex] = useState(() => Math.floor(Math.random() * PHOTOS.length));
 
+  useEffect(() => {
+    if (isAuthenticated) navigate("/dashboard", { replace: true });
+  }, [isAuthenticated, navigate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await signIn(email, password);
-      navigate("/dashboard");
+      await signIn("password", { email, password, flow: "signIn" });
     } catch (err: any) {
       toast({
         title: "Sign in failed",
@@ -48,7 +52,7 @@ const Login = () => {
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-[400px] mx-auto">
-          {/* Logo — centered */}
+          {/* Logo */}
           <div className="flex justify-center mb-14">
             <Link to="/">
               <img src="/truevoice-logo.png" alt="TrueVoice HQ" className="h-9 w-auto" />
@@ -98,25 +102,6 @@ const Login = () => {
             </Button>
           </form>
 
-          {/* Forgot password */}
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={async () => {
-                const email = (document.querySelector('input[type="email"]') as HTMLInputElement)?.value;
-                if (!email) { alert("Enter your email first."); return; }
-                const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                  redirectTo: `${window.location.origin}/login`,
-                });
-                if (error) alert(error.message);
-                else alert("Check your email for a password reset link.");
-              }}
-              className="text-sm text-gray-400 hover:text-gray-600"
-            >
-              Forgot your password?
-            </button>
-          </div>
-
           {/* Divider */}
           <div className="flex items-center gap-4 my-6">
             <div className="flex-1 h-px bg-gray-200" />
@@ -144,7 +129,7 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Right side - Rotating photos */}
+      {/* Right side - Static random photo */}
       <div className="hidden lg:block flex-1 relative overflow-hidden">
         {PHOTOS.map((src, i) => (
           <div

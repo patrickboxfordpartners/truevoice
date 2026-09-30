@@ -1,3 +1,4 @@
+// TODO: Phase 3 - migrate field_moments table to Convex
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 

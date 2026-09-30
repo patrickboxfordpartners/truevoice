@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { authTables } from "@convex-dev/auth/server";
 
 /**
  * Convex Schema for TrueVoice HQ + Joan AI Coordinator
@@ -10,6 +11,7 @@ import { v } from "convex/values";
  */
 
 export default defineSchema({
+  ...authTables,
   // ─────────────────────────────────────────────────────────────────
   // HIRING PIPELINE (Joan's Core Data)
   // ─────────────────────────────────────────────────────────────────
@@ -759,6 +761,149 @@ export default defineSchema({
     .index("by_candidate", ["candidateId"])
     .index("by_company", ["companyId"])
     .index("by_interviewer", ["interviewerId"]),
+
+  // ─────────────────────────────────────────────────────────────────
+  // CORE INTERVIEWS (migrated from Supabase)
+  // ─────────────────────────────────────────────────────────────────
+
+  interviews: defineTable({
+    companyId: v.string(),
+    createdBy: v.string(),
+    candidateName: v.string(),
+    candidateEmail: v.string(),
+    position: v.string(),
+    scheduledAt: v.optional(v.number()),
+    duration: v.optional(v.string()),
+    status: v.union(
+      v.literal("scheduled"),
+      v.literal("in_progress"),
+      v.literal("completed"),
+      v.literal("cancelled")
+    ),
+    candidateToken: v.string(),
+    candidateConsented: v.boolean(),
+    transcript: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    livekitRoomName: v.optional(v.string()),
+    livekitStartedAt: v.optional(v.number()),
+    latestScores: v.optional(v.object({
+      speech: v.number(),
+      timing: v.number(),
+      flow: v.number(),
+      linguistic: v.number(),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_company", ["companyId"])
+    .index("by_token", ["candidateToken"])
+    .index("by_status", ["status"])
+    .index("by_created_by", ["createdBy"]),
+
+  interview_reports: defineTable({
+    interviewId: v.string(),
+    overallScore: v.number(),
+    speechScore: v.number(),
+    timingScore: v.number(),
+    flowScore: v.number(),
+    linguisticScore: v.number(),
+    engagement: v.number(),
+    confidence: v.number(),
+    summary: v.optional(v.string()),
+    recommendations: v.optional(v.array(v.string())),
+    createdAt: v.number(),
+  })
+    .index("by_interview", ["interviewId"]),
+
+  interview_flags: defineTable({
+    interviewId: v.string(),
+    time: v.string(),
+    pattern: v.string(),
+    severity: v.union(
+      v.literal("low"),
+      v.literal("medium"),
+      v.literal("high")
+    ),
+    flagType: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_interview", ["interviewId"]),
+
+  interview_timeline: defineTable({
+    interviewId: v.string(),
+    minute: v.string(),
+    score: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_interview", ["interviewId"]),
+
+  response_delays: defineTable({
+    interviewId: v.string(),
+    question: v.string(),
+    delay: v.number(),
+    label: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_interview", ["interviewId"]),
+
+  transcript_chunks: defineTable({
+    interviewId: v.string(),
+    chunkIndex: v.number(),
+    text: v.string(),
+    speaker: v.optional(v.string()),
+    elapsedSeconds: v.number(),
+    speechScore: v.optional(v.number()),
+    timingScore: v.optional(v.number()),
+    flowScore: v.optional(v.number()),
+    linguisticScore: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_interview", ["interviewId"])
+    .index("by_interview_chunk", ["interviewId", "chunkIndex"]),
+
+  report_tokens: defineTable({
+    interviewId: v.string(),
+    token: v.string(),
+    expiresAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_token", ["token"])
+    .index("by_interview", ["interviewId"]),
+
+  // ─────────────────────────────────────────────────────────────────
+  // USER PROFILES & COMPANIES (migrated from Supabase)
+  // ─────────────────────────────────────────────────────────────────
+
+  profiles: defineTable({
+    userId: v.string(),
+    email: v.string(),
+    full_name: v.optional(v.string()),
+    role: v.string(),
+    company_id: v.optional(v.string()),
+    has_completed_onboarding: v.boolean(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_email", ["email"])
+    .index("by_company", ["company_id"]),
+
+  companies: defineTable({
+    name: v.optional(v.string()),
+    subscription_tier: v.string(),
+    stripe_customer_id: v.optional(v.string()),
+    max_interviews_per_month: v.number(),
+    features: v.optional(v.object({
+      video_analysis: v.boolean(),
+      multi_face_detection: v.boolean(),
+      phone_detection: v.boolean(),
+      script_reading: v.boolean(),
+      team_dashboard: v.boolean(),
+      api_access: v.boolean(),
+    })),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }),
 
   joan_settings: defineTable({
     companyId: v.string(),

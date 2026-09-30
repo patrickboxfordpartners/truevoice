@@ -4,7 +4,9 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuthActions } from "@convex-dev/auth/react";
+import { useConvexAuth, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { useToast } from "@/hooks/use-toast";
 
 const PHOTOS = [
@@ -15,7 +17,9 @@ const PHOTOS = [
 ];
 
 const Signup = () => {
-  const { signUp } = useAuth();
+  const { signIn } = useAuthActions();
+  const { isAuthenticated } = useConvexAuth();
+  const createProfile = useMutation(api.users.createProfile);
   const { toast } = useToast();
   const { setTheme } = useTheme();
   useEffect(() => { setTheme("light"); }, [setTheme]);
@@ -28,23 +32,28 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [photoIndex] = useState(() => Math.floor(Math.random() * PHOTOS.length));
 
+  useEffect(() => {
+    if (isAuthenticated && !loading) {
+      navigate(plan ? `/onboarding?plan=${plan}` : "/onboarding", { replace: true });
+    }
+  }, [isAuthenticated, loading, navigate, plan]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await signUp(email, password, fullName);
+      await signIn("password", { email, password, flow: "signUp" });
+      await createProfile({ full_name: fullName });
       toast({
         title: "Account created",
-        description: "Check your email to confirm your account, then sign in.",
+        description: "Welcome to TrueVoice HQ.",
       });
-      navigate(plan ? `/onboarding?plan=${plan}` : "/onboarding");
     } catch (err: any) {
       toast({
         title: "Signup failed",
         description: err.message || "Something went wrong.",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -54,7 +63,7 @@ const Signup = () => {
       {/* Left side - Form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-[400px] mx-auto">
-          {/* Logo — centered */}
+          {/* Logo */}
           <div className="flex justify-center mb-14">
             <Link to="/">
               <img src="/truevoice-logo.png" alt="TrueVoice HQ" className="h-9 w-auto" />
@@ -140,7 +149,7 @@ const Signup = () => {
         </div>
       </div>
 
-      {/* Right side - Rotating photos */}
+      {/* Right side - Static random photo */}
       <div className="hidden lg:block flex-1 relative overflow-hidden">
         {PHOTOS.map((src, i) => (
           <div

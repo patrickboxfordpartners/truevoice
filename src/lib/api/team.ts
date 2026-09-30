@@ -1,5 +1,8 @@
+// TODO: Phase 3 - migrate team management to Convex mutations
+// Team operations require profiles table mutations (updateRole, removeMember, invite)
+// that need dedicated Convex functions in convex/users.ts
+
 import { supabase } from "@/lib/supabase";
-import type { Role } from "@/types";
 
 export async function getTeamMembers(companyId: string) {
   const { data, error } = await supabase
@@ -11,7 +14,7 @@ export async function getTeamMembers(companyId: string) {
   return data;
 }
 
-export async function updateMemberRole(memberId: string, role: Role) {
+export async function updateMemberRole(memberId: string, role: string) {
   const { error } = await supabase
     .from("profiles")
     .update({ role, updated_at: new Date().toISOString() })
@@ -27,9 +30,7 @@ export async function removeMember(memberId: string) {
   if (error) throw error;
 }
 
-export async function inviteTeamMember(email: string, role: Role, companyId: string) {
-  // For MVP, we update an existing profile's company_id.
-  // A full implementation would send an invite email.
+export async function inviteTeamMember(email: string, role: string, companyId: string) {
   const { data: profile } = await supabase
     .from("profiles")
     .select("id")

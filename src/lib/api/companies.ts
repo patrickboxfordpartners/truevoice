@@ -1,25 +1,18 @@
-import { supabase } from "@/lib/supabase";
-import type { Database } from "@/types/supabase";
+// Convex API - companies
+// Inside components, prefer useQuery/useMutation directly.
 
-type CompanyUpdate = Database["public"]["Tables"]["companies"]["Update"];
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../convex/_generated/api";
 
-export async function getCompany(id: string) {
-  const { data, error } = await supabase
-    .from("companies")
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (error) throw error;
-  return data;
+const client = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
+
+export async function getCompany(_id: string) {
+  const viewer = await client.query(api.users.viewer, {});
+  return viewer?.company ?? null;
 }
 
-export async function updateCompany(id: string, updates: CompanyUpdate) {
-  const { data, error } = await supabase
-    .from("companies")
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+export async function updateCompany(id: string, updates: Record<string, any>) {
+  return client.mutation(api.users.completeOnboarding, {
+    companyName: updates.name ?? "",
+  });
 }
