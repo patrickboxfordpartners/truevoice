@@ -90,10 +90,10 @@ export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDia
     }
     setIsGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-questions", {
-        body: { position, job_description: jobDescription || undefined },
+      const data = await generateQuestionsAction({
+        position,
+        jobDescription: jobDescription || undefined,
       });
-      if (error) throw error;
       const questions: GeneratedQuestion[] = data?.questions ?? [];
       setGeneratedQuestions(questions);
       setSelectedQuestions(new Set(questions.map((q) => q.id)));

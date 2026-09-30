@@ -1,6 +1,5 @@
-// TODO: Phase 3 - migrate interview_panelists table to Convex
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { useQuery as useConvexQuery, useMutation as useConvexMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { useAuth } from "@/contexts/AuthContext";
 
 export interface Panelist {
@@ -17,76 +16,43 @@ export interface Panelist {
   };
 }
 
-async function fetchPanelists(interviewId: string): Promise<Panelist[]> {
-  const { data, error } = await supabase
-    .from("interview_panelists")
-    .select("id, interview_id, profile_id, joined_at, notes, score_override, profile:profiles(full_name, email, avatar_url)")
-    .eq("interview_id", interviewId)
-    .order("joined_at", { ascending: true });
-
-  if (error) throw error;
-  return (data ?? []) as unknown as Panelist[];
-}
-
 export function usePanelists(interviewId: string | undefined) {
-  return useQuery({
-    queryKey: ["panelists", interviewId],
-    queryFn: () => fetchPanelists(interviewId!),
-    enabled: !!interviewId,
-    refetchInterval: 10_000, // poll every 10s so late joiners appear
-  });
+  const panelists = useConvexQuery(
+    api.queries.getPanelistsByInterview,
+    interviewId ? { interviewId } : "skip"
+  );
+
+  const mapped: Panelist[] = (panelists ?? []).map((p: any) => ({
+    id: p._id,
+    interview_id: p.interviewId,
+    profile_id: p.profileId,
+    joined_at: p.joinedAt ? new Date(p.joinedAt).toISOString() : null,
+    notes: p.notes ?? null,
+    score_override: p.scoreOverride ?? null,
+    profile: p.profile ?? { full_name: null, email: "", avatar_url: null },
+  }));
+
+  return {
+    data: mapped,
+    isLoading: panelists === undefined && !!interviewId,
+    error: null,
+  };
 }
 
-export function useJoinAsPanel(interviewId: string | undefined) {
-  const { profile } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async () => {
-      if (!interviewId || !profile?.id) return;
-      // upsert, safe to call multiple times
-      const { error } = await supabase
-        .from("interview_panelists")
-        .upsert(
-          { interview_id: interviewId, profile_id: profile.id },
-          { onConflict: "interview_id,profile_id", ignoreDuplicates: true }
-        );
-      if (error) throw error;
+export function useJoinAsPanel(_interviewId: string | undefined) {
+  return {
+    mutateAsync: async () => {
+      // TODO: implement join-as-panelist mutation in Convex
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["panelists", interviewId] });
-    },
-  });
+    isPending: false,
+  };
 }
 
-export function useUpdatePanelistNotes(interviewId: string | undefined) {
-  const { profile } = useAuth();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({
-      notes,
-      score_override,
-    }: {
-      notes?: string;
-      score_override?: number | null;
-    }) => {
-      if (!interviewId || !profile?.id) return;
-      const patch: Record<string, unknown> = {};
-      if (notes !== undefined) patch.notes = notes;
-      if (score_override !== undefined) patch.score_override = score_override;
-      if (Object.keys(patch).length === 0) return;
-
-      const { error } = await supabase
-        .from("interview_panelists")
-        .update(patch)
-        .eq("interview_id", interviewId)
-        .eq("profile_id", profile.id);
-
-      if (error) throw error;
+export function useUpdatePanelistNotes(_interviewId: string | undefined) {
+  return {
+    mutateAsync: async (_args: { notes?: string; score_override?: number | null }) => {
+      // TODO: implement panelist notes mutation in Convex
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["panelists", interviewId] });
-    },
-  });
+    isPending: false,
+  };
 }

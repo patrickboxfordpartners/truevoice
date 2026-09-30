@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAssemblyAITranscription } from "./useAssemblyAITranscription";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { supabase } from "@/lib/supabase";
 import type { InterviewFlag, InterviewTimeline } from "@/types";
 import type { LiveScores } from "@/types";
 
@@ -156,15 +155,9 @@ export function useLiveInterview(interviewId: string, companyId?: string): UseLi
       chunkTimerRef.current = setInterval(() => sendChunkForAnalysis(), CHUNK_INTERVAL_MS);
       setTimeout(() => sendChunkForAnalysis(), 5000);
 
-      // TODO: Phase 3 - migrate start-recording to Convex action
+      // TODO: Wire start-recording Convex action when LiveKit egress is migrated
       const roomName = `interview-${interviewId}`;
-      supabase.functions
-        .invoke("start-recording", { body: { interview_id: interviewId, room_name: roomName } })
-        .then(({ data, error }) => {
-          if (error) console.warn("[useLiveInterview] Recording start failed:", error.message);
-          else if (data?.egress_id) { egressIdRef.current = data.egress_id; setIsRecording(true); }
-        })
-        .catch((err) => console.warn("[useLiveInterview] Recording exception:", err));
+      console.log("[useLiveInterview] Recording start skipped (pending Convex migration)", roomName);
     } catch (error: any) {
       setAudioError(error.message || "Failed to start interview");
       throw error;
@@ -177,14 +170,12 @@ export function useLiveInterview(interviewId: string, companyId?: string): UseLi
     if (chunkTimerRef.current) clearInterval(chunkTimerRef.current);
     deepgram.disconnect();
 
-    // TODO: Phase 3 - migrate stop-recording to Convex action
+    // TODO: Wire stop-recording Convex action when LiveKit egress is migrated
     const currentEgressId = egressIdRef.current;
     if (currentEgressId) {
       setIsRecording(false);
       egressIdRef.current = null;
-      supabase.functions
-        .invoke("stop-recording", { body: { interview_id: interviewId, egress_id: currentEgressId } })
-        .catch((err) => console.warn("[useLiveInterview] Recording stop exception:", err));
+      console.log("[useLiveInterview] Recording stop skipped (pending Convex migration)", currentEgressId);
     }
 
     await sendChunkForAnalysis();
@@ -192,10 +183,11 @@ export function useLiveInterview(interviewId: string, companyId?: string): UseLi
     const fullTranscript = deepgram.transcript;
     await updateInterview({ interviewId, transcript: fullTranscript, status: "completed" });
 
-    // TODO: Phase 3 - migrate generate-final-report to Convex action
     try {
-      await supabase.functions.invoke("generate-final-report", { body: { interview_id: interviewId } });
-    } catch { /* not deployed yet */ }
+      const { ConvexHttpClient } = await import("convex/browser");
+      const client = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
+      await client.action(api.actions.generateFinalReport.generate, { interviewId });
+    } catch (e) { console.warn("[useLiveInterview] Final report generation failed:", e); }
   }, [deepgram, interviewId, sendChunkForAnalysis, updateInterview]);
 
   return {

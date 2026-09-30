@@ -30,21 +30,18 @@ const PublicReport = () => {
 
   useEffect(() => {
     if (!token) return
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-    const fnUrl = `${supabaseUrl}/functions/v1/get-public-report?token=${encodeURIComponent(token)}`
-    fetch(fnUrl, {
-      headers: { "apikey": supabaseKey, "Authorization": `Bearer ${supabaseKey}` },
+    import("convex/browser").then(async ({ ConvexHttpClient }) => {
+      const { api } = await import("../../convex/_generated/api");
+      const client = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
+      try {
+        const tokenRow = await client.query(api.reportTokens.getByToken, { token });
+        if (!tokenRow) { setError("This report link is invalid or has expired."); return; }
+        const report = await client.query(api.interviewData.getFullReport, { interviewId: tokenRow.interviewId });
+        if (!report) { setError("Report not found."); return; }
+        setData(report);
+      } catch { setError("This report link is invalid or has expired."); }
+      finally { setLoading(false); }
     })
-      .then(async (res) => {
-        if (!res.ok) {
-          setError("This report link is invalid or has expired.")
-        } else {
-          setData(await res.json())
-        }
-      })
-      .catch(() => setError("This report link is invalid or has expired."))
-      .finally(() => setLoading(false))
   }, [token])
 
   if (loading) {

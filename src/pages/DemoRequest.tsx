@@ -22,6 +22,7 @@ const PHOTOS = [
 ]
 
 const DemoRequest = () => {
+  const sendDemo = useAction(api.actions.sendDemoRequest.sendDemoRequest)
   const [name, setName] = useState("")
   const [company, setCompany] = useState("")
   const [role, setRole] = useState("")
@@ -37,10 +38,7 @@ const DemoRequest = () => {
     setError(null)
     setSubmitting(true)
     try {
-      const { error: fnError } = await supabase.functions.invoke("send-demo-request", {
-        body: { name, company, role, volume, message: message || undefined },
-      })
-      if (fnError) throw fnError
+      await sendDemo({ name, company, role, volume, message: message || undefined })
       setSubmitted(true)
     } catch {
       setError("Something went wrong. Please email us directly at hello@truevoicehq.com")
