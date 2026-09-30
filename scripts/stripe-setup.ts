@@ -32,20 +32,20 @@ const plans: PlanDefinition[] = [
   {
     name: "Starter",
     description: "Audio-only analysis - 30 interviews/mo",
-    monthlyPrice: 7900, // $79.00
-    yearlyPrice: 75600, // $756.00 ($63/mo)
+    monthlyPrice: 9900, // $99.00
+    yearlyPrice: 94800, // $948.00 ($79/mo)
   },
   {
     name: "Pro",
     description: "Audio + video analysis - 30 interviews/mo",
-    monthlyPrice: 14900, // $149.00
-    yearlyPrice: 142800, // $1,428.00 ($119/mo)
+    monthlyPrice: 24900, // $249.00
+    yearlyPrice: 238800, // $2,388.00 ($199/mo)
   },
   {
     name: "Scale",
     description: "High-volume hiring - 100 interviews/mo",
-    monthlyPrice: 34900, // $349.00
-    yearlyPrice: 334800, // $3,348.00 ($279/mo)
+    monthlyPrice: 49900, // $499.00
+    yearlyPrice: 478800, // $4,788.00 ($399/mo)
   },
 ];
 

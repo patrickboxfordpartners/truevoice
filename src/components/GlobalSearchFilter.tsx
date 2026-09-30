@@ -26,7 +26,7 @@ const STAGE_CONFIG: { key: Stage; label: string; color: string }[] = [
   { key: "screening", label: "Screening", color: "#3b82f6" },
   { key: "technical", label: "Technical", color: "#a855f7" },
   { key: "final", label: "Final", color: "#f59e0b" },
-  { key: "offer", label: "Offer", color: "#22c55e" },
+  { key: "offer", label: "Offer", color: "#10B981" },
   { key: "hired", label: "Hired", color: "hsl(160,84%,39%)" },
   { key: "rejected", label: "Rejected", color: "#ef4444" },
 ];

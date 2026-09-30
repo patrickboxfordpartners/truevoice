@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 const CTASection = () => (
   <section className="py-28 px-6 bg-card border-t border-border">
     <ScrollReveal className="max-w-3xl mx-auto text-center">
-      <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground mb-4">
+      <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-foreground mb-4">
         Stop guessing. Start knowing.
       </h2>
       <p className="text-muted-foreground text-lg mb-10">

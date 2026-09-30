@@ -47,9 +47,11 @@
   - Use for: Buttons, links, call-to-action elements
 
 ## Typography
-- **Font Family:** Inter (system-ui fallback)
-- **Headings:** Bold (700), letter-spacing: -0.025em
+- **Font Family:** Geist (system-ui fallback)
+- **Headings:** Light (300), letter-spacing: -0.025em
 - **Body:** Regular (400), Neutral Gray (#64748B)
+- **Buttons/Labels:** Regular (400)
+- **Direction:** Editorial lightness, matching Boxford Partners ecosystem (TitleWise, etc.)
 
 ## Component Examples
 

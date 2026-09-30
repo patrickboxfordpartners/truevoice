@@ -102,7 +102,7 @@ const CandidateFeedback = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
       </div>
     );
   }
@@ -135,14 +135,14 @@ const CandidateFeedback = () => {
   }
 
   const overallPct = Math.round((report.overall_score / 100) * 100);
-  const scoreColor = overallPct >= 70 ? "text-green-600" : overallPct >= 50 ? "text-amber-600" : "text-red-600";
+  const scoreColor = overallPct >= 70 ? "text-emerald-600" : overallPct >= 50 ? "text-amber-600" : "text-red-600";
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-12">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10">
-          <div className="h-12 w-12 rounded-xl bg-green-600 flex items-center justify-center mx-auto mb-4">
+          <div className="h-12 w-12 rounded-xl bg-emerald-600 flex items-center justify-center mx-auto mb-4">
             <CheckCircle2 className="h-6 w-6 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-1">Your Interview Results</h1>
@@ -181,7 +181,7 @@ const CandidateFeedback = () => {
             {DIMENSIONS.map((dim) => {
               const raw = report[dim.key];
               const pct = Math.round((raw / 25) * 100);
-              const color = pct >= 70 ? "text-green-600" : pct >= 50 ? "text-amber-600" : "text-red-600";
+              const color = pct >= 70 ? "text-emerald-600" : pct >= 50 ? "text-amber-600" : "text-red-600";
               return (
                 <div key={dim.key}>
                   <div className="flex items-center justify-between mb-1.5">

@@ -19,7 +19,7 @@ const StepCard = ({ step, index }: { step: typeof steps[0]; index: number }) => 
         whileHover={prefersReducedMotion ? {} : { y: -4, transition: { duration: 0.2, ease } }}
       >
         <motion.span
-          className="text-7xl sm:text-8xl font-extrabold text-border/50 leading-none select-none block"
+          className="text-7xl sm:text-8xl font-light text-border/50 leading-none select-none block"
           whileHover={prefersReducedMotion ? {} : { color: "hsl(160, 84%, 39%)", transition: { duration: 0.3 } }}
         >
           {step.num}
@@ -36,7 +36,7 @@ const HowItWorks = () => (
     <div className="max-w-5xl mx-auto">
       <ScrollReveal className="text-center lg:text-left mb-16 sm:mb-20">
         <p className="text-sm font-medium tracking-wide text-accent uppercase mb-3">Process</p>
-        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">How it works</h2>
+        <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-foreground">How it works</h2>
         <p className="text-muted-foreground text-lg mt-4">Three steps. No setup complexity.</p>
       </ScrollReveal>
 

@@ -82,7 +82,7 @@ const Features = () => (
     <div className="max-w-6xl mx-auto">
       <ScrollReveal className="text-center lg:text-left mb-16 sm:mb-20">
         <p className="text-sm font-medium tracking-wide text-accent uppercase mb-3">Interview Authenticity</p>
-        <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground max-w-xl mx-auto lg:mx-0">
+        <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-foreground max-w-xl mx-auto lg:mx-0">
           Detect, compare, and verify every candidate
         </h2>
         <p className="text-muted-foreground text-lg max-w-xl mx-auto lg:mx-0 mt-4">

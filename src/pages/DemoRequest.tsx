@@ -29,14 +29,7 @@ const DemoRequest = () => {
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [photoIndex, setPhotoIndex] = useState(0)
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setPhotoIndex((i) => (i + 1) % PHOTOS.length)
-    }, 6000)
-    return () => clearInterval(timer)
-  }, [])
+  const [photoIndex] = useState(() => Math.floor(Math.random() * PHOTOS.length))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -70,7 +63,7 @@ const DemoRequest = () => {
           {submitted ? (
             <div className="text-center py-8">
               <div className="h-16 w-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-5">
-                <CheckCircle2 className="h-8 w-8 text-green-600" strokeWidth={1.5} />
+                <CheckCircle2 className="h-8 w-8 text-emerald-600" strokeWidth={1.5} />
               </div>
               <h1 className="text-[32px] font-bold text-gray-900 tracking-tight mb-3">We'll be in touch</h1>
               <p className="text-gray-500 text-[15px] leading-relaxed">

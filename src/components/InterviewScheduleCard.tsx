@@ -220,7 +220,7 @@ export function InterviewScheduleCard({
                       variant="secondary"
                       className={`text-[10px] ${
                         upcoming
-                          ? "bg-green-500/10 text-green-600 border-green-500/20"
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
                           : "bg-muted text-muted-foreground"
                       }`}
                     >

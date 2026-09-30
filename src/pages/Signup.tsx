@@ -26,14 +26,7 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [photoIndex, setPhotoIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setPhotoIndex((i) => (i + 1) % PHOTOS.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, []);
+  const [photoIndex] = useState(() => Math.floor(Math.random() * PHOTOS.length));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

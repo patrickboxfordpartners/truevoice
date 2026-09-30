@@ -49,10 +49,10 @@ const RECOMMENDATION_CONFIG = {
   advance: {
     label: "Advance",
     icon: ThumbsUp,
-    color: "text-green-600",
-    bg: "bg-green-500/10",
-    border: "border-green-500/20",
-    badge: "bg-green-500/10 text-green-600 border-green-500/20",
+    color: "text-emerald-600",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    badge: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   },
   review: {
     label: "Review",
@@ -190,7 +190,7 @@ function AutopilotCard({ item }: { item: AutopilotItem }) {
                 <div className="mt-3 space-y-2">
                   {brief.synthesis.strengths?.length > 0 && (
                     <div>
-                      <p className="text-xs font-medium text-green-600 mb-1">
+                      <p className="text-xs font-medium text-emerald-600 mb-1">
                         Strengths
                       </p>
                       <ul className="text-xs text-muted-foreground space-y-0.5">
@@ -198,7 +198,7 @@ function AutopilotCard({ item }: { item: AutopilotItem }) {
                           .slice(0, 3)
                           .map((s: string, i: number) => (
                             <li key={i} className="flex items-start gap-1.5">
-                              <CheckCircle2 className="h-3 w-3 text-green-500 mt-0.5 shrink-0" />
+                              <CheckCircle2 className="h-3 w-3 text-emerald-500 mt-0.5 shrink-0" />
                               {s}
                             </li>
                           ))}
@@ -310,7 +310,7 @@ function AutopilotCard({ item }: { item: AutopilotItem }) {
           <div className="flex items-center gap-2 pt-1">
             <Button
               size="sm"
-              className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
+              className="bg-emerald-600 hover:bg-green-700 text-white gap-1.5"
               onClick={() => handleResolve("approved")}
               disabled={resolving !== null}
             >

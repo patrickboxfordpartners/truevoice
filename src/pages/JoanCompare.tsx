@@ -29,7 +29,7 @@ import {
 import { RadarScoreChart } from "@/components/RadarScoreChart";
 
 const REC_COLORS: Record<string, string> = {
-  advance: "bg-green-500/10 text-green-600 border-green-500/20",
+  advance: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   review: "bg-amber-500/10 text-amber-600 border-amber-500/20",
   reject: "bg-red-500/10 text-red-600 border-red-500/20",
 };
@@ -38,7 +38,7 @@ const STAGE_COLORS: Record<string, string> = {
   screening: "bg-blue-500/10 text-blue-600 border-blue-500/20",
   technical: "bg-purple-500/10 text-purple-600 border-purple-500/20",
   final: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  offer: "bg-green-500/10 text-green-600 border-green-500/20",
+  offer: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   hired: "bg-success/10 text-success border-success/20",
   rejected: "bg-destructive/10 text-destructive border-destructive/20",
 };
@@ -130,7 +130,7 @@ function CandidateColumn({ candidate, color }: { candidate: Candidate; color: st
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-1.5">
-              <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
               Strengths
             </CardTitle>
           </CardHeader>
@@ -138,7 +138,7 @@ function CandidateColumn({ candidate, color }: { candidate: Candidate; color: st
             <ul className="space-y-1.5">
               {brief.strengths.map((s, i) => (
                 <li key={i} className="text-xs text-muted-foreground flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                   {s}
                 </li>
               ))}

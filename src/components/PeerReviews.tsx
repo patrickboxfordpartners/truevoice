@@ -222,7 +222,7 @@ function CompletedReviewCard({ review }: { review: any }) {
             <div className="flex items-center gap-2 mb-2">
               <span className="font-semibold">{review.reviewerName}</span>
               {review.agreeWithOriginal ? (
-                <ThumbsUp className="h-4 w-4 text-green-600" title="Agrees with assessment" />
+                <ThumbsUp className="h-4 w-4 text-emerald-600" title="Agrees with assessment" />
               ) : (
                 <ThumbsDown className="h-4 w-4 text-orange-600" title="Disagrees with assessment" />
               )}
@@ -241,7 +241,7 @@ function CompletedReviewCard({ review }: { review: any }) {
         {review.strengths && review.strengths.length > 0 && (
           <div className="mb-3">
             <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
               <span className="text-sm font-medium">Strengths</span>
             </div>
             <ul className="space-y-1">

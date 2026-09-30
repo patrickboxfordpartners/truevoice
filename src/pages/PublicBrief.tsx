@@ -54,14 +54,14 @@ export default function PublicBrief() {
 
   const recColor =
     synthesis.recommendation === "advance"
-      ? "bg-green-500/10 text-green-600 border-green-500/20"
+      ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
       : synthesis.recommendation === "reject"
         ? "bg-red-500/10 text-red-600 border-red-500/20"
         : "bg-amber-500/10 text-amber-600 border-amber-500/20";
 
   const scoreColor =
     synthesis.confidenceScore >= 70
-      ? "text-green-600"
+      ? "text-emerald-600"
       : synthesis.confidenceScore >= 40
         ? "text-amber-600"
         : "text-red-600";
@@ -131,7 +131,7 @@ export default function PublicBrief() {
           {synthesis.strengths.length > 0 && (
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm text-green-600">
+                <CardTitle className="text-sm text-emerald-600">
                   Strengths
                 </CardTitle>
               </CardHeader>
@@ -142,7 +142,7 @@ export default function PublicBrief() {
                       key={i}
                       className="flex items-start gap-2 text-sm text-muted-foreground"
                     >
-                      <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
                       {s}
                     </li>
                   ))}

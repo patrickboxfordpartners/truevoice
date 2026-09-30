@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useDeepgramTranscription } from "./useDeepgramTranscription";
+import { useAssemblyAITranscription } from "./useAssemblyAITranscription";
 import { supabase } from "@/lib/supabase";
 import type { InterviewFlag, InterviewTimeline, LiveScores } from "@/types";
 
@@ -29,7 +29,7 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
   const [timeline, setTimeline] = useState<InterviewTimeline[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
-  const deepgram = useDeepgramTranscription();
+  const deepgram = useAssemblyAITranscription();
 
   const chunkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -158,12 +158,12 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
 
       console.log("[videoInterview] ✅ Received scores:", data);
 
-      if (data && typeof data === "object") {
+      if (data?.scores) {
         const newScores = {
-          speech: data.speech || 0,
-          timing: data.timing || 0,
-          flow: data.flow || 0,
-          linguistic: data.linguistic || 0,
+          speech: data.scores.speech ?? 0,
+          timing: data.scores.timing ?? 0,
+          flow: data.scores.flow ?? 0,
+          linguistic: data.scores.linguistic ?? 0,
         };
 
         // Update local state
@@ -203,7 +203,8 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
     startedRef.current = true;
 
     try {
-      await deepgram.start();
+      const language = localStorage.getItem("interview_language") || "en";
+      await deepgram.connect(language, interviewId);
 
       // First analysis after 5 seconds
       setTimeout(() => {
@@ -234,7 +235,7 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
       timerRef.current = null;
     }
 
-    deepgram.stop();
+    deepgram.disconnect();
   }, [deepgram]);
 
   return {
@@ -244,7 +245,7 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
     overallScore,
     flags,
     timeline,
-    isTranscribing: deepgram.isTranscribing,
+    isTranscribing: deepgram.isConnected,
     startTranscription,
     stopTranscription,
   };

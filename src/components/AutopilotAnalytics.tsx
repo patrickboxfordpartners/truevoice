@@ -60,7 +60,7 @@ function RecBreakdown({
         <span className="text-muted-foreground">({data.total})</span>
       </div>
       <div className="flex items-center gap-3 text-muted-foreground">
-        <span className="text-green-600">{data.approved} approved</span>
+        <span className="text-emerald-600">{data.approved} approved</span>
         <span className="text-red-600">{data.rejected} rejected</span>
         <span className="text-amber-600">{data.modified} modified</span>
         {resolved > 0 && (
@@ -98,7 +98,7 @@ export default function AutopilotAnalytics() {
             label="Approval rate"
             value={`${analytics.approvalRate}%`}
             icon={analytics.approvalRate >= 70 ? TrendingUp : TrendingDown}
-            color={analytics.approvalRate >= 70 ? "bg-green-500/10 text-green-600" : "bg-amber-500/10 text-amber-600"}
+            color={analytics.approvalRate >= 70 ? "bg-emerald-500/10 text-emerald-600" : "bg-amber-500/10 text-amber-600"}
           />
           <StatCard
             label="Override rate"
@@ -111,7 +111,7 @@ export default function AutopilotAnalytics() {
             label="Avg confidence (approved)"
             value={analytics.avgConfidenceApproved}
             icon={CheckCircle2}
-            color="bg-green-500/10 text-green-600"
+            color="bg-emerald-500/10 text-emerald-600"
           />
           <StatCard
             label="Avg confidence (overridden)"
@@ -123,14 +123,14 @@ export default function AutopilotAnalytics() {
 
         <div className="space-y-2 pt-3 border-t border-border">
           <p className="text-xs font-medium text-muted-foreground mb-2">By recommendation type</p>
-          <RecBreakdown label="Advance" data={analytics.byRecommendation.advance} color="bg-green-500" />
+          <RecBreakdown label="Advance" data={analytics.byRecommendation.advance} color="bg-emerald-500" />
           <RecBreakdown label="Review" data={analytics.byRecommendation.review} color="bg-amber-500" />
           <RecBreakdown label="Reject" data={analytics.byRecommendation.reject} color="bg-red-500" />
         </div>
 
         {analytics.approvalRate >= 80 && resolved >= 5 && (
-          <div className="mt-3 rounded-md bg-green-500/10 border border-green-500/20 p-2.5 flex items-start gap-2">
-            <Brain className="h-3.5 w-3.5 text-green-600 mt-0.5 shrink-0" />
+          <div className="mt-3 rounded-md bg-emerald-500/10 border border-emerald-500/20 p-2.5 flex items-start gap-2">
+            <Brain className="h-3.5 w-3.5 text-emerald-600 mt-0.5 shrink-0" />
             <p className="text-xs text-green-700">
               Joan's recommendations align with your team {analytics.approvalRate}% of the time across {resolved} decisions.
             </p>

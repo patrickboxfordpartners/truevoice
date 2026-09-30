@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useDeepgramTranscription } from "./useDeepgramTranscription";
+import { useAssemblyAITranscription } from "./useAssemblyAITranscription";
 import { supabase } from "@/lib/supabase";
 import type { InterviewFlag, InterviewTimeline } from "@/types";
 import type { LiveScores } from "@/types";
@@ -78,7 +78,7 @@ export function useLiveInterview(interviewId: string, companyId?: string): UseLi
     }, 1500);
   }, [interviewId]);
 
-  const deepgram = useDeepgramTranscription();
+  const deepgram = useAssemblyAITranscription();
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chunkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -219,6 +219,10 @@ export function useLiveInterview(interviewId: string, companyId?: string): UseLi
         console.error("[analysis] Edge function error:", error);
       } else if (data?.scores) {
         setScores(data.scores);
+        supabase
+          .from("interviews")
+          .update({ latest_scores: data.scores, updated_at: new Date().toISOString() })
+          .eq("id", interviewId);
       }
     } catch (err) {
       console.error("[analysis] Exception:", err);

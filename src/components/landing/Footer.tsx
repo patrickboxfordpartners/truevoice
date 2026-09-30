@@ -4,7 +4,7 @@ const BG = "#0a1a12";
 const MUTED = "rgba(200,230,210,0.45)";
 const DIM = "rgba(200,230,210,0.2)";
 const RULE = "rgba(200,230,210,0.07)";
-const ACCENT = "#22c55e";
+const ACCENT = "#10B981";
 
 const Footer = () => {
   const year = new Date().getFullYear();
@@ -74,6 +74,11 @@ const Footer = () => {
               Book a call
             </a>
           </div>
+
+          {/* Address */}
+          <p style={{ fontSize: "0.75rem", color: DIM, marginTop: 4 }}>
+            345 California St., Suite 600, San Francisco CA 94104
+          </p>
 
           {/* Legal bar */}
           <div style={{

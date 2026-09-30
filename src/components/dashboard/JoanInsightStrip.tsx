@@ -1,8 +1,9 @@
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useAuth } from "@/contexts/AuthContext";
-import { Brain, Users, Clock, CheckCircle2, TrendingUp, FileSearch, Zap } from "lucide-react";
+import { Brain, Users, Clock, CheckCircle2, TrendingUp, FileSearch, Zap, ArrowRight } from "lucide-react";
 
 export const JoanInsightStrip = () => {
   const { company } = useAuth();
@@ -54,10 +55,11 @@ export const JoanInsightStrip = () => {
   const approvalRate = analytics && analytics.total > 0 ? analytics.approvalRate : null;
 
   return (
-    <div className="glass-card rounded-xl px-6 py-3 flex items-center gap-6 flex-wrap">
+    <Link to="/joan-pipeline" className="block glass-card rounded-xl px-6 py-3 flex items-center gap-6 flex-wrap hover:ring-1 hover:ring-primary/20 transition-all cursor-pointer group">
       <div className="flex items-center gap-2">
         <Brain className="h-3.5 w-3.5 text-primary" />
         <span className="text-xs text-muted-foreground">Joan Pipeline</span>
+        <ArrowRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
       <div className="h-6 w-px bg-border" />
@@ -74,7 +76,7 @@ export const JoanInsightStrip = () => {
         <span className="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-600 font-medium tabular-nums">{stats.screening}</span>
         <span className="px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-600 font-medium tabular-nums">{stats.technical}</span>
         <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 font-medium tabular-nums">{stats.final}</span>
-        <span className="px-1.5 py-0.5 rounded bg-green-500/10 text-green-600 font-medium tabular-nums">{stats.offer}</span>
+        <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-600 font-medium tabular-nums">{stats.offer}</span>
         {stats.hired > 0 && (
           <span className="px-1.5 py-0.5 rounded bg-success/10 text-success font-medium tabular-nums">{stats.hired}</span>
         )}
@@ -123,6 +125,6 @@ export const JoanInsightStrip = () => {
           </div>
         </>
       )}
-    </div>
+    </Link>
   );
 };

@@ -14,7 +14,7 @@ const STAGE_COLORS: Record<string, string> = {
   screening: "#3b82f6",
   technical: "#a855f7",
   final: "#f59e0b",
-  offer: "#22c55e",
+  offer: "#10B981",
   hired: "hsl(160, 84%, 39%)",
   rejected: "#ef4444",
 };
@@ -29,7 +29,7 @@ function getInitials(name: string): string {
 }
 
 function similarityColor(pct: number): string {
-  if (pct >= 80) return "#22c55e";
+  if (pct >= 80) return "#10B981";
   if (pct >= 60) return "#3b82f6";
   if (pct >= 40) return "#f59e0b";
   return "#94a3b8";

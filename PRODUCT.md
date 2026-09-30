@@ -47,6 +47,6 @@ WCAG 2.1 AA minimum. Respect prefers-reduced-motion. Ensure sufficient contrast 
 - Tailwind CSS 3
 - Framer Motion for animations
 - Supabase auth
-- Stripe payments (3 tiers: Starter $79, Pro $149, Scale $349)
+- Stripe payments (3 tiers: Starter $99, Pro $249, Scale $499)
 - No free trial, no "Get Started" flow
 - Sign-in page, not signup (new users come through Stripe checkout)

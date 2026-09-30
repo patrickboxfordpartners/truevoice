@@ -38,7 +38,7 @@ const ACTION_ICONS: Record<string, React.ElementType> = {
 };
 
 const ACTION_COLORS: Record<string, string> = {
-  extracted_action_items: "text-green-500",
+  extracted_action_items: "text-emerald-500",
   routed_email: "text-[hsl(160,84%,39%)]",
   moved_pipeline_stage: "text-blue-500",
   sent_reminder: "text-amber-500",
@@ -202,7 +202,7 @@ export function TeamActivityFeed({ companyId, className = "" }: TeamActivityFeed
                       <div className="flex items-center gap-2 mt-1">
                         <span
                           className={`h-1.5 w-1.5 rounded-full shrink-0 ${
-                            isFailed ? "bg-red-500" : "bg-green-500"
+                            isFailed ? "bg-red-500" : "bg-emerald-500"
                           }`}
                         />
                         <span className="text-[11px] text-muted-foreground">

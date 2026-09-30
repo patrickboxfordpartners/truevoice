@@ -27,7 +27,7 @@ const TYPE_CONFIG: Record<NoteType, { label: string; icon: typeof MessageSquare;
   note: { label: "Note", icon: MessageSquare, color: "bg-muted text-muted-foreground" },
   flag: { label: "Flag", icon: Flag, color: "bg-red-500/10 text-red-600" },
   question: { label: "Question", icon: HelpCircle, color: "bg-blue-500/10 text-blue-600" },
-  decision: { label: "Decision", icon: CheckCircle2, color: "bg-green-500/10 text-green-600" },
+  decision: { label: "Decision", icon: CheckCircle2, color: "bg-emerald-500/10 text-emerald-600" },
 };
 
 function relativeTime(ts: number): string {

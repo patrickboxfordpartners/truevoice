@@ -90,7 +90,7 @@ const Pricing = () => {
           transition={{ duration: 0.6, ease }}
         >
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Pricing</p>
-          <h1 className="text-4xl font-bold tracking-tight text-foreground mb-4">
+          <h1 className="text-4xl font-light tracking-tight text-foreground mb-4">
             Transparent pricing. No sales call required.
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-2">
@@ -208,7 +208,7 @@ const Pricing = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5, ease }}
         >
-          <h2 className="text-2xl font-bold text-foreground text-center mb-8">Frequently asked questions</h2>
+          <h2 className="text-2xl font-light text-foreground text-center mb-8">Frequently asked questions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               {

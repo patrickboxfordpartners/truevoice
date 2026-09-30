@@ -25,6 +25,14 @@
         {
           "key": "Strict-Transport-Security",
           "value": "max-age=31536000; includeSubDomains"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com https://cdn.jsdelivr.net https://*.supabase.co https://*.convex.cloud https://*.livekit.cloud https://*.posthog.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.convex.cloud wss://*.convex.cloud wss://*.livekit.cloud https://*.livekit.cloud https://*.deepgram.com wss://*.deepgram.com https://api.x.ai https://*.posthog.com https://*.stripe.com https://cal.com; frame-src https://*.stripe.com https://cal.com; font-src 'self' https://cdn.jsdelivr.net; media-src 'self' blob:; worker-src 'self' blob:;"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), microphone=(self), geolocation=()"
         }
       ]
     }

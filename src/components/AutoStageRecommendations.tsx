@@ -17,7 +17,7 @@ const STAGE_COLORS: Record<string, string> = {
   screening: "#3b82f6",
   technical: "#a855f7",
   final: "#f59e0b",
-  offer: "#22c55e",
+  offer: "#10B981",
   hired: "hsl(160,84%,39%)",
   rejected: "#ef4444",
 };
@@ -57,10 +57,10 @@ function computeRecommendation(
   if (score !== undefined && score >= 80 && allDone) {
     return {
       label: "Ready to advance",
-      color: "#22c55e",
-      bgClass: "bg-green-500/10",
-      textClass: "text-green-600",
-      borderClass: "border-green-500/30",
+      color: "#10B981",
+      bgClass: "bg-emerald-500/10",
+      textClass: "text-emerald-600",
+      borderClass: "border-emerald-500/30",
     };
   }
   if (score !== undefined && score >= 60 && halfDone) {
@@ -181,7 +181,7 @@ export function AutoStageRecommendations({
             style={{
               background:
                 completionRatio >= 1
-                  ? "#22c55e"
+                  ? "#10B981"
                   : completionRatio >= 0.5
                     ? "#3b82f6"
                     : "#f59e0b",

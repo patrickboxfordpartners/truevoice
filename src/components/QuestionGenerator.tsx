@@ -25,7 +25,7 @@ interface GeneratedQuestion {
 const CATEGORY_COLORS: Record<Category, string> = {
   behavioral: "#3b82f6",
   technical: "#a855f7",
-  "culture-fit": "#22c55e",
+  "culture-fit": "#10B981",
   situational: "#f59e0b",
 };
 
@@ -191,7 +191,7 @@ function QuestionCard({
           className="h-7 px-2 text-xs gap-1"
           onClick={handleCopy}
         >
-          {copied ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+          {copied ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
           {copied ? "Copied" : "Copy"}
         </Button>
         <Button

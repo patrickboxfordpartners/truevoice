@@ -69,13 +69,13 @@ export function ApprovalGate({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 300, damping: 25 }}
-      className={`glass-card rounded-xl border border-border border-l-4 border-l-green-500 overflow-hidden ${className}`}
+      className={`glass-card rounded-xl border border-border border-l-4 border-l-emerald-500 overflow-hidden ${className}`}
     >
       <div className="p-5">
         {/* Header */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center">
-            <ShieldCheck className="h-5 w-5 text-green-600" />
+          <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <ShieldCheck className="h-5 w-5 text-emerald-600" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="text-sm font-semibold">Approval Required</h3>

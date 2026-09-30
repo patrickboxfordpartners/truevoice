@@ -277,7 +277,7 @@ export const JoanSettings = ({ companyId }: JoanSettingsProps) => {
           <div className="rounded-md bg-muted/50 p-3">
             <div className="flex items-center gap-2 text-xs">
               <div className="flex items-center gap-1.5">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
                 <span>Advance: {">="}{settings.advanceThreshold}</span>
               </div>
               <div className="flex items-center gap-1.5">

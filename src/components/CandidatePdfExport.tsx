@@ -20,7 +20,7 @@ const STAGE_COLORS: Record<string, string> = {
   screening: "#3b82f6",
   technical: "#a855f7",
   final: "#f59e0b",
-  offer: "#22c55e",
+  offer: "#10B981",
   hired: "#0fba81",
   rejected: "#ef4444",
 };

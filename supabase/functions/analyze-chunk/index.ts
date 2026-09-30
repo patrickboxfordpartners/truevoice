@@ -396,6 +396,11 @@ You MUST return ONLY valid JSON with no explanation, no markdown, no code fences
       }
     }
 
+    await supabase
+      .from("interviews")
+      .update({ latest_scores: scores })
+      .eq("id", interview_id);
+
     return new Response(
       JSON.stringify({ scores, overall, flags }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

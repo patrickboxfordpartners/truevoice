@@ -27,6 +27,10 @@ export const seed = mutation({
     activitiesCreated: v.number(),
   }),
   handler: async (ctx, args) => {
+    const allowSeed = process.env.ALLOW_SEED;
+    if (allowSeed !== "true") {
+      throw new Error("Seed mutation is disabled in production. Set ALLOW_SEED=true in Convex env to enable.");
+    }
     const { companyId } = args;
     const now = Date.now();
 

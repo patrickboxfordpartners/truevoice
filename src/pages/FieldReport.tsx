@@ -13,7 +13,7 @@ import { useFieldMoments } from "@/hooks/useFieldMoments";
 
 const emotionColors: Record<string, string> = {
   frustration: "text-red-600 bg-red-50 dark:bg-red-950/30",
-  excitement: "text-green-600 bg-green-50 dark:bg-green-950/30",
+  excitement: "text-emerald-600 bg-green-50 dark:bg-green-950/30",
   confusion: "text-amber-600 bg-amber-50 dark:bg-amber-950/30",
   satisfaction: "text-blue-600 bg-blue-50 dark:bg-blue-950/30",
 };

@@ -265,7 +265,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       {/* Checkout success banner */}
       {showCheckoutSuccess && (
-        <div className="bg-green-500 text-white px-4 py-3 flex items-center justify-between gap-4">
+        <div className="bg-emerald-500 text-white px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <CheckCircle2 className="h-5 w-5 shrink-0" />
             <span className="text-sm font-medium">
@@ -290,7 +290,8 @@ const Dashboard = () => {
           </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <Link to="/dashboard" className="font-medium text-foreground">Dashboard</Link>
-            <span className="text-muted-foreground cursor-pointer hover:text-foreground transition-colors">Interviews</span>
+            <Link to="/joan-pipeline" className="text-muted-foreground hover:text-foreground transition-colors">Joan Pipeline</Link>
+            <Link to="/analytics" className="text-muted-foreground hover:text-foreground transition-colors">Analytics</Link>
             <Link to="/settings" className="text-muted-foreground hover:text-foreground transition-colors">Settings</Link>
           </nav>
           <div className="flex items-center gap-3">

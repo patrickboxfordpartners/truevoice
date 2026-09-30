@@ -31,7 +31,7 @@ const STAGE_COLORS: Record<string, string> = {
   screening: "#3b82f6",
   technical: "#a855f7",
   final: "#f59e0b",
-  offer: "#22c55e",
+  offer: "#10B981",
   hired: "#0fba81",
   rejected: "#ef4444",
 };
@@ -167,7 +167,7 @@ export default function JoanDigest() {
               </div>
               <div className="flex items-baseline gap-2">
                 <span className="text-2xl font-bold">{stats.totalCandidates}</span>
-                <TrendingUp className="h-3.5 w-3.5 text-green-500" />
+                <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
               </div>
             </div>
 
@@ -196,10 +196,10 @@ export default function JoanDigest() {
 
             <div className={card}>
               <div className="flex items-center gap-2 mb-2">
-                <UserCheck className="h-4 w-4 text-green-500" />
+                <UserCheck className="h-4 w-4 text-emerald-500" />
                 <span className="text-xs text-muted-foreground">Recent Hires</span>
               </div>
-              <span className="text-2xl font-bold text-green-600">{stats.recentHires}</span>
+              <span className="text-2xl font-bold text-emerald-600">{stats.recentHires}</span>
               <span className="text-xs text-muted-foreground ml-1">last 30d</span>
             </div>
 
@@ -223,7 +223,7 @@ export default function JoanDigest() {
             <>
               <div className="h-8 rounded-full overflow-hidden flex">
                 {[
-                  { key: "excellent", color: "#22c55e", label: "80+" },
+                  { key: "excellent", color: "#10B981", label: "80+" },
                   { key: "good", color: "#3b82f6", label: "60-79" },
                   { key: "fair", color: "#f59e0b", label: "40-59" },
                   { key: "poor", color: "#ef4444", label: "<40" },
@@ -249,7 +249,7 @@ export default function JoanDigest() {
               </div>
               <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-green-500" /> Excellent ({scoreDist.excellent})
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" /> Excellent ({scoreDist.excellent})
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="h-2 w-2 rounded-full bg-blue-500" /> Good ({scoreDist.good})
@@ -348,7 +348,7 @@ export default function JoanDigest() {
             {[
               {
                 text: `Top-scoring candidate pool — ${scoreDist.excellent} candidates scored 80+`,
-                color: "border-green-500/30 bg-green-500/5",
+                color: "border-emerald-500/30 bg-emerald-500/5",
               },
               {
                 text: `${stats.byStage.offer + stats.byStage.final} candidates ready for advancement`,

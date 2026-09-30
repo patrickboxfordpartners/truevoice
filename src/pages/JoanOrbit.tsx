@@ -28,7 +28,7 @@ const ACTIVE_STAGES: Stage[] = ["hired", "offer", "final", "technical", "screeni
 
 const STAGE_CONFIG: Record<string, { label: string; color: string; ringColor: string; radius: number }> = {
   hired:     { label: "Hired",      color: "#0fba81", ringColor: "rgba(15,186,129,0.25)",  radius: 100 },
-  offer:     { label: "Offer",      color: "#22c55e", ringColor: "rgba(34,197,94,0.25)",   radius: 170 },
+  offer:     { label: "Offer",      color: "#10B981", ringColor: "rgba(34,197,94,0.25)",   radius: 170 },
   final:     { label: "Final",      color: "#f59e0b", ringColor: "rgba(245,158,11,0.25)",  radius: 240 },
   technical: { label: "Technical",  color: "#a855f7", ringColor: "rgba(168,85,247,0.25)",  radius: 310 },
   screening: { label: "Screening",  color: "#3b82f6", ringColor: "rgba(59,130,246,0.25)",  radius: 380 },

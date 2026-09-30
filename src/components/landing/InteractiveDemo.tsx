@@ -418,14 +418,14 @@ export default function InteractiveDemo() {
   const actLabel = ACT_LABELS[demo.act];
 
   return (
-    <section ref={sectionRef} className="py-24 sm:py-28 px-4 sm:px-6" id="demo">
+    <section ref={sectionRef} className="py-14 sm:py-16 px-4 sm:px-6" id="demo">
       <div className="max-w-5xl mx-auto">
-        <ScrollReveal className="text-center mb-12">
-          <p className="text-sm font-medium tracking-wide text-accent uppercase mb-3">See it in action</p>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
+        <ScrollReveal className="text-center mb-8">
+          <p className="text-sm font-medium tracking-wide text-accent uppercase mb-2">See it in action</p>
+          <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-foreground">
             Watch Joan work
           </h2>
-          <p className="text-muted-foreground text-lg mt-4 max-w-xl mx-auto">
+          <p className="text-muted-foreground text-lg mt-3 max-w-xl mx-auto">
             From live interview to hiring decision in under 30 seconds.
           </p>
         </ScrollReveal>

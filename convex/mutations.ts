@@ -34,6 +34,7 @@ export const createCandidate = mutation({
   },
   returns: v.id("hiring_pipeline"),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const now = Date.now();
     const id = await ctx.db.insert("hiring_pipeline", {
       interviewId: args.interviewId,

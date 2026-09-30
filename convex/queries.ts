@@ -365,6 +365,7 @@ export const getQuestionsByCompany = query({
   },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
+    await requireAuth(ctx);
     const baseQuery = ctx.db
       .query("interview_questions")
       .withIndex("by_company", (q) => q.eq("companyId", args.companyId));

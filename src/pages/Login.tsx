@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
 const PHOTOS = [
@@ -23,14 +24,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [photoIndex, setPhotoIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setPhotoIndex((i) => (i + 1) % PHOTOS.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, []);
+  const [photoIndex] = useState(() => Math.floor(Math.random() * PHOTOS.length));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,9 +100,21 @@ const Login = () => {
 
           {/* Forgot password */}
           <div className="mt-4 text-center">
-            <Link to="/reset-password" className="text-sm text-gray-400 hover:text-gray-600">
+            <button
+              type="button"
+              onClick={async () => {
+                const email = (document.querySelector('input[type="email"]') as HTMLInputElement)?.value;
+                if (!email) { alert("Enter your email first."); return; }
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                  redirectTo: `${window.location.origin}/login`,
+                });
+                if (error) alert(error.message);
+                else alert("Check your email for a password reset link.");
+              }}
+              className="text-sm text-gray-400 hover:text-gray-600"
+            >
               Forgot your password?
-            </Link>
+            </button>
           </div>
 
           {/* Divider */}

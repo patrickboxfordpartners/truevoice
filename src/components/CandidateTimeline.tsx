@@ -72,13 +72,13 @@ function TimelineNode({ activity, index }: { activity: Activity; index: number }
         <div
           className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${
             activity.success
-              ? "bg-green-500/10 border border-green-500/30"
+              ? "bg-emerald-500/10 border border-emerald-500/30"
               : "bg-red-500/10 border border-red-500/30"
           }`}
         >
           <Icon
             className={`h-3.5 w-3.5 ${
-              activity.success ? "text-green-600" : "text-red-600"
+              activity.success ? "text-emerald-600" : "text-red-600"
             }`}
           />
         </div>

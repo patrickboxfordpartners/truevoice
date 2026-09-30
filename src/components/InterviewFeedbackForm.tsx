@@ -34,7 +34,7 @@ const INTERVIEW_TYPES: { value: InterviewType; label: string }[] = [
 ];
 
 const RECOMMENDATIONS: { value: Recommendation; label: string; color: string; bg: string }[] = [
-  { value: "strong_hire", label: "Strong Hire", color: "#22c55e", bg: "bg-green-500/10 text-green-600 border-green-500/30" },
+  { value: "strong_hire", label: "Strong Hire", color: "#10B981", bg: "bg-emerald-500/10 text-emerald-600 border-emerald-500/30" },
   { value: "hire", label: "Hire", color: "#3b82f6", bg: "bg-blue-500/10 text-blue-600 border-blue-500/30" },
   { value: "no_hire", label: "No Hire", color: "#f59e0b", bg: "bg-amber-500/10 text-amber-600 border-amber-500/30" },
   { value: "strong_no_hire", label: "Strong No Hire", color: "#ef4444", bg: "bg-red-500/10 text-red-600 border-red-500/30" },
@@ -49,14 +49,14 @@ const SCORE_DIMENSIONS = [
 ];
 
 function scoreColor(val: number): string {
-  if (val >= 80) return "text-green-600";
+  if (val >= 80) return "text-emerald-600";
   if (val >= 60) return "text-blue-600";
   if (val >= 40) return "text-amber-600";
   return "text-red-500";
 }
 
 function scoreBarColor(val: number): string {
-  if (val >= 80) return "bg-green-500";
+  if (val >= 80) return "bg-emerald-500";
   if (val >= 60) return "bg-blue-500";
   if (val >= 40) return "bg-amber-500";
   return "bg-red-500";
@@ -274,14 +274,14 @@ export function InterviewFeedbackForm({ candidateId, companyId, className = "" }
                     placeholder="Add a strength..."
                     className="flex-1 bg-background border border-border/50 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-accent/50"
                   />
-                  <button onClick={addStrength} className="p-1.5 rounded-lg bg-green-500/10 text-green-600 hover:bg-green-500/20">
+                  <button onClick={addStrength} className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20">
                     <Plus size={14} />
                   </button>
                 </div>
                 {strengths.length > 0 && (
                   <div className="flex flex-wrap gap-1.5">
                     {strengths.map((s, i) => (
-                      <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-500/10 text-green-600">
+                      <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-emerald-500/10 text-emerald-600">
                         {s}
                         <button onClick={() => setStrengths(strengths.filter((_, j) => j !== i))}><X size={10} /></button>
                       </span>
@@ -404,7 +404,7 @@ export function InterviewFeedbackForm({ candidateId, companyId, className = "" }
                 {/* Strengths & concerns */}
                 <div className="flex flex-wrap gap-1.5 mb-2">
                   {(fb.strengths || []).map((s: string, i: number) => (
-                    <span key={`s-${i}`} className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] bg-green-500/10 text-green-600">
+                    <span key={`s-${i}`} className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] bg-emerald-500/10 text-emerald-600">
                       <ThumbsUp size={8} />
                       {s}
                     </span>

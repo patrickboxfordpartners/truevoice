@@ -59,7 +59,7 @@ const STAGE_COLORS: Record<Stage, string> = {
   screening: "bg-blue-500/10 text-blue-600 border-blue-500/20",
   technical: "bg-purple-500/10 text-purple-600 border-purple-500/20",
   final: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  offer: "bg-green-500/10 text-green-600 border-green-500/20",
+  offer: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   hired: "bg-success/10 text-success border-success/20",
   rejected: "bg-destructive/10 text-destructive border-destructive/20",
 };
@@ -326,7 +326,9 @@ export default function JoanPipeline() {
       <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <Shield className="h-5 w-5 text-primary shrink-0" />
+            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")} className="h-8 w-8 p-0 shrink-0" title="Back to Dashboard">
+              <Shield className="h-5 w-5 text-primary" />
+            </Button>
             <div className="min-w-0">
               <h1 className="text-base sm:text-lg font-bold truncate">
                 <span className="text-gradient">Joan</span> <span className="hidden xs:inline">Hiring </span>Pipeline

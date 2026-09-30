@@ -16,28 +16,28 @@ interface SentimentIndicator {
 }
 
 function getConfidence(score: number): SentimentIndicator {
-  if (score >= 80) return { label: "High Confidence", color: "#22c55e", icon: ThumbsUp };
+  if (score >= 80) return { label: "High Confidence", color: "#10B981", icon: ThumbsUp };
   if (score >= 60) return { label: "Moderate", color: "#3b82f6", icon: ThumbsUp };
   if (score >= 40) return { label: "Low", color: "#f59e0b", icon: ThumbsUp };
   return { label: "Uncertain", color: "#ef4444", icon: ThumbsUp };
 }
 
 function getEngagement(score: number): SentimentIndicator {
-  if (score >= 80) return { label: "Highly Engaged", color: "#22c55e", icon: Zap };
+  if (score >= 80) return { label: "Highly Engaged", color: "#10B981", icon: Zap };
   if (score >= 60) return { label: "Engaged", color: "#3b82f6", icon: Zap };
   if (score >= 40) return { label: "Passive", color: "#f59e0b", icon: Zap };
   return { label: "Disengaged", color: "#ef4444", icon: Zap };
 }
 
 function getFluency(score: number): SentimentIndicator {
-  if (score >= 80) return { label: "Fluent", color: "#22c55e", icon: MessageCircle };
+  if (score >= 80) return { label: "Fluent", color: "#10B981", icon: MessageCircle };
   if (score >= 60) return { label: "Clear", color: "#3b82f6", icon: MessageCircle };
   if (score >= 40) return { label: "Average", color: "#f59e0b", icon: MessageCircle };
   return { label: "Hesitant", color: "#ef4444", icon: MessageCircle };
 }
 
 function getAuthenticity(score: number): SentimentIndicator {
-  if (score >= 80) return { label: "Authentic", color: "#22c55e", icon: Shield };
+  if (score >= 80) return { label: "Authentic", color: "#10B981", icon: Shield };
   if (score >= 60) return { label: "Credible", color: "#3b82f6", icon: Shield };
   if (score >= 40) return { label: "Review", color: "#f59e0b", icon: Shield };
   return { label: "Flagged", color: "#ef4444", icon: Shield };
