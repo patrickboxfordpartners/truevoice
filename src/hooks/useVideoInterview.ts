@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useAssemblyAITranscription } from "./useAssemblyAITranscription";
-import { supabase } from "@/lib/supabase";
+import { useAction, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import type { InterviewFlag, InterviewTimeline, LiveScores } from "@/types";
 
 const CHUNK_INTERVAL_MS = 20_000;
@@ -18,18 +19,15 @@ interface UseVideoInterviewReturn {
   stopTranscription: () => void;
 }
 
-/**
- * Hook for live video interviews with AI analysis
- * Captures audio via Deepgram, analyzes every 20 seconds
- * Syncs scores via Supabase realtime
- */
 export function useVideoInterview(interviewId: string, mode?: string): UseVideoInterviewReturn {
   const [scores, setScores] = useState<LiveScores>({ speech: 0, timing: 0, flow: 0, linguistic: 0 });
-  const [flags, setFlags] = useState<InterviewFlag[]>([]);
-  const [timeline, setTimeline] = useState<InterviewTimeline[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   const deepgram = useAssemblyAITranscription();
+  const analyzeChunk = useAction(api.actions.analyzeChunk.analyzeChunk);
+
+  const convexFlags = useQuery(api.interviewData.getFlags, interviewId ? { interviewId } : "skip") ?? [];
+  const convexTimeline = useQuery(api.interviewData.getTimeline, interviewId ? { interviewId } : "skip") ?? [];
 
   const chunkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -40,201 +38,69 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
 
   const overallScore = scores.speech + scores.timing + scores.flow + scores.linguistic;
 
-  // Keep refs in sync
-  useEffect(() => {
-    transcriptRef.current = deepgram.transcript;
-  }, [deepgram.transcript]);
+  useEffect(() => { transcriptRef.current = deepgram.transcript; }, [deepgram.transcript]);
+  useEffect(() => { scoresRef.current = scores; }, [scores]);
 
-  useEffect(() => {
-    scoresRef.current = scores;
-  }, [scores]);
-
-  // Timer for elapsed seconds
   useEffect(() => {
     if (startedRef.current) {
-      timerRef.current = setInterval(() => {
-        setElapsedSeconds((s) => s + 1);
-      }, 1000);
+      timerRef.current = setInterval(() => setElapsedSeconds((s) => s + 1), 1000);
     }
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [startedRef.current]);
-
-  // Subscribe to realtime updates
-  useEffect(() => {
-    if (!interviewId) return;
-
-    // Subscribe to flags
-    const flagChannel = supabase
-      .channel(`video-flags-${interviewId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "interview_flags", filter: `interview_id=eq.${interviewId}` },
-        (payload) => {
-          setFlags((prev) => [...prev, payload.new as InterviewFlag]);
-        }
-      )
-      .subscribe();
-
-    // Subscribe to timeline
-    const timelineChannel = supabase
-      .channel(`video-timeline-${interviewId}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "interview_timeline", filter: `interview_id=eq.${interviewId}` },
-        (payload) => {
-          setTimeline((prev) => [...prev, payload.new as InterviewTimeline]);
-        }
-      )
-      .subscribe();
-
-    // Subscribe to score updates
-    const scoresChannel = supabase
-      .channel(`video-scores-${interviewId}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "interviews", filter: `id=eq.${interviewId}` },
-        (payload: any) => {
-          if (payload.new.latest_scores) {
-            setScores(payload.new.latest_scores);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(flagChannel);
-      supabase.removeChannel(timelineChannel);
-      supabase.removeChannel(scoresChannel);
-    };
-  }, [interviewId]);
-
-  const formatTime = useCallback((seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${String(s).padStart(2, "0")}`;
-  }, []);
 
   const sendChunkForAnalysis = useCallback(async () => {
     const fullTranscript = transcriptRef.current;
     const currentScores = scoresRef.current;
     const currentElapsed = elapsedSeconds;
 
-    console.log(`[videoInterview] Checking chunk #${chunkIndexRef.current}`, {
-      length: fullTranscript.length,
-      words: fullTranscript.split(/\s+/).filter(Boolean).length,
-    });
-
-    if (!fullTranscript) {
-      console.log("[videoInterview] No transcript yet");
-      return;
-    }
-
+    if (!fullTranscript) return;
     const wordCount = fullTranscript.split(/\s+/).filter(Boolean).length;
-    if (wordCount < MIN_WORDS_PER_CHUNK) {
-      console.log(`[videoInterview] Only ${wordCount} words, need ${MIN_WORDS_PER_CHUNK}`);
-      return;
-    }
-
-    console.log(`[videoInterview] ✅ Sending chunk #${chunkIndexRef.current} for analysis (${wordCount} words)`);
+    if (wordCount < MIN_WORDS_PER_CHUNK) return;
 
     try {
-      const { data, error } = await supabase.functions.invoke("analyze-chunk", {
-        body: {
-          interview_id: interviewId,
-          chunk_text: fullTranscript,
-          chunk_index: chunkIndexRef.current,
-          elapsed_seconds: currentElapsed,
-          previous_scores: currentScores,
-          mode: mode || "interview",
-        },
+      const result = await analyzeChunk({
+        interviewId,
+        chunkText: fullTranscript,
+        chunkIndex: chunkIndexRef.current,
+        elapsedSeconds: currentElapsed,
+        previousScores: currentScores,
+        mode: mode || "interview",
       });
 
-      if (error) {
-        console.error("[videoInterview] Analysis error:", error);
-        return;
-      }
-
-      console.log("[videoInterview] ✅ Received scores:", data);
-
-      if (data?.scores) {
-        const newScores = {
-          speech: data.scores.speech ?? 0,
-          timing: data.scores.timing ?? 0,
-          flow: data.scores.flow ?? 0,
-          linguistic: data.scores.linguistic ?? 0,
-        };
-
-        // Update local state
-        setScores(newScores);
-
-        // Update database (triggers realtime for interviewer)
-        await supabase
-          .from("interviews")
-          .update({
-            latest_scores: newScores,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", interviewId);
-
-        // Add to timeline
-        await supabase.from("interview_timeline").insert({
-          interview_id: interviewId,
-          timestamp: formatTime(currentElapsed),
-          speech: newScores.speech,
-          timing: newScores.timing,
-          flow: newScores.flow,
-          linguistic: newScores.linguistic,
-          overall: newScores.speech + newScores.timing + newScores.flow + newScores.linguistic,
+      if (result?.scores) {
+        setScores({
+          speech: result.scores.speech ?? 0,
+          timing: result.scores.timing ?? 0,
+          flow: result.scores.flow ?? 0,
+          linguistic: result.scores.linguistic ?? 0,
         });
-
         chunkIndexRef.current++;
       }
     } catch (err) {
-      console.error("[videoInterview] Exception:", err);
+      console.error("[videoInterview] Analysis error:", err);
     }
-  }, [interviewId, elapsedSeconds, formatTime]);
+  }, [interviewId, elapsedSeconds, analyzeChunk, mode]);
 
   const startTranscription = useCallback(async () => {
     if (startedRef.current) return;
-
-    console.log("[videoInterview] Starting transcription and analysis");
     startedRef.current = true;
 
     try {
       const language = localStorage.getItem("interview_language") || "en";
       await deepgram.connect(language, interviewId);
 
-      // First analysis after 5 seconds
-      setTimeout(() => {
-        sendChunkForAnalysis();
-      }, 5000);
-
-      // Regular analysis every 20 seconds
-      chunkTimerRef.current = setInterval(() => {
-        sendChunkForAnalysis();
-      }, CHUNK_INTERVAL_MS);
+      setTimeout(() => sendChunkForAnalysis(), 5000);
+      chunkTimerRef.current = setInterval(() => sendChunkForAnalysis(), CHUNK_INTERVAL_MS);
     } catch (error) {
-      console.error("[videoInterview] Failed to start transcription:", error);
+      console.error("[videoInterview] Failed to start:", error);
       startedRef.current = false;
     }
-  }, [deepgram, sendChunkForAnalysis]);
+  }, [deepgram, sendChunkForAnalysis, interviewId]);
 
   const stopTranscription = useCallback(() => {
-    console.log("[videoInterview] Stopping transcription");
     startedRef.current = false;
-
-    if (chunkTimerRef.current) {
-      clearInterval(chunkTimerRef.current);
-      chunkTimerRef.current = null;
-    }
-
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
+    if (chunkTimerRef.current) { clearInterval(chunkTimerRef.current); chunkTimerRef.current = null; }
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     deepgram.disconnect();
   }, [deepgram]);
 
@@ -243,8 +109,8 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
     interimText: deepgram.interimText,
     scores,
     overallScore,
-    flags,
-    timeline,
+    flags: convexFlags as InterviewFlag[],
+    timeline: convexTimeline as InterviewTimeline[],
     isTranscribing: deepgram.isConnected,
     startTranscription,
     stopTranscription,

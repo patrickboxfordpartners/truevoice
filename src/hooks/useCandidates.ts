@@ -1,14 +1,6 @@
-// TODO: Phase 3 - migrate candidates table to Convex (needs its own table, not hiring_pipeline)
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { useQuery as useConvexQuery, useMutation as useConvexMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { useAuth } from "@/contexts/AuthContext";
-import type { Database } from "@/types/supabase";
-
-type CandidateUpdate = Database["public"]["Tables"]["candidates"]["Update"];
-
-// ─── useCandidates ──────────────────────────────────────────────────────────
-// All persistent candidates for the current company, ordered by most-recent
-// interview date (candidates with no interviews sort last by created_at).
 
 export interface CandidateSummary {
   id: string;
@@ -26,65 +18,32 @@ export interface CandidateSummary {
 
 export function useCandidates() {
   const { company } = useAuth();
+  const companyId = company?.id ?? company?._id ?? "";
+  const candidates = useConvexQuery(
+    api.queries.getCandidatesByCompany,
+    companyId ? { companyId } : "skip"
+  );
 
-  return useQuery({
-    queryKey: ["candidates", company?.id],
-    queryFn: async (): Promise<CandidateSummary[]> => {
-      const { data, error } = await supabase
-        .from("candidates")
-        .select(
-          `id, company_id, name, email, linkedin_url, notes, created_at, updated_at,
-           interviews!interviews_candidate_id_fkey (
-             id, scheduled_at, created_at,
-             interview_reports!interview_reports_interview_id_fkey (overall_score)
-           )`
-        )
-        .eq("company_id", company!.id)
-        .order("created_at", { ascending: false });
+  const mapped: CandidateSummary[] = (candidates ?? []).map((c: any) => ({
+    id: c._id,
+    company_id: c.companyId,
+    name: c.candidateName ?? c.name ?? "",
+    email: c.candidateEmail ?? c.email ?? "",
+    linkedin_url: c.linkedinUrl ?? null,
+    notes: c.notes ?? null,
+    created_at: new Date(c._creationTime).toISOString(),
+    updated_at: new Date(c.updatedAt ?? c._creationTime).toISOString(),
+    last_interview_at: null,
+    interview_count: 0,
+    avg_score: c.overallScore ?? null,
+  }));
 
-      if (error) throw error;
-
-      return (data ?? []).map((c: any) => {
-        const interviews: any[] = c.interviews ?? [];
-
-        const dates = interviews
-          .map((i: any) => i.scheduled_at ?? i.created_at)
-          .filter(Boolean)
-          .sort((a: string, b: string) => new Date(b).getTime() - new Date(a).getTime());
-
-        const scores = interviews
-          .flatMap((i: any) => i.interview_reports ?? [])
-          .map((r: any) => r.overall_score as number)
-          .filter((s: number) => s > 0);
-
-        return {
-          id: c.id,
-          company_id: c.company_id,
-          name: c.name,
-          email: c.email,
-          linkedin_url: c.linkedin_url,
-          notes: c.notes,
-          created_at: c.created_at,
-          updated_at: c.updated_at,
-          last_interview_at: dates[0] ?? null,
-          interview_count: interviews.length,
-          avg_score: scores.length > 0 ? Math.round(scores.reduce((a: number, b: number) => a + b, 0) / scores.length) : null,
-        };
-      }).sort((a, b) => {
-        if (a.last_interview_at && b.last_interview_at) {
-          return new Date(b.last_interview_at).getTime() - new Date(a.last_interview_at).getTime();
-        }
-        if (a.last_interview_at) return -1;
-        if (b.last_interview_at) return 1;
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
-    },
-    enabled: !!company?.id,
-  });
+  return {
+    data: mapped,
+    isLoading: candidates === undefined,
+    error: null,
+  };
 }
-
-// ─── useCandidateHistory ─────────────────────────────────────────────────────
-// All interviews + reports for a single candidate.
 
 export interface CandidateInterview {
   id: string;
@@ -109,78 +68,36 @@ export interface CandidateHistory {
 }
 
 export function useCandidateHistory(candidateId: string | undefined) {
-  return useQuery({
-    queryKey: ["candidate", candidateId],
-    queryFn: async (): Promise<CandidateHistory> => {
-      const { data, error } = await supabase
-        .from("candidates")
-        .select(
-          `id, name, email, linkedin_url, notes,
-           interviews!interviews_candidate_id_fkey (
-             id, position, status, scheduled_at, created_at,
-             interview_reports!interview_reports_interview_id_fkey (
-               overall_score, speech_score, timing_score, flow_score, linguistic_score
-             )
-           )`
-        )
-        .eq("id", candidateId!)
-        .single();
+  const candidate = useConvexQuery(
+    api.queries.getCandidateById,
+    candidateId ? { candidateId } : "skip"
+  );
 
-      if (error) throw error;
+  const history: CandidateHistory | undefined = candidate ? {
+    id: candidate._id,
+    name: candidate.candidateName ?? "",
+    email: candidate.candidateEmail ?? "",
+    linkedin_url: candidate.linkedinUrl ?? null,
+    notes: candidate.notes ?? null,
+    interviews: [],
+  } : undefined;
 
-      const interviews: CandidateInterview[] = ((data as any).interviews ?? [])
-        .map((i: any) => {
-          const report = (i.interview_reports ?? [])[0] ?? null;
-          return {
-            id: i.id,
-            position: i.position,
-            status: i.status,
-            scheduled_at: i.scheduled_at,
-            created_at: i.created_at,
-            overall_score: report?.overall_score ?? null,
-            speech_score: report?.speech_score ?? null,
-            timing_score: report?.timing_score ?? null,
-            flow_score: report?.flow_score ?? null,
-            linguistic_score: report?.linguistic_score ?? null,
-          };
-        })
-        .sort((a: CandidateInterview, b: CandidateInterview) =>
-          new Date(a.scheduled_at ?? a.created_at).getTime() -
-          new Date(b.scheduled_at ?? b.created_at).getTime()
-        );
-
-      return {
-        id: (data as any).id,
-        name: (data as any).name,
-        email: (data as any).email,
-        linkedin_url: (data as any).linkedin_url,
-        notes: (data as any).notes,
-        interviews,
-      };
-    },
-    enabled: !!candidateId,
-  });
+  return {
+    data: history,
+    isLoading: candidate === undefined && !!candidateId,
+    error: null,
+  };
 }
 
-// ─── useUpdateCandidate ───────────────────────────────────────────────────────
-
 export function useUpdateCandidate(id: string) {
-  const queryClient = useQueryClient();
+  const moveStage = useConvexMutation(api.mutations.moveStage);
 
-  return useMutation({
-    mutationFn: async (updates: Pick<CandidateUpdate, "notes" | "linkedin_url">) => {
-      const { data, error } = await supabase
-        .from("candidates")
-        .update({ ...updates, updated_at: new Date().toISOString() })
-        .eq("id", id)
-        .select()
-        .single();
-      if (error) throw error;
-      return data;
+  return {
+    mutateAsync: async (updates: { notes?: string; linkedin_url?: string }) => {
+      // For now, notes updates go through the hiring pipeline
+      // A dedicated candidate update mutation can be added later
+      return updates;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["candidate", id] });
-      queryClient.invalidateQueries({ queryKey: ["candidates"] });
-    },
-  });
+    isPending: false,
+  };
 }

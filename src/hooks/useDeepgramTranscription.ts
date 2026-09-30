@@ -37,36 +37,14 @@ export function useDeepgramTranscription(): UseDeepgramReturn {
 
   const connect = useCallback(async (language: string = "en", interviewId?: string, candidateToken?: string) => {
     // Fetch temporary Deepgram token from secure edge function
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error("Missing Supabase configuration");
-    }
-
     if (!interviewId) {
       throw new Error("Missing interviewId for Deepgram token generation");
     }
 
-    const tokenResponse = await fetch(`${supabaseUrl}/functions/v1/deepgram-token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": supabaseAnonKey,
-        ...(candidateToken ? {} : { "Authorization": `Bearer ${supabaseAnonKey}` }),
-      },
-      body: JSON.stringify({
-        interview_id: interviewId,
-        ...(candidateToken ? { candidate_token: candidateToken } : {}),
-      }),
-    });
-
-    if (!tokenResponse.ok) {
-      const error = await tokenResponse.json();
-      throw new Error(error.error || "Failed to obtain Deepgram token");
-    }
-
-    const { token: apiKey, expires_at } = await tokenResponse.json();
+    const { ConvexHttpClient } = await import("convex/browser");
+    const { api } = await import("../../convex/_generated/api");
+    const client = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
+    const { token: apiKey, expires_at } = await client.action(api.actions.deepgramToken.generate, { interviewId });
     console.log(`[deepgram] Obtained temporary token, expires at ${expires_at}`);
 
     const stream = await navigator.mediaDevices.getUserMedia({

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalMutation } from "./_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const viewer = query({
@@ -104,6 +104,41 @@ export const completeOnboarding = mutation({
       });
     }
 
+    return null;
+  },
+});
+
+export const updateCompanyStripeId = internalMutation({
+  args: {
+    companyId: v.string(),
+    stripeCustomerId: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.companyId as any, {
+      stripe_customer_id: args.stripeCustomerId,
+      updatedAt: Date.now(),
+    });
+    return null;
+  },
+});
+
+export const updateCompanySubscription = internalMutation({
+  args: {
+    companyId: v.string(),
+    subscriptionTier: v.string(),
+    stripeCustomerId: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const updates: Record<string, any> = {
+      subscription_tier: args.subscriptionTier,
+      updatedAt: Date.now(),
+    };
+    if (args.stripeCustomerId) {
+      updates.stripe_customer_id = args.stripeCustomerId;
+    }
+    await ctx.db.patch(args.companyId as any, updates);
     return null;
   },
 });

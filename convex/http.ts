@@ -449,6 +449,87 @@ http.route({
   }),
 });
 
+/**
+ * Stripe Webhook
+ */
+http.route({
+  path: "/stripe/webhook",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    try {
+      const stripeKey = process.env.STRIPE_SECRET_KEY;
+      const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+      if (!stripeKey || !webhookSecret) {
+        return new Response(JSON.stringify({ error: "Stripe not configured" }), { status: 500 });
+      }
+
+      const Stripe = (await import("stripe")).default;
+      const stripe = new Stripe(stripeKey);
+
+      const body = await request.text();
+      const signature = request.headers.get("stripe-signature");
+      if (!signature) {
+        return new Response(JSON.stringify({ error: "Missing stripe-signature" }), { status: 400 });
+      }
+
+      const event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+
+      const PRICE_TO_TIER: Record<string, string> = {
+        [process.env.STRIPE_PRICE_STARTER_MONTHLY || ""]: "starter",
+        [process.env.STRIPE_PRICE_STARTER_YEARLY || ""]: "starter",
+        [process.env.STRIPE_PRICE_PRO_MONTHLY || ""]: "pro",
+        [process.env.STRIPE_PRICE_PRO_YEARLY || ""]: "pro",
+        [process.env.STRIPE_PRICE_SCALE_MONTHLY || ""]: "scale",
+        [process.env.STRIPE_PRICE_SCALE_YEARLY || ""]: "scale",
+      };
+
+      if (event.type === "checkout.session.completed") {
+        const session = event.data.object as any;
+        if (session.mode !== "subscription" || !session.subscription) break_out: { break break_out; }
+        else {
+          const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+          const companyId = subscription.metadata?.convex_company_id;
+          if (!companyId) { console.error("[stripe-webhook] No convex_company_id in metadata"); }
+          else {
+            const priceId = subscription.items.data[0]?.price?.id || "";
+            const tier = PRICE_TO_TIER[priceId] || "starter";
+            await ctx.runMutation(api.users.updateCompanySubscription as any, {
+              companyId, subscriptionTier: tier, stripeCustomerId: session.customer,
+            });
+          }
+        }
+      } else if (event.type === "customer.subscription.updated") {
+        const subscription = event.data.object as any;
+        const companyId = subscription.metadata?.convex_company_id;
+        if (companyId) {
+          const priceId = subscription.items.data[0]?.price?.id || "";
+          const tier = PRICE_TO_TIER[priceId] || "starter";
+          await ctx.runMutation(api.users.updateCompanySubscription as any, {
+            companyId, subscriptionTier: tier,
+          });
+        }
+      } else if (event.type === "customer.subscription.deleted") {
+        const subscription = event.data.object as any;
+        const companyId = subscription.metadata?.convex_company_id;
+        if (companyId) {
+          await ctx.runMutation(api.users.updateCompanySubscription as any, {
+            companyId, subscriptionTier: "free",
+          });
+        }
+      }
+
+      return new Response(JSON.stringify({ received: true }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (err) {
+      console.error("[stripe-webhook] Error:", err);
+      return new Response(JSON.stringify({ error: (err as Error).message }), {
+        status: 400, headers: { "Content-Type": "application/json" },
+      });
+    }
+  }),
+});
+
 // Auth routes (sign-in, sign-out, OIDC discovery)
 import { auth } from "./auth";
 auth.addHttpRoutes(http);

@@ -1,6 +1,5 @@
-// TODO: Phase 3 - migrate field_moments table to Convex
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { useQuery as useConvexQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export interface FieldMoment {
   id: string;
@@ -16,21 +15,31 @@ export interface FieldMoment {
   created_at: string;
 }
 
-async function getFieldMoments(interviewId: string): Promise<FieldMoment[]> {
-  const { data, error } = await supabase
-    .from("field_moments")
-    .select("*")
-    .eq("interview_id", interviewId)
-    .order("elapsed_seconds", { ascending: true });
-
-  if (error) throw error;
-  return data || [];
-}
-
 export function useFieldMoments(interviewId: string | undefined) {
-  return useQuery({
-    queryKey: ["fieldMoments", interviewId],
-    queryFn: () => getFieldMoments(interviewId!),
-    enabled: !!interviewId,
-  });
+  const moments = useConvexQuery(
+    api.interviewData.getFlags,
+    interviewId ? { interviewId } : "skip"
+  );
+
+  const mapped: FieldMoment[] = (moments ?? [])
+    .filter((m: any) => m.flagType === "environment" || m.flagType === "insight")
+    .map((m: any) => ({
+      id: m._id,
+      interview_id: m.interviewId,
+      timestamp: new Date(m._creationTime).toISOString(),
+      elapsed_seconds: 0,
+      scene_description: m.pattern ?? null,
+      detected_objects: null,
+      emotional_cue: null,
+      quote: null,
+      significance_score: m.severity === "high" ? 80 : m.severity === "medium" ? 60 : 40,
+      tags: [m.flagType],
+      created_at: new Date(m._creationTime).toISOString(),
+    }));
+
+  return {
+    data: mapped,
+    isLoading: moments === undefined && !!interviewId,
+    error: null,
+  };
 }

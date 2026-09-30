@@ -13,7 +13,8 @@ import { Check, Copy, Mail, Loader2, Sparkles, ChevronDown, ChevronUp } from "lu
 import { toast } from "@/hooks/use-toast";
 import { useCreateInterview } from "@/hooks/useInterviews";
 import { getSiteUrl } from "@/lib/config";
-import { supabase } from "@/lib/supabase";
+import { useAction } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 const QUESTION_TYPE_LABELS: Record<string, string> = {
   behavioral: "Behavioral",
@@ -53,6 +54,7 @@ interface CreateInterviewDialogProps {
 }
 
 export const CreateInterviewDialog = ({ open, onOpenChange }: CreateInterviewDialogProps) => {
+  const generateQuestionsAction = useAction(api.actions.generateQuestions.generate);
   const [step, setStep] = useState<"form" | "success">("form");
   const [copied, setCopied] = useState(false);
   const [generatedToken, setGeneratedToken] = useState("");

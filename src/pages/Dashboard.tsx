@@ -29,7 +29,8 @@ import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { useCompletedReports } from "@/hooks/useReport";
 import { useCandidates } from "@/hooks/useCandidates";
 import type { Interview } from "@/types";
-import { supabase } from "@/lib/supabase";
+import { useAction } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 const DarkModeToggle = () => {
   const { theme, setTheme } = useTheme();
@@ -56,6 +57,7 @@ const ITEMS_PER_PAGE = 8;
 const Dashboard = () => {
   const { toast } = useToast();
   const { profile, signOut } = useAuth();
+  const sendInvitation = useAction(api.actions.sendInterviewEmail.sendInterviewEmail);
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const plan = usePlan();
@@ -566,20 +568,16 @@ const Dashboard = () => {
                       date={dateStr}
                       index={i}
                       onResendInvitation={() => {
-                        supabase.functions.invoke("send-interview-email", {
-                          body: { interview_id: interview.id, template_type: "invitation" },
-                        }).then(({ error }) => {
-                          if (error) {
-                            toast({ title: "Failed to resend invitation", variant: "destructive" });
-                          } else {
+                        sendInvitation({ interviewId: interview.id, templateType: "invitation" })
+                          .then((result) => {
                             toast({
                               title: "Invitation resent",
-                              description: `Sent to ${interview.candidate_email}`,
+                              description: result.message || `Sent to ${interview.candidate_email}`,
                             });
-                          }
-                        }).catch(() => {
-                          toast({ title: "Failed to resend invitation", variant: "destructive" });
-                        });
+                          })
+                          .catch((err) => {
+                            toast({ title: "Failed to resend invitation", description: err.message, variant: "destructive" });
+                          });
                       }}
                     />
                   );

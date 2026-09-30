@@ -1,11 +1,15 @@
-// TODO: Phase 3 - migrate stripe-checkout and stripe-portal to Convex actions
 import { useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useAction } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 export function useBilling() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+  const checkout = useAction(api.actions.stripeCheckout.createCheckoutSession);
+  const portal = useAction(api.actions.stripePortal.createPortalSession);
 
   async function startCheckout(priceId: string) {
     if (!priceId) {
@@ -13,47 +17,23 @@ export function useBilling() {
       return;
     }
 
+    if (!user) {
+      window.location.href = `/signup?redirect=${encodeURIComponent(`/pricing?plan=${priceId}`)}`;
+      return;
+    }
+
     setLoading(true);
     try {
-      // Refresh session to get a fresh token
-      const { data: { session }, error: refreshError } = await supabase.auth.refreshSession();
-      console.log("[useBilling] Session check:", { hasSession: !!session, userId: session?.user?.id, refreshError });
-
-      if (!session) {
-        console.log("[useBilling] No session found, redirecting to signup");
-        window.location.href = `/signup?redirect=${encodeURIComponent(`/pricing?plan=${priceId}`)}`;
-        return;
-      }
-
-      console.log("[useBilling] Calling stripe-checkout Edge Function with priceId:", priceId);
-
-      const { data, error } = await supabase.functions.invoke("stripe-checkout", {
-        body: {
-          priceId,
-          successUrl: `${window.location.origin}/onboarding?checkout=success`,
-          cancelUrl: `${window.location.origin}/pricing?checkout=cancelled`,
-        },
+      const { url } = await checkout({
+        priceId,
+        successUrl: `${window.location.origin}/onboarding?checkout=success`,
+        cancelUrl: `${window.location.origin}/pricing?checkout=cancelled`,
       });
-
-      if (error) {
-        console.error("[useBilling] Supabase function error:", error);
-        throw error;
-      }
-      if (data?.error) {
-        console.error("[useBilling] Edge function returned error:", data.error);
-        throw new Error(data.error);
-      }
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        console.error("[useBilling] No checkout URL returned:", data);
-        throw new Error("No checkout URL returned from server");
-      }
+      window.location.href = url;
     } catch (err: any) {
-      console.error("[useBilling] Full checkout error:", err);
       toast({
         title: "Checkout failed",
-        description: err.message || err.msg || "Unable to start checkout. Please try again.",
+        description: err.message || "Unable to start checkout. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -64,17 +44,11 @@ export function useBilling() {
   async function openBillingPortal() {
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("stripe-portal", {
-        body: { returnUrl: `${window.location.origin}/settings` },
+      const { url } = await portal({
+        returnUrl: `${window.location.origin}/settings`,
       });
-
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      if (data?.url) {
-        window.location.href = data.url;
-      }
+      window.location.href = url;
     } catch (err: any) {
-      console.error("[useBilling] portal error:", err);
       toast({
         title: "Billing portal unavailable",
         description: err.message || "Unable to open billing portal. Please try again.",

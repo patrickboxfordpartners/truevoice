@@ -871,6 +871,54 @@ export default defineSchema({
     .index("by_interview", ["interviewId"]),
 
   // ─────────────────────────────────────────────────────────────────
+  // CANDIDATES, FIELD MOMENTS, PANELISTS
+  // ─────────────────────────────────────────────────────────────────
+
+  candidates: defineTable({
+    companyId: v.string(),
+    name: v.string(),
+    email: v.string(),
+    linkedinUrl: v.optional(v.string()),
+    notes: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_company", ["companyId"])
+    .index("by_email", ["email"]),
+
+  field_moments: defineTable({
+    interviewId: v.string(),
+    elapsedSeconds: v.number(),
+    sceneDescription: v.optional(v.string()),
+    detectedObjects: v.optional(v.array(v.string())),
+    emotionalCue: v.optional(v.string()),
+    quote: v.optional(v.string()),
+    significanceScore: v.optional(v.number()),
+    tags: v.optional(v.array(v.string())),
+    createdAt: v.number(),
+  })
+    .index("by_interview", ["interviewId"]),
+
+  interview_panelists: defineTable({
+    interviewId: v.string(),
+    profileId: v.string(),
+    joinedAt: v.optional(v.number()),
+    notes: v.optional(v.string()),
+    scoreOverride: v.optional(v.number()),
+    createdAt: v.number(),
+  })
+    .index("by_interview", ["interviewId"])
+    .index("by_profile", ["profileId"]),
+
+  flagged_phrases: defineTable({
+    interviewId: v.string(),
+    phrase: v.string(),
+    count: v.number(),
+    lastDetectedAt: v.number(),
+  })
+    .index("by_interview", ["interviewId"]),
+
+  // ─────────────────────────────────────────────────────────────────
   // USER PROFILES & COMPANIES (migrated from Supabase)
   // ─────────────────────────────────────────────────────────────────
 
