@@ -4,8 +4,10 @@ import { motion } from "framer-motion";
 import { Loader2, CheckCircle2, RefreshCw, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/lib/supabase";
-import { getInterviewByToken } from "@/lib/api/interviews";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../convex/_generated/api";
+
+const convexHttp = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
 
 interface FeedbackReport {
   overall_score: number;
@@ -66,24 +68,13 @@ const CandidateFeedback = () => {
     setLoading(true);
     setNotReady(false);
     try {
-      const interviewData = await getInterviewByToken(token);
+      const interviewData = await convexHttp.query(api.interviews.getByToken, { token });
       if (!interviewData) { setLoading(false); return; }
       setInterview(interviewData);
 
-      // Fetch company name
-      const { data: company } = await supabase
-        .from("companies")
-        .select("name")
-        .eq("id", interviewData.company_id)
-        .single();
-      setCompanyName(company?.name || "");
+      setCompanyName(interviewData.companyName || "");
 
-      // Fetch report
-      const { data: reportData } = await supabase
-        .from("interview_reports")
-        .select("*")
-        .eq("interview_id", interviewData.id)
-        .single();
+      const reportData = await convexHttp.query(api.interviewData.getReport, { interviewId: interviewData._id });
 
       if (!reportData) {
         setNotReady(true);

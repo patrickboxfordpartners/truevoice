@@ -4,8 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, Shield, Mic, Camera, Wifi, ChevronRight, Clock, MessageSquare, Eye, Volume2, HelpCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { getInterviewByToken } from "@/lib/api/interviews";
-import { supabase } from "@/lib/supabase";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../convex/_generated/api";
+
+const convexHttp = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
 import { useBehaviorMonitor } from "@/hooks/useBehaviorMonitor";
 import { useWebcamMonitor } from "@/hooks/useWebcamMonitor";
 import { useVideoInterview } from "@/hooks/useVideoInterview";
@@ -118,24 +120,13 @@ const CandidateInterview = () => {
       return;
     }
 
-    getInterviewByToken(token)
-      .then(async (data) => {
+    convexHttp.query(api.interviews.getByToken, { token })
+      .then(async (data: any) => {
+        if (!data) { setStep("error"); return; }
         setInterview(data);
-        setCompanyName((data as any).companies?.name || "the company");
-        setPosition(data.candidate_name ? data.position : "the position");
-
-        // Fetch interviewer profile
-        if (data.created_by) {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name")
-            .eq("id", data.created_by)
-            .single();
-          if (profile?.full_name) {
-            setInterviewerName(profile.full_name);
-          }
-        }
-
+        setCompanyName(data.companyName || "the company");
+        setPosition(data.candidateName ? data.position : "the position");
+        if (data.interviewerName) setInterviewerName(data.interviewerName);
         setStep("welcome");
       })
       .catch(() => {
@@ -143,28 +134,22 @@ const CandidateInterview = () => {
       });
   }, [token]);
 
-  // Subscribe to interview status changes (waiting room → in_progress)
+  // Poll for interview status changes (waiting room → in_progress)
+  // Convex reactive queries handle this automatically in authenticated contexts;
+  // for unauthenticated candidate views we poll via HTTP
   useEffect(() => {
-    if (!interview?.id) return;
-
-    const channel = supabase
-      .channel(`candidate-${interview.id}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "interviews", filter: `id=eq.${interview.id}` },
-        (payload) => {
-          if (payload.new.status === "in_progress") {
-            // Interview has started, redirect or show notification
-            setInterview((prev: any) => ({ ...prev, ...payload.new }));
-          }
+    if (!interview?._id && !interview?.id) return;
+    const interviewId = interview._id || interview.id;
+    const interval = setInterval(async () => {
+      try {
+        const updated = await convexHttp.query(api.interviews.getByToken, { token: token! });
+        if (updated && updated.status === "in_progress") {
+          setInterview((prev: any) => ({ ...prev, ...updated }));
         }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [interview?.id]);
+      } catch { /* ignore polling errors */ }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [interview?._id, interview?.id, token]);
 
   const startChecks = async () => {
     setStep("systemcheck");
@@ -194,12 +179,11 @@ const CandidateInterview = () => {
   };
 
   const handleConsent = async () => {
-    // Update consent in DB
-    if (interview?.id) {
-      await supabase
-        .from("interviews")
-        .update({ candidate_consented: true, updated_at: new Date().toISOString() })
-        .eq("id", interview.id);
+    if (interview?._id || interview?.id) {
+      await convexHttp.mutation(api.interviews.update, {
+        interviewId: interview._id || interview.id,
+        candidateConsented: true,
+      });
     }
     startChecks();
   };
@@ -210,15 +194,14 @@ const CandidateInterview = () => {
     if (!interview?.id) return;
 
     // Set room name and update status
-    const roomName = `interview-${interview.id}`;
-    await supabase
-      .from("interviews")
-      .update({
-        livekit_room_name: roomName,
-        livekit_started_at: new Date().toISOString(),
-        status: "waiting_for_interviewer",
-      })
-      .eq("id", interview.id);
+    const interviewId = interview._id || interview.id;
+    const roomName = `interview-${interviewId}`;
+    await convexHttp.mutation(api.interviews.update, {
+      interviewId,
+      livekitRoomName: roomName,
+      livekitStartedAt: Date.now(),
+      status: "waiting_for_interviewer",
+    });
 
     setStep("interview");
 

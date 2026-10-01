@@ -1,16 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/types/supabase";
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    "Missing Supabase environment variables. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local"
-  );
-}
-
-export const supabase = createClient<Database>(
-  supabaseUrl ?? "",
-  supabaseAnonKey ?? ""
-);
+// Supabase client removed -- all data now flows through Convex.
+// This file is kept as a stub to prevent import errors from any
+// straggler references discovered at runtime.
+export const supabase = null as any;

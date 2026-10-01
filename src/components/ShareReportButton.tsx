@@ -2,7 +2,8 @@
 import { useState } from "react"
 import { Share2, Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { supabase } from "@/lib/supabase"
+import { useMutation } from "convex/react"
+import { api } from "../../convex/_generated/api"
 import { useToast } from "@/hooks/use-toast"
 
 interface ShareReportButtonProps {
@@ -13,19 +14,14 @@ export function ShareReportButton({ interviewId }: ShareReportButtonProps) {
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const { toast } = useToast()
+  const createToken = useMutation(api.reportTokens.create)
 
   const handleShare = async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
-        .from("report_tokens")
-        .insert({ interview_id: interviewId })
-        .select("token")
-        .single()
+      const token = await createToken({ interviewId })
 
-      if (error) throw error
-
-      const url = `${window.location.origin}/r/${data.token}`
+      const url = `${window.location.origin}/r/${token}`
       await navigator.clipboard.writeText(url)
       setCopied(true)
       toast({ title: "Report link copied", description: "Anyone with this link can view the report." })

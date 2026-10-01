@@ -1,16 +1,11 @@
-// TODO: Phase 3 - migrate to Convex (Joan already has email_templates table)
-// For now, keeping Supabase for email templates
+// Email templates via Convex (Joan already has email_templates table)
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../convex/_generated/api";
 
-import { supabase } from "@/lib/supabase";
+const client = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
 
 export async function getTemplates(companyId: string) {
-  const { data, error } = await supabase
-    .from("email_templates")
-    .select("*")
-    .eq("company_id", companyId)
-    .order("template_type", { ascending: true });
-  if (error) throw error;
-  return data;
+  return client.query(api.queries.getEmailTemplates, { companyId });
 }
 
 export async function upsertTemplate(template: {
@@ -20,34 +15,11 @@ export async function upsertTemplate(template: {
   subject: string;
   body: string;
 }) {
-  const { data: existing } = await supabase
-    .from("email_templates")
-    .select("id")
-    .eq("company_id", template.company_id)
-    .eq("template_type", template.template_type)
-    .single();
-
-  if (existing) {
-    const { data, error } = await supabase
-      .from("email_templates")
-      .update({
-        name: template.name,
-        subject: template.subject,
-        body: template.body,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", existing.id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data;
-  }
-
-  const { data, error } = await supabase
-    .from("email_templates")
-    .insert(template)
-    .select()
-    .single();
-  if (error) throw error;
-  return data;
+  return client.mutation(api.mutations.saveEmailTemplate, {
+    companyId: template.company_id,
+    templateType: template.template_type,
+    name: template.name,
+    subject: template.subject,
+    body: template.body,
+  });
 }

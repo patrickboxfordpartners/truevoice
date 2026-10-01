@@ -37,25 +37,20 @@ export function useAssemblyAITranscription(): UseAssemblyAIReturn {
   const streamRef = useRef<MediaStream | null>(null);
 
   const connect = useCallback(async (language: string = "en", interviewId?: string, candidateToken?: string) => {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const convexSiteUrl = import.meta.env.VITE_CONVEX_SITE_URL;
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error("Missing Supabase configuration");
+    if (!convexSiteUrl) {
+      throw new Error("Missing VITE_CONVEX_SITE_URL configuration");
     }
 
     if (!interviewId) {
       throw new Error("Missing interviewId for AssemblyAI token generation");
     }
 
-    // Mint a temp token via our edge function
-    const tokenResponse = await fetch(`${supabaseUrl}/functions/v1/assemblyai-token`, {
+    // Mint a temp token via Convex HTTP endpoint
+    const tokenResponse = await fetch(`${convexSiteUrl}/assemblyai/token`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "apikey": supabaseAnonKey,
-        ...(candidateToken ? {} : { "Authorization": `Bearer ${supabaseAnonKey}` }),
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         interview_id: interviewId,
         ...(candidateToken ? { candidate_token: candidateToken } : {}),
@@ -63,7 +58,7 @@ export function useAssemblyAITranscription(): UseAssemblyAIReturn {
     });
 
     if (!tokenResponse.ok) {
-      const error = await tokenResponse.json();
+      const error = await tokenResponse.json().catch(() => ({ error: "Failed to obtain token" }));
       throw new Error(error.error || "Failed to obtain AssemblyAI token");
     }
 

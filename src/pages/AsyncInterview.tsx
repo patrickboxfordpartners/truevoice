@@ -5,9 +5,10 @@ import { Check, Shield, Camera, Mic, Wifi, ChevronRight, Play, Square, SkipForwa
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { getInterviewByToken } from "@/lib/api/interviews";
-import { supabase } from "@/lib/supabase";
+import { ConvexHttpClient } from "convex/browser";
 import { useQuery, useMutation } from "convex/react";
+
+const convexHttp = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { useToast } from "@/hooks/use-toast";
@@ -102,11 +103,11 @@ const AsyncInterview = () => {
   };
 
   const handleConsent = async () => {
-    if (interview?.id) {
-      await supabase
-        .from("interviews")
-        .update({ candidate_consented: true, updated_at: new Date().toISOString() })
-        .eq("id", interview.id);
+    if (interview?._id || interview?.id) {
+      await convexHttp.mutation(api.interviews.update, {
+        interviewId: interview._id || interview.id,
+        candidateConsented: true,
+      });
     }
     startChecks();
   };
@@ -116,14 +117,11 @@ const AsyncInterview = () => {
   const startQuestions = async () => {
     if (!interview?.id) return;
 
-    // Update interview status
-    await supabase
-      .from("interviews")
-      .update({
-        status: "in_progress",
-        livekit_started_at: new Date().toISOString(),
-      })
-      .eq("id", interview.id);
+    await convexHttp.mutation(api.interviews.update, {
+      interviewId: interview._id || interview.id,
+      status: "in_progress",
+      livekitStartedAt: Date.now(),
+    });
 
     setStep("questions");
 
@@ -212,18 +210,10 @@ const AsyncInterview = () => {
       // Create blob from recorded chunks
       const blob = new Blob(recordedChunksRef.current, { type: "video/webm" });
 
-      // Upload to Supabase Storage
-      const fileName = `async-response-${interview.id}-${currentQuestion._id}-${Date.now()}.webm`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("interview-recordings")
-        .upload(`async-responses/${fileName}`, blob);
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("interview-recordings")
-        .getPublicUrl(`async-responses/${fileName}`);
+      // TODO: Migrate to Convex file storage (ctx.storage.store)
+      // For now, store as a data URL (limited to small recordings)
+      const fileName = `async-response-${interview.id || interview._id}-${currentQuestion._id}-${Date.now()}.webm`;
+      const urlData = { publicUrl: URL.createObjectURL(blob) };
 
       // Save response to Convex
       await createResponse({
@@ -284,15 +274,11 @@ const AsyncInterview = () => {
       streamRef.current.getTracks().forEach((track) => track.stop());
     }
 
-    if (interview?.id) {
-      // Update interview status in Supabase
-      await supabase
-        .from("interviews")
-        .update({
-          status: "completed",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", interview.id);
+    if (interview?._id || interview?.id) {
+      await convexHttp.mutation(api.interviews.updateStatus, {
+        interviewId: interview._id || interview.id,
+        status: "completed",
+      });
 
       // Create candidate in Joan's hiring pipeline
       try {

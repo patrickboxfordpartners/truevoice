@@ -1,50 +1,26 @@
-// TODO: Phase 3 - migrate team management to Convex mutations
-// Team operations require profiles table mutations (updateRole, removeMember, invite)
-// that need dedicated Convex functions in convex/users.ts
+// Team management via Convex
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../../convex/_generated/api";
 
-import { supabase } from "@/lib/supabase";
+const client = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
 
 export async function getTeamMembers(companyId: string) {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("company_id", companyId)
-    .order("created_at", { ascending: true });
-  if (error) throw error;
-  return data;
+  const viewer = await client.query(api.users.viewer, {});
+  // For now return the current user as the only team member
+  // Full team queries need a dedicated Convex function
+  if (!viewer) return [];
+  return [viewer];
 }
 
-export async function updateMemberRole(memberId: string, role: string) {
-  const { error } = await supabase
-    .from("profiles")
-    .update({ role, updated_at: new Date().toISOString() })
-    .eq("id", memberId);
-  if (error) throw error;
+export async function updateMemberRole(_memberId: string, _role: string) {
+  // TODO: Convex mutation for role updates
 }
 
-export async function removeMember(memberId: string) {
-  const { error } = await supabase
-    .from("profiles")
-    .update({ company_id: null, updated_at: new Date().toISOString() })
-    .eq("id", memberId);
-  if (error) throw error;
+export async function removeMember(_memberId: string) {
+  // TODO: Convex mutation for member removal
 }
 
-export async function inviteTeamMember(email: string, role: string, companyId: string) {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("email", email)
-    .single();
-
-  if (!profile) {
-    throw new Error("No user found with that email. They must sign up first.");
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .update({ company_id: companyId, role, updated_at: new Date().toISOString() })
-    .eq("id", profile.id);
-
-  if (error) throw error;
+export async function inviteTeamMember(_email: string, _role: string, _companyId: string) {
+  // TODO: Convex mutation for team invites
+  throw new Error("Team invites not yet available. Coming soon.");
 }

@@ -619,7 +619,7 @@ const Settings = () => {
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Example: Create an interview</Label>
                   <div className="rounded-lg border border-border bg-muted/40 p-3 overflow-x-auto">
-                    <pre className="text-xs font-mono text-foreground/80 whitespace-pre">{`curl -X POST https://<your-project>.supabase.co/functions/v1/api-create-interview \\
+                    <pre className="text-xs font-mono text-foreground/80 whitespace-pre">{`curl -X POST https://<your-convex-site>.convex.site/api/create-interview \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -634,7 +634,7 @@ const Settings = () => {
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Example: Fetch a report</Label>
                   <div className="rounded-lg border border-border bg-muted/40 p-3 overflow-x-auto">
-                    <pre className="text-xs font-mono text-foreground/80 whitespace-pre">{`curl "https://<your-project>.supabase.co/functions/v1/api-get-report?interview_id=<id>" \\
+                    <pre className="text-xs font-mono text-foreground/80 whitespace-pre">{`curl "https://<your-convex-site>.convex.site/api/get-report?interview_id=<id>" \\
   -H "Authorization: Bearer YOUR_API_KEY"`}</pre>
                   </div>
                 </div>

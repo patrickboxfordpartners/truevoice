@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { VideoRoomWithAnalysis } from "@/components/VideoRoom";
-import { supabase } from "@/lib/supabase";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../convex/_generated/api";
 import { Shield, Loader2, AlertCircle, AlertTriangle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePlan } from "@/hooks/usePlan";
@@ -35,31 +36,19 @@ export default function InterviewerRoom() {
       return;
     }
 
-    // Fetch interview data
-    supabase
-      .from("interviews")
-      .select("*, companies(name), profiles(full_name)")
-      .eq("id", id)
-      .single()
-      .then(({ data, error }) => {
-        if (error || !data) {
+    const client = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
+    client.query(api.interviews.getById, { interviewId: id })
+      .then((data) => {
+        if (!data) {
           setError("Interview not found");
           setLoading(false);
           return;
         }
-
         setInterview(data);
         setLoading(false);
-
-        // Update status to in_progress when interviewer joins
-        supabase
-          .from("interviews")
-          .update({
-            status: "in_progress",
-            livekit_started_at: new Date().toISOString(),
-          })
-          .eq("id", id);
-      });
+        client.mutation(api.interviews.updateStatus, { interviewId: id, status: "in_progress" });
+      })
+      .catch(() => { setError("Interview not found"); setLoading(false); });
   }, [id]);
 
   if (loading) {

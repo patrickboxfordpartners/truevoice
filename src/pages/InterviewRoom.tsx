@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useLiveInterview } from "@/hooks/useLiveInterview";
 import { usePanelists, useJoinAsPanel, useUpdatePanelistNotes } from "@/hooks/usePanelists";
-import { supabase } from "@/lib/supabase";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { SCORE_LABELS } from "@/lib/scoreLabels";
 
 interface ScriptQuestion {
@@ -54,6 +55,8 @@ const InterviewRoom = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const insertFlags = useMutation(api.interviewData.insertFlags);
+  const interviewNotes = useQuery(api.interviews.getById, id ? { interviewId: id } : "skip");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [micMuted, setMicMuted] = useState(false);
 
@@ -107,21 +110,15 @@ const InterviewRoom = () => {
     setSavingPhrase(true);
     try {
       const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-      // Save to flagged_phrases memory for future interviews
-      await supabase.from("flagged_phrases").upsert({
-        company_id: company.id,
-        phrase: phrasePopover.text.toLowerCase(),
-        reason: "Manually flagged during interview",
-        flagged_by: profile?.id ?? null,
-        interview_id: id,
-      }, { onConflict: "company_id,phrase" });
-      // Also flag immediately on this interview
-      await supabase.from("interview_flags").insert({
-        interview_id: id,
-        time: formatTime(interview.elapsedSeconds),
-        pattern: `Flagged phrase: "${phrasePopover.text}"`,
-        severity: "medium",
-        flag_type: "phrase",
+      // Flag immediately on this interview via Convex
+      await insertFlags({
+        interviewId: id,
+        flags: [{
+          time: formatTime(interview.elapsedSeconds),
+          pattern: `Flagged phrase: "${phrasePopover.text}"`,
+          severity: "medium",
+          flagType: "phrase",
+        }],
       });
       window.getSelection()?.removeAllRanges();
       setPhrasePopover(null);
@@ -166,12 +163,8 @@ const InterviewRoom = () => {
   // Load saved questions from interview notes on mount
   useEffect(() => {
     if (!id) return;
-    supabase
-      .from("interviews")
-      .select("notes")
-      .eq("id", id)
-      .single()
-      .then(({ data }) => {
+    // Load saved questions from Convex interview data
+    Promise.resolve(interviewNotes).then((data) => {
         if (!data?.notes) return;
         try {
           const parsed = JSON.parse(data.notes);

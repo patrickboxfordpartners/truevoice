@@ -12,7 +12,8 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { useUpdateCompany } from "@/hooks/useCompany";
 import { useCreateInterview } from "@/hooks/useInterviews";
-import { supabase } from "@/lib/supabase";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 const ease = [0.16, 1, 0.3, 1];
 
@@ -30,6 +31,7 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const updateCompany = useUpdateCompany();
   const createInterview = useCreateInterview();
+  const completeOnboarding = useMutation(api.users.completeOnboarding);
   const { setTheme } = useTheme();
 
   useEffect(() => { setTheme("light"); }, [setTheme]);
@@ -120,16 +122,12 @@ export default function Onboarding() {
   };
 
   const handleFinish = async () => {
-    if (profile?.id) {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ has_completed_onboarding: true })
-        .eq("id", profile.id);
-      if (error) {
-        setFinishError("Something went wrong. Please try again.");
-        return;
-      }
-      await refreshProfile();
+    try {
+      await completeOnboarding({ companyName: company?.name ?? companyName ?? "" });
+      refreshProfile();
+    } catch {
+      setFinishError("Something went wrong. Please try again.");
+      return;
     }
     navigate("/dashboard");
   };
