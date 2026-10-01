@@ -1,4 +1,6 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export function useCompany() {
   const { company, loading } = useAuth();
@@ -10,11 +12,11 @@ export function useCompany() {
 }
 
 export function useUpdateCompany() {
-  // TODO: Phase 3 - add Convex mutation for company updates
-  // For now, company updates happen through the onboarding flow (api.users.completeOnboarding)
+  const update = useMutation(api.users.updateCompany);
+
   return {
-    mutateAsync: async (_updates: Record<string, unknown>) => {
-      console.warn("[useUpdateCompany] Not yet migrated to Convex");
+    mutateAsync: async (updates: { name?: string; industry?: string }) => {
+      await update(updates);
     },
     isPending: false,
   };

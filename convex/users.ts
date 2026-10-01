@@ -76,6 +76,32 @@ export const createProfile = mutation({
   },
 });
 
+export const updateCompany = mutation({
+  args: {
+    name: v.optional(v.string()),
+    industry: v.optional(v.string()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .first();
+
+    if (!profile?.company_id) throw new Error("No company found");
+
+    const updates: Record<string, any> = { updatedAt: Date.now() };
+    if (args.name !== undefined) updates.name = args.name;
+    if (args.industry !== undefined) updates.industry = args.industry;
+
+    await ctx.db.patch(profile.company_id as any, updates);
+    return null;
+  },
+});
+
 export const completeOnboarding = mutation({
   args: {
     companyName: v.string(),

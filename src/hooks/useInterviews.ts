@@ -27,7 +27,7 @@ export function useCreateInterview() {
       notes?: string;
     }) => {
       if (!company?.id) throw new Error("No company");
-      const id = await create({
+      const interviewId = await create({
         companyId: company.id,
         candidateName: input.candidate_name,
         candidateEmail: input.candidate_email,
@@ -36,7 +36,10 @@ export function useCreateInterview() {
         duration: input.duration,
         notes: input.notes,
       });
-      return { id };
+      const { ConvexHttpClient } = await import("convex/browser");
+      const httpClient = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
+      const interview = await httpClient.query(api.interviews.getById, { interviewId });
+      return { id: interviewId, candidate_token: interview?.candidateToken ?? interviewId };
     },
     isPending: false,
   };

@@ -4,7 +4,7 @@ import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Building2, Video, Check, ArrowRight, Loader2, Copy, CheckCircle2,
-  Users,
+  Users, SkipForward,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,12 +38,11 @@ export default function Onboarding() {
 
   const workspaceAlreadySet = !!(company?.name);
 
-  // Start at step 1. Step 2 will be skipped if workspace is set.
   const [step, setStep] = useState<WizardStep>(1);
 
   // Step 2 state
   const [companyName, setCompanyName] = useState(company?.name ?? "");
-  const [industry, setIndustry] = useState(company?.industry ?? "technology");
+  const [industry, setIndustry] = useState("");
   const [savingWorkspace, setSavingWorkspace] = useState(false);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
 
@@ -60,25 +59,24 @@ export default function Onboarding() {
   const [firstCandidateName, setFirstCandidateName] = useState("");
   const [finishError, setFinishError] = useState<string | null>(null);
 
-  // If already onboarded, redirect immediately
   if (profile?.has_completed_onboarding) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  const advanceFrom1 = useCallback(() => {
+  const advanceFrom1 = () => {
     if (workspaceAlreadySet) {
-      setStep(3); // skip step 2
+      setStep(3);
     } else {
       setStep(2);
     }
-  }, [workspaceAlreadySet]);
+  };
 
   const handleSaveWorkspace = async () => {
     if (!companyName.trim()) return;
     setWorkspaceError(null);
     setSavingWorkspace(true);
     try {
-      await updateCompany.mutateAsync({ name: companyName.trim(), industry });
+      await updateCompany.mutateAsync({ name: companyName.trim(), industry: industry || undefined });
       await refreshProfile();
       setStep(3);
     } catch (err) {
@@ -111,13 +109,23 @@ export default function Onboarding() {
     }
   };
 
+  const handleSkipInterview = async () => {
+    try {
+      await completeOnboarding({ companyName: company?.name ?? companyName ?? "" });
+      refreshProfile();
+    } catch {
+      // Continue anyway
+    }
+    navigate("/dashboard");
+  };
+
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(candidateLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback: select the input text
+      // Fallback
     }
   };
 
@@ -136,8 +144,8 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <div className="border-b border-border bg-[hsl(155,20%,92%)] px-6 py-4">
+      {/* Header -- neutral, matches navbar pattern */}
+      <div className="border-b border-border bg-background/80 backdrop-blur-xl px-6 py-4">
         <img src="/truevoice-logo.png" alt="TrueVoice HQ" className="h-8 w-auto" />
       </div>
 
@@ -205,14 +213,13 @@ export default function Onboarding() {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4, ease }}
             >
-              <h1 className="text-2xl font-bold text-foreground tracking-tight mb-3">
-                Welcome to TrueVoice HQ.
+              <h1 className="text-2xl font-medium text-foreground tracking-tight mb-3">
+                Welcome to TrueVoice HQ
               </h1>
               <p className="text-sm text-muted-foreground mb-10">
-                Let's get you set up in 3 minutes.
+                Let's get you set up in under 3 minutes.
               </p>
 
-              {/* 3-step visual */}
               <div className="flex items-start justify-center gap-2 mb-10">
                 {[
                   { icon: Building2, label: "Set up workspace" },
@@ -259,8 +266,8 @@ export default function Onboarding() {
               transition={{ duration: 0.4, ease }}
             >
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                  Tell us about your team.
+                <h1 className="text-2xl font-medium text-foreground tracking-tight">
+                  Tell us about your team
                 </h1>
                 <p className="text-sm text-muted-foreground mt-2">
                   This helps us personalize your experience.
@@ -276,6 +283,7 @@ export default function Onboarding() {
                     onChange={(e) => setCompanyName(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSaveWorkspace()}
                     autoFocus
+                    className="h-12 bg-gray-50 border-gray-200 rounded-lg text-[15px] placeholder:text-gray-400 focus:bg-white focus:border-gray-300"
                   />
                 </div>
                 <div className="space-y-2">
@@ -284,8 +292,9 @@ export default function Onboarding() {
                     id="industry"
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
-                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full h-12 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-[15px] ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:bg-white focus:border-gray-300"
                   >
+                    <option value="">Select industry</option>
                     <option value="technology">Technology</option>
                     <option value="finance">Finance</option>
                     <option value="healthcare">Healthcare</option>
@@ -301,13 +310,13 @@ export default function Onboarding() {
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
-                    className="flex-1 h-10"
+                    className="flex-1 h-12 rounded-lg"
                     onClick={() => setStep(1)}
                   >
                     Back
                   </Button>
                   <Button
-                    className="flex-1 h-10 bg-foreground text-background hover:bg-accent transition-all"
+                    className="flex-1 h-12 rounded-lg bg-foreground text-background hover:bg-accent transition-all"
                     onClick={handleSaveWorkspace}
                     disabled={!companyName.trim() || savingWorkspace}
                   >
@@ -331,11 +340,11 @@ export default function Onboarding() {
               transition={{ duration: 0.4, ease }}
             >
               <div className="text-center mb-8">
-                <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                  Create your first interview.
+                <h1 className="text-2xl font-medium text-foreground tracking-tight">
+                  Create your first interview
                 </h1>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Try it with a colleague first — low stakes, real results.
+                  Try it with a colleague first, low stakes, real results.
                 </p>
               </div>
               <div className="bg-card border border-border rounded-xl p-6 space-y-5">
@@ -347,31 +356,34 @@ export default function Onboarding() {
                     value={position}
                     onChange={(e) => setPosition(e.target.value)}
                     autoFocus
+                    className="h-12 bg-gray-50 border-gray-200 rounded-lg text-[15px] placeholder:text-gray-400 focus:bg-white focus:border-gray-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="candidateName">Colleague's name</Label>
+                  <Label htmlFor="candidateName">Candidate name</Label>
                   <Input
                     id="candidateName"
                     placeholder="e.g. Alex Smith"
                     value={candidateName}
                     onChange={(e) => setCandidateName(e.target.value)}
+                    className="h-12 bg-gray-50 border-gray-200 rounded-lg text-[15px] placeholder:text-gray-400 focus:bg-white focus:border-gray-300"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="candidateEmail">Colleague's email</Label>
+                  <Label htmlFor="candidateEmail">Candidate email</Label>
                   <Input
                     id="candidateEmail"
                     type="email"
-                    placeholder="alex@yourcompany.com"
+                    placeholder="alex@company.com"
                     value={candidateEmail}
                     onChange={(e) => setCandidateEmail(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleCreateInterview()}
+                    className="h-12 bg-gray-50 border-gray-200 rounded-lg text-[15px] placeholder:text-gray-400 focus:bg-white focus:border-gray-300"
                   />
                 </div>
 
                 <div className="rounded-lg bg-muted/50 border border-border px-4 py-3 text-xs text-muted-foreground">
-                  We'll generate a private link your colleague opens to join the interview.
+                  We'll generate a private link. When they open it, they join the interview from their browser.
                 </div>
 
                 {interviewError && (
@@ -381,14 +393,14 @@ export default function Onboarding() {
                 <div className="flex gap-3">
                   <Button
                     variant="outline"
-                    className="flex-1 h-10"
+                    className="flex-1 h-12 rounded-lg"
                     onClick={() => setStep(isStep2Skipped ? 1 : 2)}
                     disabled={creatingInterview}
                   >
                     Back
                   </Button>
                   <Button
-                    className="flex-1 h-10 bg-foreground text-background hover:bg-accent transition-all"
+                    className="flex-1 h-12 rounded-lg bg-foreground text-background hover:bg-accent transition-all"
                     onClick={handleCreateInterview}
                     disabled={
                       !position.trim() ||
@@ -402,6 +414,15 @@ export default function Onboarding() {
                     <ArrowRight className="h-4 w-4 ml-2" />
                   </Button>
                 </div>
+
+                {/* Skip option */}
+                <button
+                  onClick={handleSkipInterview}
+                  className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5 pt-2"
+                >
+                  <SkipForward className="h-3.5 w-3.5" />
+                  Skip for now, go to dashboard
+                </button>
               </div>
             </motion.div>
           )}
@@ -425,16 +446,15 @@ export default function Onboarding() {
                 <CheckCircle2 className="h-8 w-8 text-accent" />
               </motion.div>
 
-              <h1 className="text-2xl font-bold text-foreground tracking-tight mb-3">
-                Your interview is ready.
+              <h1 className="text-2xl font-medium text-foreground tracking-tight mb-3">
+                Your interview is ready
               </h1>
               <p className="text-sm text-muted-foreground mb-8 max-w-sm mx-auto">
                 Share this link with{" "}
                 <span className="font-medium text-foreground">{firstCandidateName}</span>.
-                When they click it, they'll join the interview from their browser — no app required.
+                When they click it, they join from their browser.
               </p>
 
-              {/* Candidate link copy box */}
               <div className="bg-card border border-border rounded-xl p-4 mb-6 text-left">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                   Candidate link
@@ -453,7 +473,7 @@ export default function Onboarding() {
                     onClick={handleCopyLink}
                   >
                     {copied ? (
-                      <><Check className="h-3.5 w-3.5 text-success" />Copied!</>
+                      <><Check className="h-3.5 w-3.5 text-accent" />Copied</>
                     ) : (
                       <><Copy className="h-3.5 w-3.5" />Copy</>
                     )}
