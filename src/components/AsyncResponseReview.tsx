@@ -175,8 +175,12 @@ export const AsyncResponseReview = ({ interviewId }: AsyncResponseReviewProps) =
                   <span className="text-xs text-muted-foreground">
                     {formatDuration(response.duration)}
                   </span>
-                  {response.authenticityScore !== undefined && (
+                  {response.authenticityScore !== undefined ? (
                     <span className="text-xs font-medium">{Math.round(response.authenticityScore)}/100</span>
+                  ) : (
+                    <span className="text-xs text-accent flex items-center gap-1">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Processing
+                    </span>
                   )}
                 </div>
               </button>

@@ -1,7 +1,29 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, internalMutation } from "./_generated/server";
 import { api, internal } from "./_generated/api";
 import { requireAuth } from "./lib/requireAuth";
+
+export const internalUpdateCandidateResponse = internalMutation({
+  args: {
+    responseId: v.string(),
+    transcriptText: v.optional(v.string()),
+    authenticityScore: v.optional(v.number()),
+    flagCount: v.optional(v.number()),
+    analysisDetails: v.optional(v.any()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const updates: Record<string, any> = {};
+    if (args.transcriptText !== undefined) updates.transcriptText = args.transcriptText;
+    if (args.authenticityScore !== undefined) updates.authenticityScore = args.authenticityScore;
+    if (args.flagCount !== undefined) updates.flagCount = args.flagCount;
+    if (args.analysisDetails !== undefined) updates.analysisDetails = args.analysisDetails;
+    if (Object.keys(updates).length > 0) {
+      await ctx.db.patch(args.responseId as any, updates);
+    }
+    return null;
+  },
+});
 
 /**
  * Mutation functions for TrueVoice + Joan

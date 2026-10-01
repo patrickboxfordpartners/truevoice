@@ -6,12 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { ConvexHttpClient } from "convex/browser";
-import { useQuery, useMutation } from "convex/react";
+import { useQuery, useMutation, useAction } from "convex/react";
 
 const convexHttp = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { useToast } from "@/hooks/use-toast";
+
+async function getInterviewByToken(token: string) {
+  return convexHttp.query(api.interviews.getByToken, { token });
+}
 
 type Step = "loading" | "error" | "welcome" | "consent" | "systemcheck" | "instructions" | "questions" | "complete";
 
@@ -58,6 +62,8 @@ const AsyncInterview = () => {
 
   const createResponse = useMutation(api.mutations.createCandidateResponse);
   const createCandidate = useMutation(api.mutations.createCandidate);
+  const processResponse = useAction(api.actions.processAsyncResponse.processAsyncResponse);
+  const [processingIndex, setProcessingIndex] = useState<number | null>(null);
 
   const currentQuestion = questions?.[currentQuestionIndex];
   const progress = questions ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
@@ -216,18 +222,31 @@ const AsyncInterview = () => {
       const urlData = { publicUrl: URL.createObjectURL(blob) };
 
       // Save response to Convex
-      await createResponse({
-        interviewId: interview.id,
+      const responseId = await createResponse({
+        interviewId: interview._id || interview.id,
         questionId: currentQuestion._id,
-        candidateId: interview.id, // Using interview ID as candidate ID for now
-        companyId: interview.companies?.id || "",
+        candidateId: interview._id || interview.id,
+        companyId: interview.companies?.id || interview.companyId || "",
         videoUrl: urlData.publicUrl,
         duration: recordingDuration,
       });
 
       toast({
-        title: "Success",
-        description: "Response saved",
+        title: "Response saved",
+        description: "Analyzing your response...",
+      });
+
+      // Trigger async processing pipeline (transcription + scoring)
+      setProcessingIndex(currentQuestionIndex);
+      processResponse({
+        responseId: responseId as string,
+        interviewId: interview._id || interview.id,
+        videoUrl: urlData.publicUrl,
+      }).then(() => {
+        setProcessingIndex(null);
+      }).catch((err) => {
+        console.error("[AsyncInterview] Processing failed:", err);
+        setProcessingIndex(null);
       });
 
       // Move to next question
@@ -491,6 +510,14 @@ const AsyncInterview = () => {
                   </Button>
                 )}
               </div>
+
+              {/* Processing indicator */}
+              {processingIndex !== null && processingIndex < currentQuestionIndex && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4 bg-accent/5 rounded-lg px-4 py-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-accent" />
+                  Analyzing previous response...
+                </div>
+              )}
 
               {/* Controls */}
               <div className="flex items-center justify-between gap-4">
