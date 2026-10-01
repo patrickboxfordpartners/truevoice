@@ -422,7 +422,7 @@ export default function InteractiveDemo() {
       <div className="max-w-5xl mx-auto">
         <ScrollReveal className="text-center mb-8">
           <p className="text-sm font-medium tracking-wide text-accent uppercase mb-2">See it in action</p>
-          <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-foreground">
+          <h2 className="text-3xl sm:text-4xl font-medium tracking-tight text-foreground">
             Watch Joan work
           </h2>
           <p className="text-muted-foreground text-lg mt-3 max-w-xl mx-auto">

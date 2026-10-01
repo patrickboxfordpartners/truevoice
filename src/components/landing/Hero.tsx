@@ -121,7 +121,7 @@ const Hero = () => {
           </motion.p>
 
           <motion.h1
-            className="text-4xl sm:text-5xl lg:text-6xl font-light tracking-[-0.03em] leading-[1.08] text-foreground mb-6"
+            className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-[-0.03em] leading-[1.08] text-foreground mb-6"
             {...anim(0.1)}
           >
             Know what's{" "}

@@ -9,6 +9,7 @@ import Hero from "@/components/landing/Hero";
 import Features from "@/components/landing/Features";
 import InteractiveDemo from "@/components/landing/InteractiveDemo";
 import HowItWorks from "@/components/landing/HowItWorks";
+import MeetJoan from "@/components/landing/MeetJoan";
 import CTASection from "@/components/landing/CTASection";
 import ScrollReveal from "@/components/ScrollReveal";
 
@@ -16,7 +17,7 @@ const PricingTeaser = () => (
   <section className="py-20 px-6 bg-background border-t border-border">
     <ScrollReveal className="max-w-4xl mx-auto text-center">
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Pricing</p>
-      <h2 className="text-3xl sm:text-4xl font-light tracking-tight text-foreground mb-4">
+      <h2 className="text-3xl sm:text-4xl font-medium tracking-tight text-foreground mb-4">
         Plans that scale with your hiring
       </h2>
       <p className="text-muted-foreground text-lg mb-4 max-w-xl mx-auto">
@@ -57,6 +58,7 @@ const Index = () => {
       <Navbar />
       <Hero />
       <Features />
+      <MeetJoan />
       <InteractiveDemo />
       <HowItWorks />
       <PricingTeaser />
