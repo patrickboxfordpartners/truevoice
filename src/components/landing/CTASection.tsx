@@ -10,12 +10,12 @@ const CTASection = () => (
         Stop guessing. Start knowing.
       </h2>
       <p className="text-muted-foreground text-lg mb-10">
-        Try 3 interviews free. See exactly what TrueVoice detects, no credit card required.
+        See exactly what TrueVoice detects. Book a demo or start today.
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
         <Button size="lg" asChild className="rounded-md bg-foreground text-background hover:bg-accent transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated">
           <Link to="/signup?plan=starter">
-            Start Free Trial
+            Get Started
             <ArrowRight size={16} className="ml-2" />
           </Link>
         </Button>

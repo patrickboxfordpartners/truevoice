@@ -145,7 +145,7 @@ const Hero = () => {
               className="rounded-md bg-foreground text-background hover:bg-accent transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated"
             >
               <Link to="/signup?plan=pro">
-                Start Free Trial
+                Get Started
                 <ArrowRight size={16} className="ml-2" />
               </Link>
             </Button>

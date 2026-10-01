@@ -26,7 +26,7 @@ const TIERS = [
       "Candidate invitation emails",
       "Email support",
     ],
-    cta: "Start Free Trial",
+    cta: "Get Started",
     href: "/signup?plan=starter",
     popular: false,
   },
@@ -46,7 +46,7 @@ const TIERS = [
       "Shareable report links",
       "Priority support",
     ],
-    cta: "Start Free Trial",
+    cta: "Get Started",
     href: "/signup?plan=pro",
     popular: true,
   },
@@ -66,7 +66,7 @@ const TIERS = [
       "API access",
       "Dedicated onboarding",
     ],
-    cta: "Start Free Trial",
+    cta: "Get Started",
     href: "/signup?plan=scale",
     popular: false,
   },
@@ -94,7 +94,7 @@ const Pricing = () => {
             Transparent pricing. No sales call required.
           </h1>
           <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-2">
-            Every plan includes 3 free interviews to start. No credit card needed.
+            Choose the plan that fits your hiring volume. Cancel anytime.
           </p>
         </motion.div>
 
@@ -188,16 +188,16 @@ const Pricing = () => {
           })}
         </div>
 
-        {/* Free trial callout */}
+        {/* Demo callout */}
         <motion.div
           className="rounded-xl border border-accent/20 bg-accent/5 p-6 text-center mb-14"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4, ease }}
         >
-          <p className="text-sm font-semibold text-foreground mb-1">Try before you buy</p>
+          <p className="text-sm font-semibold text-foreground mb-1">Book a demo</p>
           <p className="text-sm text-muted-foreground">
-            Every plan starts with 3 free interviews, audio-only analysis. No credit card, no commitment. See what TrueVoice detects in your actual interviews.
+            See TrueVoice in action with a live walkthrough. We'll show you exactly how the detection works with real interview data.
           </p>
         </motion.div>
 
@@ -212,8 +212,8 @@ const Pricing = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {[
               {
-                q: "What's included in the free trial?",
-                a: "Every plan starts with 3 free interviews using audio-only analysis. No credit card required. You'll see real authenticity scores and detection signals from your actual interviews.",
+                q: "How do I get started?",
+                a: "Choose a plan, create your account, and you can run your first interview in under 5 minutes. We also offer a live demo walkthrough if you'd like to see it in action first.",
               },
               {
                 q: "How does TrueVoice detect AI-assisted answers?",

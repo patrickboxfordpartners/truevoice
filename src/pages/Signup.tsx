@@ -76,7 +76,7 @@ const Signup = () => {
               Get started
             </h1>
             <p className="text-gray-500 text-[15px]">
-              3 free interviews. No credit card required.
+              Interview authenticity detection for hiring teams.
             </p>
           </div>
 

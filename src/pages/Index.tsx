@@ -21,7 +21,7 @@ const PricingTeaser = () => (
         Plans that scale with your hiring
       </h2>
       <p className="text-muted-foreground text-lg mb-4 max-w-xl mx-auto">
-        Start with 3 free interviews. No credit card required.
+        Simple, transparent plans for teams of any size.
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-8">
         <div className="text-center">
