@@ -7,13 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth } from "convex/react";
 import { useToast } from "@/hooks/use-toast";
-
-const PHOTOS = [
-  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=2074&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?q=80&w=2070&auto=format&fit=crop",
-];
+import { useUnsplashPhoto } from "@/hooks/useUnsplashPhoto";
 
 const Login = () => {
   const { signIn } = useAuthActions();
@@ -25,7 +19,7 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [photoIndex] = useState(() => Math.floor(Math.random() * PHOTOS.length));
+  const photo = useUnsplashPhoto();
 
   useEffect(() => {
     if (isAuthenticated) navigate("/dashboard", { replace: true });
@@ -129,18 +123,23 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Right side - Static random photo */}
+      {/* Right side - Photo */}
       <div className="hidden lg:block flex-1 relative overflow-hidden">
-        {PHOTOS.map((src, i) => (
-          <div
-            key={src}
-            className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out"
-            style={{
-              backgroundImage: `url('${src}')`,
-              opacity: i === photoIndex ? 1 : 0,
-            }}
-          />
-        ))}
+        <img
+          src={photo.url}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        <div className="absolute bottom-4 right-4 text-white/70 text-xs">
+          Photo by{" "}
+          <a href={photo.photographerUrl} target="_blank" rel="noopener noreferrer" className="underline hover:text-white">
+            {photo.photographer}
+          </a>
+          {" "}on{" "}
+          <a href="https://unsplash.com?utm_source=boxford&utm_medium=referral" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">
+            Unsplash
+          </a>
+        </div>
       </div>
     </div>
   );
