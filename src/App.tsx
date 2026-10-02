@@ -9,6 +9,7 @@ import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { CookieBanner } from "@/components/CookieBanner";
 import Index from "./pages/Index";
 import "@livekit/components-styles";
 
@@ -105,6 +106,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
             </Suspense>
+          <CookieBanner />
           </BrowserRouter>
         </TooltipProvider>
         </AuthProvider>

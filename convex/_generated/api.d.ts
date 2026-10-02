@@ -25,6 +25,7 @@ import type * as actions_intelligencePipeline from "../actions/intelligencePipel
 import type * as actions_joanChat from "../actions/joanChat.js";
 import type * as actions_livekitToken from "../actions/livekitToken.js";
 import type * as actions_parseResumeEmail from "../actions/parseResumeEmail.js";
+import type * as actions_processAsyncResponse from "../actions/processAsyncResponse.js";
 import type * as actions_sendDeadlineReminders from "../actions/sendDeadlineReminders.js";
 import type * as actions_sendDemoRequest from "../actions/sendDemoRequest.js";
 import type * as actions_sendInterviewEmail from "../actions/sendInterviewEmail.js";
@@ -72,6 +73,7 @@ declare const fullApi: ApiFromModules<{
   "actions/joanChat": typeof actions_joanChat;
   "actions/livekitToken": typeof actions_livekitToken;
   "actions/parseResumeEmail": typeof actions_parseResumeEmail;
+  "actions/processAsyncResponse": typeof actions_processAsyncResponse;
   "actions/sendDeadlineReminders": typeof actions_sendDeadlineReminders;
   "actions/sendDemoRequest": typeof actions_sendDemoRequest;
   "actions/sendInterviewEmail": typeof actions_sendInterviewEmail;

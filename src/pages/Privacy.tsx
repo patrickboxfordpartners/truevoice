@@ -13,7 +13,7 @@ const Privacy = () => {
       <div className="mx-auto max-w-3xl px-6 py-20 lg:px-8">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Legal</p>
         <h1 className="mt-3 text-4xl font-bold tracking-tight text-foreground">Privacy Policy</h1>
-        <p className="mt-4 text-sm text-muted-foreground">Last updated: July 7, 2026</p>
+        <p className="mt-4 text-sm text-muted-foreground">Last updated: October 1, 2026</p>
 
         <div className="prose prose-neutral mt-12 max-w-none text-foreground/80 [&_h2]:mb-3 [&_h2]:mt-10 [&_h2]:text-lg [&_h2]:font-semibold [&_h2]:text-foreground [&_p]:mb-4 [&_p]:leading-relaxed [&_ul]:mb-4 [&_ul]:space-y-1 [&_ul]:pl-5 [&_li]:list-disc [&_li]:leading-relaxed">
 
@@ -44,7 +44,8 @@ const Privacy = () => {
           <h2>Third-Party Service Providers</h2>
           <p>We use trusted third-party providers to operate our services. These providers process data only as directed by us:</p>
           <ul>
-            <li><strong>Supabase</strong> — database and authentication infrastructure</li>
+            <li><strong>Convex</strong> — backend infrastructure and database</li>
+            <li><strong>Convex Auth</strong> — authentication</li>
             <li><strong>Stripe</strong> — payment processing</li>
             <li><strong>Postmark</strong> — transactional email delivery</li>
             <li><strong>Deepgram</strong> — speech-to-text transcription for interview analysis</li>
