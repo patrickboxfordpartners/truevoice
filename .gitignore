@@ -33,3 +33,6 @@ index.html.bak
 docs/superpowers/
 *.bak
 .gstack/
+
+# Convex auth keys (local only; never commit)
+.auth-keys.json

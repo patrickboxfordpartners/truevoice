@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, mutation, internalQuery } from "./_generated/server";
 import { requireAuth } from "./lib/requireAuth";
 
 export const getByCompany = query({
@@ -127,5 +127,32 @@ export const updateScores = mutation({
       updatedAt: Date.now(),
     });
     return null;
+  },
+});
+
+/** Lookup used by the AssemblyAI token HTTP route. Not callable from clients. */
+export const getForTranscription = internalQuery({
+  args: { interviewId: v.string() },
+  returns: v.union(
+    v.object({
+      status: v.union(
+        v.literal("scheduled"),
+        v.literal("in_progress"),
+        v.literal("completed"),
+        v.literal("cancelled")
+      ),
+      candidateToken: v.string(),
+    }),
+    v.null()
+  ),
+  handler: async (ctx, args) => {
+    const interviewId = ctx.db.normalizeId("interviews", args.interviewId);
+    if (!interviewId) return null;
+    const interview = await ctx.db.get(interviewId);
+    if (!interview) return null;
+    return {
+      status: interview.status,
+      candidateToken: interview.candidateToken,
+    };
   },
 });
