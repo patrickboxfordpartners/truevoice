@@ -2,6 +2,7 @@
 import { action } from "../_generated/server";
 import { v } from "convex/values";
 import { api } from "../_generated/api";
+import { XAI_MAX_TOKENS, xaiChatCompletion } from "../lib/xai";
 
 function extractJson(raw: string): string | null {
   const stripped = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
@@ -17,21 +18,18 @@ export const analyzeResume = action({
   args: { interviewId: v.string() },
   returns: v.any(),
   handler: async (ctx, args) => {
-    const xaiKey = process.env.AI_PROXY_KEY || process.env.XAI_API_KEY;
-    if (!xaiKey) throw new Error("XAI_API_KEY not set");
-    const xaiBaseUrl = process.env.AI_PROXY_URL || "https://api.x.ai";
-
     const interview = await ctx.runQuery(api.interviews.getById, { interviewId: args.interviewId });
     if (!interview) throw new Error("Interview not found");
     if (!interview.resumeText) return { skipped: true, reason: "No resume uploaded" };
     if (!interview.transcript?.trim()) return { skipped: true, reason: "No transcript available" };
 
-    const grokResponse = await fetch(`${xaiBaseUrl}/v1/chat/completions`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${xaiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "grok-3-fast",
-        messages: [
+    let grokResponse: Response;
+    try {
+      grokResponse = await xaiChatCompletion({
+        maxTokens: XAI_MAX_TOKENS.resume,
+        body: {
+          model: "grok-3-fast",
+          messages: [
           {
             role: "system",
             content: `You are an expert interviewer analyzing alignment between a candidate's resume and interview responses.
@@ -59,12 +57,15 @@ INTERVIEW TRANSCRIPT:
 ${interview.transcript.slice(0, 6000)}`,
           },
         ],
-        temperature: 0.3,
-      }),
-    });
+          temperature: 0.3,
+        },
+      });
+    } catch {
+      throw new Error("Grok API error");
+    }
 
-    const grokData = await grokResponse.json();
     if (!grokResponse.ok) throw new Error("Grok API error");
+    const grokData = await grokResponse.json();
 
     const rawContent = grokData.choices?.[0]?.message?.content || "";
     let analysis: any = {};

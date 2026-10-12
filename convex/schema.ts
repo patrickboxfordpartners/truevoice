@@ -74,6 +74,7 @@ export default defineSchema({
   })
     .index("by_company", ["companyId"])
     .index("by_stage", ["stage"])
+    .index("by_company_stage", ["companyId", "stage"])
     .index("by_interview", ["interviewId"])
     .index("by_email", ["candidateEmail"]),
 
@@ -136,7 +137,8 @@ export default defineSchema({
     .index("by_candidate", ["candidateId"])
     .index("by_status", ["status"])
     .index("by_due_date", ["dueDate"])
-    .index("by_company", ["companyId"]),
+    .index("by_company", ["companyId"])
+    .index("by_company_status", ["companyId", "status"]),
 
   // ─────────────────────────────────────────────────────────────────
   // EMAIL THREADS (AgentMail routes to candidates)
@@ -367,9 +369,11 @@ export default defineSchema({
     timestamp: v.number(),
   })
     .index("by_company", ["companyId"])
+    .index("by_candidate", ["candidateId"])
     .index("by_interview", ["interviewId"])
     .index("by_action", ["action"])
-    .index("by_timestamp", ["timestamp"]),
+    .index("by_timestamp", ["timestamp"])
+    .index("by_company_timestamp", ["companyId", "timestamp"]),
 
   // ─────────────────────────────────────────────────────────────────
   // ASYNC INTERVIEWS (Pre-recorded question system)
@@ -487,6 +491,7 @@ export default defineSchema({
     .index("by_candidate", ["candidateId"])
     .index("by_company", ["companyId"])
     .index("by_reviewer", ["reviewerId"])
+    .index("by_reviewer_status", ["reviewerId", "status"])
     .index("by_status", ["status"])
     .index("by_candidate_status", ["candidateId", "status"]),
 
@@ -555,7 +560,8 @@ export default defineSchema({
   })
     .index("by_candidate", ["candidateId"])
     .index("by_company", ["companyId"])
-    .index("by_status", ["status"]),
+    .index("by_status", ["status"])
+    .index("by_company_status", ["companyId", "status"]),
 
   // ─────────────────────────────────────────────────────────────────
   // AUTOPILOT QUEUE (Joan's pending recommendations)
@@ -796,6 +802,7 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_company", ["companyId"])
+    .index("by_company_status", ["companyId", "status"])
     .index("by_token", ["candidateToken"])
     .index("by_status", ["status"])
     .index("by_created_by", ["createdBy"]),
@@ -976,4 +983,14 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_company", ["companyId"]),
+
+  /**
+   * Fixed-window counters for LiveKit and Deepgram token minting.
+   * One row per bucket (interview or signed-in user).
+   */
+  media_token_windows: defineTable({
+    bucket: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
+  }).index("by_bucket", ["bucket"]),
 });

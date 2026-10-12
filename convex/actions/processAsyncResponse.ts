@@ -2,6 +2,7 @@
 import { action } from "../_generated/server";
 import { v } from "convex/values";
 import { api, internal } from "../_generated/api";
+import { XAI_MAX_TOKENS, xaiChatCompletion } from "../lib/xai";
 
 function extractJson(raw: string): string | null {
   const stripped = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
@@ -51,7 +52,6 @@ export const processAsyncResponse = action({
       return { success: false, error: "Analysis not configured" };
     }
 
-    const xaiBaseUrl = process.env.AI_PROXY_URL || "https://api.x.ai";
     let transcript = "";
     let authenticityScore = 0;
     let flagCount = 0;
@@ -99,17 +99,16 @@ export const processAsyncResponse = action({
 Also detect behavioral flags like scripted responses, AI-generated language, or coached answers.
 Return ONLY valid JSON: {"speech":20,"timing":18,"flow":15,"linguistic":22,"flags":[{"pattern":"description","severity":"low"}]}`;
 
-        const grokResponse = await fetch(`${xaiBaseUrl}/v1/chat/completions`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${xaiKey}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const grokResponse = await xaiChatCompletion({
+          maxTokens: XAI_MAX_TOKENS.asyncResponse,
+          body: {
             model: "grok-3-fast",
             messages: [
               { role: "system", content: systemPrompt },
               { role: "user", content: `Async interview response transcript:\n\n"${transcript}"` },
             ],
             temperature: 0.3,
-          }),
+          },
         });
 
         if (grokResponse.ok) {
@@ -131,8 +130,8 @@ Return ONLY valid JSON: {"speech":20,"timing":18,"flow":15,"linguistic":22,"flag
             analysisDetails = { scores, flags: analysis.flags || [] };
           }
         }
-      } catch (err) {
-        console.error("[processAsyncResponse] Analysis failed:", err);
+      } catch {
+        console.error("[processAsyncResponse] Analysis failed");
       }
     }
 

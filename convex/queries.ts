@@ -160,12 +160,12 @@ export const getCandidatesByStage = query({
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
     await requireAuth(ctx);
-    const allCandidates = await ctx.db
+    return await ctx.db
       .query("hiring_pipeline")
-      .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
+      .withIndex("by_company_stage", (q) =>
+        q.eq("companyId", args.companyId).eq("stage", args.stage)
+      )
       .collect();
-
-    return allCandidates.filter((c) => c.stage === args.stage);
   },
 });
 
@@ -190,12 +190,12 @@ export const getPendingActionItems = query({
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
     await requireAuth(ctx);
-    const allItems = await ctx.db
+    return await ctx.db
       .query("action_items")
-      .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
+      .withIndex("by_company_status", (q) =>
+        q.eq("companyId", args.companyId).eq("status", "pending")
+      )
       .collect();
-
-    return allItems.filter((item) => item.status === "pending");
   },
 });
 
@@ -319,19 +319,12 @@ export const getActionItemsDueSoon = internalQuery({
   },
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
-    // Use the by_due_date index to efficiently query items in the time window
-    const allItems = await ctx.db
+    return await ctx.db
       .query("action_items")
-      .withIndex("by_due_date")
+      .withIndex("by_due_date", (q) =>
+        q.gte("dueDate", args.startTime).lte("dueDate", args.endTime)
+      )
       .collect();
-
-    // Filter to items in the time window (Convex doesn't support range queries on indexes yet)
-    return allItems.filter(
-      (item) =>
-        item.dueDate !== undefined &&
-        item.dueDate >= args.startTime &&
-        item.dueDate <= args.endTime
-    );
   },
 });
 
@@ -366,19 +359,19 @@ export const getQuestionsByCompany = query({
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
     await requireAuth(ctx);
-    const baseQuery = ctx.db
-      .query("interview_questions")
-      .withIndex("by_company", (q) => q.eq("companyId", args.companyId));
+    const questions = args.activeOnly
+      ? await ctx.db
+          .query("interview_questions")
+          .withIndex("by_company_active", (q) =>
+            q.eq("companyId", args.companyId).eq("isActive", true)
+          )
+          .collect()
+      : await ctx.db
+          .query("interview_questions")
+          .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
+          .collect();
 
-    const questions = await baseQuery.collect();
-
-    // Filter for active questions if requested
-    const filtered = args.activeOnly
-      ? questions.filter((q) => q.isActive)
-      : questions;
-
-    // Sort by position
-    return filtered.sort((a, b) => a.position - b.position);
+    return questions.sort((a, b) => a.position - b.position);
   },
 });
 
@@ -687,15 +680,13 @@ export const getRecentSuggestedQuestions = query({
     await requireAuth(ctx);
     const maxBriefs = args.limit ?? 5;
 
-    const briefs = await ctx.db
+    const completeBriefs = await ctx.db
       .query("intelligence_briefs")
-      .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
+      .withIndex("by_company_status", (q) =>
+        q.eq("companyId", args.companyId).eq("status", "complete")
+      )
       .order("desc")
-      .collect();
-
-    const completeBriefs = briefs
-      .filter((b) => b.status === "complete")
-      .slice(0, maxBriefs);
+      .take(maxBriefs);
 
     const results: {
       question: string;
@@ -816,13 +807,13 @@ export const getRecentJoanNotifications = query({
     await requireAuth(ctx);
     const activities = await ctx.db
       .query("joan_activity")
-      .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
+      .withIndex("by_company_timestamp", (q) =>
+        q.eq("companyId", args.companyId).gte("timestamp", args.since)
+      )
       .order("desc")
-      .collect();
+      .take(20);
 
     return activities
-      .filter((a) => a.timestamp >= args.since)
-      .slice(0, 20)
       .map((a) => ({
         _id: a._id,
         action: a.action,
@@ -1168,14 +1159,11 @@ export const getCandidateActivity = query({
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
     await requireAuth(ctx);
-    const activities = await ctx.db
+    return await ctx.db
       .query("joan_activity")
-      .withIndex("by_company")
+      .withIndex("by_candidate", (q) => q.eq("candidateId", args.candidateId))
       .order("desc")
-      .collect();
-    return activities
-      .filter((a) => a.candidateId === args.candidateId)
-      .slice(0, args.limit ?? 50);
+      .take(args.limit ?? 50);
   },
 });
 

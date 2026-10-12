@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { createClient, LiveTranscriptionEvents, LiveClient } from "@deepgram/sdk";
+import { useAction } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 interface TranscriptWord {
   word: string;
@@ -34,18 +36,17 @@ export function useDeepgramTranscription(): UseDeepgramReturn {
   const deepgramRef = useRef<LiveClient | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const generateToken = useAction(api.actions.deepgramToken.generate);
 
   const connect = useCallback(async (language: string = "en", interviewId?: string, candidateToken?: string) => {
-    // Fetch temporary Deepgram token from secure edge function
     if (!interviewId) {
       throw new Error("Missing interviewId for Deepgram token generation");
     }
 
-    const { ConvexHttpClient } = await import("convex/browser");
-    const { api } = await import("../../convex/_generated/api");
-    const client = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
-    const { token: apiKey, expires_at } = await client.action(api.actions.deepgramToken.generate, { interviewId });
-    console.log(`[deepgram] Obtained temporary token, expires at ${expires_at}`);
+    const { token: apiKey } = await generateToken({
+      interviewId,
+      ...(candidateToken ? { candidateToken } : {}),
+    });
 
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -127,7 +128,7 @@ export function useDeepgramTranscription(): UseDeepgramReturn {
     });
 
     return stream;
-  }, []);
+  }, [generateToken]);
 
   const disconnect = useCallback(() => {
     if (mediaRecorderRef.current?.state !== "inactive") {
