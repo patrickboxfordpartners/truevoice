@@ -983,4 +983,14 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_company", ["companyId"]),
+
+  /**
+   * Fixed-window counters for LiveKit and Deepgram token minting.
+   * One row per bucket (interview or signed-in user).
+   */
+  media_token_windows: defineTable({
+    bucket: v.string(),
+    windowStart: v.number(),
+    count: v.number(),
+  }).index("by_bucket", ["bucket"]),
 });

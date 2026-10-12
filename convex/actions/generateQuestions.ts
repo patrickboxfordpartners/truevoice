@@ -2,6 +2,7 @@
 import { v } from "convex/values";
 import { action } from "../_generated/server";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { XAI_MAX_TOKENS, xaiChatCompletion } from "../lib/xai";
 
 function extractJson(raw: string): string | null {
   const stripped = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
@@ -27,26 +28,20 @@ export const generate = action({
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Unauthorized");
 
-    const xaiKey = process.env.AI_PROXY_KEY || process.env.XAI_API_KEY;
-    if (!xaiKey) throw new Error("AI API key not configured");
-    const baseUrl = process.env.AI_PROXY_URL || "https://api.x.ai";
-
     const contextParts: string[] = [`Position: ${args.position}`];
     if (args.companyName) contextParts.push(`Company: ${args.companyName}`);
     if (args.jobDescription) contextParts.push(`Job Description:\n${args.jobDescription}`);
 
-    const response = await fetch(`${baseUrl}/v1/chat/completions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${xaiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "grok-3-fast",
-        messages: [
-          {
-            role: "system",
-            content: `You are an expert interviewer generating tailored interview questions.
+    let response: Response;
+    try {
+      response = await xaiChatCompletion({
+        maxTokens: XAI_MAX_TOKENS.questions,
+        body: {
+          model: "grok-3-fast",
+          messages: [
+            {
+              role: "system",
+              content: `You are an expert interviewer generating tailored interview questions.
 Given a job position and optional job description, produce 8-10 interview questions.
 
 Mix question types:
@@ -60,12 +55,15 @@ Each item must have exactly: id (string), text (string), type ("behavioral"|"sit
           },
           { role: "user", content: contextParts.join("\n\n") },
         ],
-        temperature: 0.7,
-      }),
-    });
+          temperature: 0.7,
+        },
+      });
+    } catch {
+      throw new Error("AI generation failed");
+    }
 
-    const data = await response.json();
     if (!response.ok) throw new Error("AI generation failed");
+    const data = await response.json();
 
     const rawContent = data.choices?.[0]?.message?.content || "";
     const jsonStr = extractJson(rawContent);

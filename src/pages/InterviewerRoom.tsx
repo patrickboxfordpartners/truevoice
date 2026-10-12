@@ -97,7 +97,7 @@ export default function InterviewerRoom() {
     );
   }
 
-  const roomName = `interview-${interview.id}`;
+  const roomName = `interview-${id}`;
   const interviewerName = (interview as any).profiles?.full_name || "Interviewer";
 
   const scoreCategories = [
@@ -211,7 +211,8 @@ export default function InterviewerRoom() {
       <VideoRoomWithAnalysis
         roomName={roomName}
         participantName={interviewerName}
-        participantIdentity={`interviewer-${interview.created_by}`}
+        participantIdentity={`interviewer-${interview.createdBy || interview.created_by || id}`}
+        interviewId={id}
         isHost={true}
         onDisconnected={() => navigate("/dashboard")}
         analysisPanel={analysisPanel}

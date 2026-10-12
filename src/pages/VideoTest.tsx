@@ -1,17 +1,21 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { VideoRoom } from "@/components/VideoRoom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 
 /**
  * Test page to verify LiveKit integration
  * Navigate to /video-test to use this
  */
 export default function VideoTest() {
+  const { user, loading } = useAuth();
   const [joined, setJoined] = useState(false);
   const [roomName, setRoomName] = useState("test-room-" + Date.now());
   const [userName, setUserName] = useState("Test User");
+  const canJoin = Boolean(user) && roomName.startsWith("test-room-");
 
   useEffect(() => {
     console.log("[VideoTest] Environment check:", {
@@ -63,9 +67,14 @@ export default function VideoTest() {
               placeholder="John Doe"
             />
           </div>
-          <Button className="w-full" onClick={() => setJoined(true)}>
+          <Button className="w-full" disabled={!canJoin || loading} onClick={() => setJoined(true)}>
             Join Room
           </Button>
+          {!loading && !user && (
+            <p className="text-sm text-muted-foreground">
+              <Link to="/login" className="underline">Sign in</Link> to request a test room token.
+            </p>
+          )}
         </div>
         <div className="mt-4 p-3 bg-muted rounded-lg">
           <p className="text-xs font-mono">

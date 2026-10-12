@@ -5,12 +5,13 @@ import {
   GridLayout,
   ParticipantTile,
   RoomAudioRenderer,
-  ControlBar,
   useTracks,
 } from "@livekit/components-react";
 import "@livekit/components-styles";
 import { Track } from "livekit-client";
-import { getLiveKitToken, getLiveKitUrl } from "@/lib/livekit";
+import { useAction } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { getLiveKitUrl } from "@/lib/livekit";
 import { Loader2 } from "lucide-react";
 
 interface VideoRoomProps {
@@ -18,8 +19,55 @@ interface VideoRoomProps {
   participantName: string;
   participantIdentity: string;
   isHost?: boolean;
+  interviewId?: string;
+  candidateToken?: string;
   onDisconnected?: () => void;
   children?: React.ReactNode;
+}
+
+function useRoomToken({
+  roomName,
+  participantName,
+  participantIdentity,
+  isHost,
+  interviewId,
+  candidateToken,
+}: {
+  roomName: string;
+  participantName: string;
+  participantIdentity: string;
+  isHost: boolean;
+  interviewId?: string;
+  candidateToken?: string;
+}) {
+  const generateToken = useAction(api.actions.livekitToken.generate);
+  const [token, setToken] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+    generateToken({
+      roomName,
+      participantName,
+      participantIdentity,
+      isHost,
+      ...(interviewId ? { interviewId } : {}),
+      ...(candidateToken ? { candidateToken } : {}),
+    })
+      .then((response) => {
+        if (mounted) setToken(response.token);
+      })
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : "Failed to join video room";
+        console.error("[VideoRoom] Token error:", message);
+        if (mounted) setError(message);
+      });
+    return () => {
+      mounted = false;
+    };
+  }, [generateToken, roomName, participantName, participantIdentity, isHost, interviewId, candidateToken]);
+
+  return { token, error };
 }
 
 export function VideoRoom({
@@ -27,35 +75,19 @@ export function VideoRoom({
   participantName,
   participantIdentity,
   isHost = false,
+  interviewId,
+  candidateToken,
   onDisconnected,
   children,
 }: VideoRoomProps) {
-  const [token, setToken] = useState<string>("");
-  const [error, setError] = useState<string>("");
-
-  useEffect(() => {
-    let mounted = true;
-
-    console.log("[VideoRoom] Getting token for:", { roomName, participantName, participantIdentity, isHost });
-
-    getLiveKitToken(roomName, participantName, participantIdentity, isHost)
-      .then((response) => {
-        console.log("[VideoRoom] Got token response:", response);
-        if (mounted) {
-          setToken(response.token);
-        }
-      })
-      .catch((err) => {
-        console.error("[VideoRoom] Token error:", err);
-        if (mounted) {
-          setError(err.message || "Failed to join video room");
-        }
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [roomName, participantName, participantIdentity, isHost]);
+  const { token, error } = useRoomToken({
+    roomName,
+    participantName,
+    participantIdentity,
+    isHost,
+    interviewId,
+    candidateToken,
+  });
 
   if (error) {
     return (
@@ -99,35 +131,19 @@ export function VideoRoomWithAnalysis({
   participantName,
   participantIdentity,
   isHost = false,
+  interviewId,
+  candidateToken,
   onDisconnected,
   analysisPanel,
 }: VideoRoomProps & { analysisPanel?: React.ReactNode }) {
-  const [token, setToken] = useState<string>("");
-  const [error, setError] = useState<string>("");
-
-  useEffect(() => {
-    let mounted = true;
-
-    console.log("[VideoRoom] Getting token for:", { roomName, participantName, participantIdentity, isHost });
-
-    getLiveKitToken(roomName, participantName, participantIdentity, isHost)
-      .then((response) => {
-        console.log("[VideoRoom] Got token response:", response);
-        if (mounted) {
-          setToken(response.token);
-        }
-      })
-      .catch((err) => {
-        console.error("[VideoRoom] Token error:", err);
-        if (mounted) {
-          setError(err.message || "Failed to join video room");
-        }
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [roomName, participantName, participantIdentity, isHost]);
+  const { token, error } = useRoomToken({
+    roomName,
+    participantName,
+    participantIdentity,
+    isHost,
+    interviewId,
+    candidateToken,
+  });
 
   if (error) {
     return (
