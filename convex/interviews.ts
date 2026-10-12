@@ -156,3 +156,58 @@ export const getForTranscription = internalQuery({
     };
   },
 });
+
+/** Interview row used to authorize LiveKit and Deepgram tokens. */
+export const getForMediaAccess = internalQuery({
+  args: {
+    interviewId: v.optional(v.string()),
+    candidateToken: v.optional(v.string()),
+  },
+  returns: v.union(
+    v.null(),
+    v.object({
+      interviewId: v.string(),
+      companyId: v.string(),
+      roomName: v.string(),
+      storedRoomName: v.union(v.string(), v.null()),
+    })
+  ),
+  handler: async (ctx, args) => {
+    let interview = null;
+    if (args.candidateToken) {
+      interview = await ctx.db
+        .query("interviews")
+        .withIndex("by_token", (q) => q.eq("candidateToken", args.candidateToken))
+        .first();
+      if (interview && args.interviewId && interview._id !== args.interviewId) {
+        return null;
+      }
+    } else if (args.interviewId) {
+      const interviewId = ctx.db.normalizeId("interviews", args.interviewId);
+      if (!interviewId) return null;
+      interview = await ctx.db.get(interviewId);
+    }
+    if (!interview) return null;
+    if (interview.status !== "scheduled" && interview.status !== "in_progress") {
+      return null;
+    }
+    return {
+      interviewId: interview._id,
+      companyId: interview.companyId,
+      roomName: `interview-${interview._id}`,
+      storedRoomName: interview.livekitRoomName ?? null,
+    };
+  },
+});
+
+export const getCompanyIdForUser = internalQuery({
+  args: { userId: v.string() },
+  returns: v.union(v.string(), v.null()),
+  handler: async (ctx, args) => {
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .first();
+    return profile?.company_id ?? null;
+  },
+});

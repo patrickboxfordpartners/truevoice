@@ -72,8 +72,10 @@ const CandidateInterview = () => {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  const interviewId = interview?._id || interview?.id || "";
+
   // Video interview analysis hook
-  const videoInterview = useVideoInterview(interview?.id || "");
+  const videoInterview = useVideoInterview(interviewId);
 
   // Monitoring is active once the candidate passes the consent step
   const monitoringActive = ["systemcheck", "tips", "waiting"].includes(step);
@@ -86,13 +88,13 @@ const CandidateInterview = () => {
     (companyStatus === "active" || companyStatus === "trialing");
 
   useBehaviorMonitor({
-    interviewId: interview?.id || "",
+    interviewId,
     enabled: monitoringActive,
     elapsedSeconds,
   });
 
   useWebcamMonitor({
-    interviewId: interview?.id || "",
+    interviewId,
     enabled: monitoringActive && companyHasVideo,
     elapsedSeconds,
     intervalSeconds: 15,
@@ -191,17 +193,18 @@ const CandidateInterview = () => {
   const allChecksPassed = checks.camera && checks.mic && checks.internet;
 
   const enterInterviewRoom = async () => {
-    if (!interview?.id) return;
+    if (!interviewId) return;
 
-    // Set room name and update status
-    const interviewId = interview._id || interview.id;
     const roomName = `interview-${interviewId}`;
-    await convexHttp.mutation(api.interviews.update, {
-      interviewId,
-      livekitRoomName: roomName,
-      livekitStartedAt: Date.now(),
-      status: "waiting_for_interviewer",
-    });
+    try {
+      await convexHttp.mutation(api.interviews.update, {
+        interviewId,
+        livekitRoomName: roomName,
+        livekitStartedAt: Date.now(),
+      });
+    } catch {
+      // Candidates are not signed in, and the room name is derived from the interview id.
+    }
 
     setStep("interview");
 
@@ -447,9 +450,11 @@ const CandidateInterview = () => {
         {step === "interview" && interview && (
           <div className="h-screen w-screen fixed top-0 left-0">
             <VideoRoom
-              roomName={`interview-${interview.id}`}
-              participantName={interview.candidate_name || "Candidate"}
-              participantIdentity={`candidate-${interview.id}`}
+              roomName={`interview-${interviewId}`}
+              participantName={interview.candidateName || interview.candidate_name || "Candidate"}
+              participantIdentity={`candidate-${interviewId}`}
+              interviewId={interviewId}
+              candidateToken={token}
               isHost={false}
               onDisconnected={() => {
                 videoInterview.stopTranscription();
