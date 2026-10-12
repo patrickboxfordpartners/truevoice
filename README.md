@@ -9,7 +9,7 @@ TrueVoice HQ is a comprehensive video interview platform that combines real-time
 
 ### Core Capabilities
 - **Live Video Interviews** — Real-time video conferencing with LiveKit integration
-- **AI-Powered Transcription** — Real-time speech-to-text using Deepgram
+- **AI-Powered Transcription** — Real-time speech-to-text using AssemblyAI
 - **Intelligent Analysis** — Automated interview insights powered by XAI Grok
 - **Multi-Role Support** — Separate experiences for interviewers and candidates
 - **Team Collaboration** — Company-based access with role-based permissions
@@ -36,17 +36,17 @@ TrueVoice HQ is a comprehensive video interview platform that combines real-time
 - **Framer Motion** — Smooth animations
 
 ### Backend & Services
-- **Supabase** — PostgreSQL database, authentication, edge functions
+- **Convex** — Database, auth, server functions, crons, and HTTP endpoints
 - **LiveKit** — Real-time video/audio streaming
-- **Deepgram** — Speech-to-text transcription
-- **XAI Grok** — AI-powered interview analysis
+- **AssemblyAI** — Live interview transcription
+- **Deepgram** — Alternate speech-to-text path (token action only)
+- **xAI Grok** — AI-powered interview analysis
 - **Stripe** — Payment processing and subscriptions
 - **PostHog** — Product analytics
 
 ### Key Libraries
 - `@livekit/components-react` — Pre-built LiveKit UI components
-- `@deepgram/sdk` — Real-time transcription
-- `@supabase/supabase-js` — Database and auth client
+- `convex` — Reactive client for queries, mutations, and actions
 - `@tanstack/react-query` — Data fetching and caching
 - `react-router-dom` — Client-side routing
 - `react-hook-form` + `zod` — Form validation
@@ -67,14 +67,8 @@ true-voice-insights/
 │   │   ├── CandidateInterview.tsx
 │   │   └── Report.tsx
 │   └── types/           # TypeScript type definitions
-├── supabase/
-│   ├── functions/       # Edge functions
-│   │   ├── analyze-chunk/
-│   │   ├── analyze-frame/
-│   │   ├── generate-final-report/
-│   │   ├── livekit-token/
-│   │   └── stripe-*/
-│   └── migrations/      # Database migrations
+├── convex/              # Schema, queries, mutations, actions, HTTP routes
+├── supabase/            # Legacy edge functions with no Convex equivalent yet
 ├── scripts/             # Build and setup scripts
 └── public/              # Static assets
 
@@ -105,44 +99,16 @@ The wizard will:
 
 ### Prerequisites
 - **Node.js** 18+ or **Bun** runtime
-- **Supabase** account and project
+- **Convex** account and deployment
 - **LiveKit** account and project
-- **Deepgram** API key
-- **XAI/Grok** API key
+- **AssemblyAI** API key (live transcription)
+- **xAI/Grok** API key
 - **Stripe** account (for billing)
 
-Edit `.env` with your credentials:
-```env
-# Supabase
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+The browser only needs public URLs. Put API keys in the Convex dashboard, not in `VITE_*` variables. See `.env.example`.
 
-# Deepgram
-VITE_DEEPGRAM_API_KEY=your-deepgram-api-key
-
-# LiveKit
-VITE_LIVEKIT_URL=wss://your-project.livekit.cloud
-LIVEKIT_API_KEY=your-api-key
-LIVEKIT_API_SECRET=your-api-secret
-
-# Stripe
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_PUBLISHABLE_KEY=pk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-
-# Site URL
-VITE_SITE_URL=http://localhost:8080
-```
-
-4. Set up the database:
 ```bash
-# Run the schema in your Supabase SQL Editor
-cat supabase-schema.sql
-```
-
-5. Deploy edge functions (optional):
-```bash
-supabase functions deploy
+npx convex dev
 ```
 
 ### Development
@@ -178,36 +144,18 @@ tsx scripts/stripe-setup.ts
 
 ### LiveKit Configuration
 1. Create a LiveKit Cloud project
-2. Add API credentials to `.env`
-3. Configure webhooks for recording callbacks
+2. Set `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`, and `LIVEKIT_URL` in the Convex dashboard
+3. Set `VITE_LIVEKIT_URL` for the browser
 
-### Deepgram Setup
-1. Create a Deepgram account
-2. Generate an API key with transcription permissions
-3. Add to `.env`
+Live interview transcription uses AssemblyAI (`ASSEMBLYAI_API_KEY` in Convex, HTTP route `/assemblyai/token`).
 
 ## Database Schema
 
-The application uses several key tables:
-- **companies** — Organization accounts
-- **profiles** — User profiles with role-based access
-- **interviews** — Interview sessions and metadata
-- **candidates** — Candidate information
-- **transcripts** — Timestamped transcription data
-- **analysis_chunks** — Real-time AI analysis segments
-- **reports** — Generated interview reports
+The schema lives in `convex/schema.ts`. Core tables include `interviews`, `hiring_pipeline`, `interview_reports`, `transcript_chunks`, and the Joan tables (`action_items`, `autopilot_queue`, `intelligence_briefs`).
 
-See `supabase-schema.sql` for the complete schema.
+## Backend functions
 
-## Edge Functions
-
-Supabase edge functions power the backend:
-- `analyze-chunk` — Process interview audio chunks
-- `analyze-frame` — Video frame analysis
-- `generate-final-report` — Compile interview insights
-- `livekit-token` — Generate video room tokens
-- `drip-scheduler` — Schedule follow-up emails
-- `stripe-*` — Payment processing webhooks
+Convex actions and HTTP routes replace the old Supabase edge functions for analysis, tokens, email, and Stripe. A few Supabase functions are still in `supabase/functions/` because nothing in Convex replaces them yet: LiveKit egress recording (`start-recording`, `stop-recording`, `transcribe-recording`), drip email (`drip-scheduler`, `send-drip-email`), and the external interview API (`api-create-interview`, `api-get-report`). The app does not call those from the client.
 
 ## Branding
 
@@ -216,8 +164,8 @@ Brand assets and design guidelines are documented in `BRANDING.md`.
 ## Deployment
 
 This project is optimized for deployment on:
-- **Vercel** (recommended for frontend)
-- **Supabase** (backend and database)
+- **Convex** (backend, and optional static hosting via `@convex-dev/static-hosting`)
+- **Vercel** (frontend; `vercel.json` sets security headers)
 - **LiveKit Cloud** (video infrastructure)
 
 Set environment variables in your deployment platform matching `.env.example`.
@@ -246,7 +194,7 @@ Built with:
 - [LiveKit](https://livekit.io/) — Real-time video infrastructure
 - [Deepgram](https://deepgram.com/) — AI speech recognition
 - [XAI Grok](https://x.ai/) — Advanced AI analysis
-- [Supabase](https://supabase.com/) — Backend platform
+- [Convex](https://convex.dev/) — Backend platform
 - [shadcn/ui](https://ui.shadcn.com/) — Component library
 
 ---

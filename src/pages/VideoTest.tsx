@@ -14,11 +14,9 @@ export default function VideoTest() {
   const [userName, setUserName] = useState("Test User");
 
   useEffect(() => {
-    // Debug environment variables
     console.log("[VideoTest] Environment check:", {
-      VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-      VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? "present" : "missing",
-      VITE_LIVEKIT_URL: import.meta.env.VITE_LIVEKIT_URL,
+      VITE_CONVEX_URL: import.meta.env.VITE_CONVEX_URL ? "present" : "missing",
+      VITE_LIVEKIT_URL: import.meta.env.VITE_LIVEKIT_URL ? "present" : "missing",
     });
   }, []);
 
@@ -71,8 +69,7 @@ export default function VideoTest() {
         </div>
         <div className="mt-4 p-3 bg-muted rounded-lg">
           <p className="text-xs font-mono">
-            Supabase URL: {import.meta.env.VITE_SUPABASE_URL ? "✓" : "✗"}<br/>
-            Anon Key: {import.meta.env.VITE_SUPABASE_ANON_KEY ? "✓" : "✗"}<br/>
+            Convex URL: {import.meta.env.VITE_CONVEX_URL ? "✓" : "✗"}<br/>
             LiveKit URL: {import.meta.env.VITE_LIVEKIT_URL ? "✓" : "✗"}
           </p>
         </div>

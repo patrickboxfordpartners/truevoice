@@ -167,13 +167,12 @@ export const getPendingReviewsForUser = query({
   returns: v.array(v.any()),
   handler: async (ctx, args) => {
     await requireAuth(ctx);
-    const allReviews = await ctx.db
+    return await ctx.db
       .query("peer_reviews")
-      .withIndex("by_reviewer", (q) => q.eq("reviewerId", args.reviewerId))
+      .withIndex("by_reviewer_status", (q) =>
+        q.eq("reviewerId", args.reviewerId).eq("status", "pending")
+      )
       .collect();
-
-    // Filter to pending only
-    return allReviews.filter((r) => r.status === "pending");
   },
 });
 

@@ -9,7 +9,21 @@ import {
 } from "recharts"
 import { ScoreGauge } from "@/components/ScoreGauge"
 import { SCORE_LABELS } from "@/lib/scoreLabels"
-import type { FullReport } from "@/types"
+
+type PublicReportData = {
+  interview: { candidateName: string; position: string }
+  report: {
+    overallScore: number
+    speechScore: number
+    timingScore: number
+    flowScore: number
+    linguisticScore: number
+    summary?: string
+    recommendations?: string[]
+  } | null
+  flags: { time: string; pattern: string; severity: string }[]
+  timeline: { minute: string; score: number }[]
+}
 
 const ease = [0.16, 1, 0.3, 1]
 
@@ -24,7 +38,7 @@ const severityBg = (s: string) =>
 
 const PublicReport = () => {
   const { token } = useParams<{ token: string }>()
-  const [data, setData] = useState<FullReport | null>(null)
+  const [data, setData] = useState<PublicReportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -34,10 +48,8 @@ const PublicReport = () => {
       const { api } = await import("../../convex/_generated/api");
       const client = new ConvexHttpClient(import.meta.env.VITE_CONVEX_URL);
       try {
-        const tokenRow = await client.query(api.reportTokens.getByToken, { token });
-        if (!tokenRow) { setError("This report link is invalid or has expired."); return; }
-        const report = await client.query(api.interviewData.getFullReport, { interviewId: tokenRow.interviewId });
-        if (!report) { setError("Report not found."); return; }
+        const report = await client.query(api.interviewData.getByShareToken, { token });
+        if (!report) { setError("This report link is invalid or has expired."); return; }
         setData(report);
       } catch { setError("This report link is invalid or has expired."); }
       finally { setLoading(false); }
@@ -67,10 +79,10 @@ const PublicReport = () => {
   const { interview, report, flags, timeline } = data
 
   const radarData = report ? [
-    { subject: SCORE_LABELS.speech, value: ((report.speech_score ?? 0) / 25) * 100 },
-    { subject: SCORE_LABELS.timing, value: ((report.timing_score ?? 0) / 25) * 100 },
-    { subject: SCORE_LABELS.flow, value: ((report.flow_score ?? 0) / 25) * 100 },
-    { subject: SCORE_LABELS.linguistic, value: ((report.linguistic_score ?? 0) / 25) * 100 },
+    { subject: SCORE_LABELS.speech, value: ((report.speechScore ?? 0) / 25) * 100 },
+    { subject: SCORE_LABELS.timing, value: ((report.timingScore ?? 0) / 25) * 100 },
+    { subject: SCORE_LABELS.flow, value: ((report.flowScore ?? 0) / 25) * 100 },
+    { subject: SCORE_LABELS.linguistic, value: ((report.linguisticScore ?? 0) / 25) * 100 },
   ] : []
 
   const timelineData = timeline.map((t) => ({ name: t.minute, score: t.score }))
@@ -95,11 +107,11 @@ const PublicReport = () => {
           transition={{ duration: 0.5, ease }}
         >
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{interview.candidate_name}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{interview.candidateName}</h1>
             <p className="text-muted-foreground mt-0.5">{interview.position}</p>
           </div>
           {report && (
-            <ScoreGauge score={report.overall_score ?? 0} size={100} />
+            <ScoreGauge score={report.overallScore ?? 0} size={100} />
           )}
         </motion.div>
 

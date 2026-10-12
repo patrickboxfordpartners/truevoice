@@ -29,6 +29,104 @@ export const getFullReport = query({
   },
 });
 
+/**
+ * Public report payload for a share token. Returns only fields shown on the
+ * public page, and only while the token is unexpired.
+ */
+export const getByShareToken = query({
+  args: { token: v.string() },
+  returns: v.union(
+    v.null(),
+    v.object({
+      interview: v.object({
+        candidateName: v.string(),
+        position: v.string(),
+      }),
+      report: v.union(
+        v.null(),
+        v.object({
+          overallScore: v.number(),
+          speechScore: v.number(),
+          timingScore: v.number(),
+          flowScore: v.number(),
+          linguisticScore: v.number(),
+          summary: v.optional(v.string()),
+          recommendations: v.optional(v.array(v.string())),
+        })
+      ),
+      flags: v.array(
+        v.object({
+          time: v.string(),
+          pattern: v.string(),
+          severity: v.string(),
+        })
+      ),
+      timeline: v.array(
+        v.object({
+          minute: v.string(),
+          score: v.number(),
+        })
+      ),
+    })
+  ),
+  handler: async (ctx, args) => {
+    const tokenDoc = await ctx.db
+      .query("report_tokens")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .first();
+    if (!tokenDoc || tokenDoc.expiresAt < Date.now()) return null;
+
+    const interviewId = ctx.db.normalizeId("interviews", tokenDoc.interviewId);
+    if (!interviewId) return null;
+    const interview = await ctx.db.get(interviewId);
+    if (!interview) return null;
+
+    const [report, flags, timeline] = await Promise.all([
+      ctx.db
+        .query("interview_reports")
+        .withIndex("by_interview", (q) => q.eq("interviewId", tokenDoc.interviewId))
+        .first(),
+      ctx.db
+        .query("interview_flags")
+        .withIndex("by_interview", (q) => q.eq("interviewId", tokenDoc.interviewId))
+        .collect(),
+      ctx.db
+        .query("interview_timeline")
+        .withIndex("by_interview", (q) => q.eq("interviewId", tokenDoc.interviewId))
+        .collect(),
+    ]);
+
+    return {
+      interview: {
+        candidateName: interview.candidateName,
+        position: interview.position,
+      },
+      report: report
+        ? {
+            overallScore: report.overallScore,
+            speechScore: report.speechScore,
+            timingScore: report.timingScore,
+            flowScore: report.flowScore,
+            linguisticScore: report.linguisticScore,
+            ...(report.summary !== undefined ? { summary: report.summary } : {}),
+            ...(report.recommendations !== undefined
+              ? { recommendations: report.recommendations }
+              : {}),
+          }
+        : null,
+      flags: flags.map((flag) => ({
+        time: flag.time,
+        pattern: flag.pattern,
+        severity: flag.severity,
+      })),
+      timeline: timeline.map((entry) => ({
+        minute: entry.minute,
+        score: entry.score,
+      })),
+    };
+  },
+});
+
 export const getReport = query({
   args: { interviewId: v.string() },
   returns: v.any(),
@@ -94,12 +192,12 @@ export const getCompletedReports = query({
   returns: v.any(),
   handler: async (ctx, args) => {
     await requireAuth(ctx);
-    const interviews = await ctx.db
+    const completed = await ctx.db
       .query("interviews")
-      .withIndex("by_company", (q) => q.eq("companyId", args.companyId))
+      .withIndex("by_company_status", (q) =>
+        q.eq("companyId", args.companyId).eq("status", "completed")
+      )
       .collect();
-
-    const completed = interviews.filter((i) => i.status === "completed");
 
     const reports = await Promise.all(
       completed.map(async (interview) => {
