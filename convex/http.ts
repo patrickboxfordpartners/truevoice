@@ -2,6 +2,8 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { api, internal, components } from "./_generated/api";
 import { registerStaticRoutes } from "@convex-dev/static-hosting";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import { ASSEMBLYAI_TOKEN_LIMIT, ASSEMBLYAI_WINDOW_MS } from "./lib/tokenWindow";
 
 const http = httpRouter();
 
@@ -451,7 +453,7 @@ http.route({
 const assemblyAiCors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
   "Content-Type": "application/json",
 };
 
@@ -509,8 +511,36 @@ http.route({
     if (interview.status !== "scheduled" && interview.status !== "in_progress") {
       return assemblyAiJson({ error: "Interview is not active" }, 403);
     }
-    if (candidateToken && candidateToken !== interview.candidateToken) {
-      return assemblyAiJson({ error: "Unauthorized" }, 401);
+    // Callers must prove access: either the candidate's invite token, or a
+    // signed-in member of the company that owns the interview (same rule as
+    // the LiveKit and Deepgram token actions).
+    if (candidateToken) {
+      if (candidateToken !== interview.candidateToken) {
+        return assemblyAiJson({ error: "Unauthorized" }, 401);
+      }
+    } else {
+      const userId = await getAuthUserId(ctx);
+      if (!userId) {
+        return assemblyAiJson({ error: "Unauthorized" }, 401);
+      }
+      const access = await ctx.runQuery(internal.interviews.getForMediaAccess, {
+        interviewId,
+      });
+      const companyId = await ctx.runQuery(internal.interviews.getCompanyIdForUser, {
+        userId,
+      });
+      if (!access || !companyId || companyId !== access.companyId) {
+        return assemblyAiJson({ error: "Unauthorized" }, 401);
+      }
+    }
+
+    const slot = await ctx.runMutation(internal.mediaTokens.consume, {
+      bucket: `assemblyai:${interviewId}`,
+      windowMs: ASSEMBLYAI_WINDOW_MS,
+      limit: ASSEMBLYAI_TOKEN_LIMIT,
+    });
+    if (!slot.allowed) {
+      return assemblyAiJson({ error: "Too many token requests. Try again shortly." }, 429);
     }
 
     const assemblyaiKey = process.env.ASSEMBLYAI_API_KEY;

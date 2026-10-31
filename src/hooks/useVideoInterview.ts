@@ -19,7 +19,11 @@ interface UseVideoInterviewReturn {
   stopTranscription: () => void;
 }
 
-export function useVideoInterview(interviewId: string, mode?: string): UseVideoInterviewReturn {
+export function useVideoInterview(
+  interviewId: string,
+  mode?: string,
+  candidateToken?: string,
+): UseVideoInterviewReturn {
   const [scores, setScores] = useState<LiveScores>({ speech: 0, timing: 0, flow: 0, linguistic: 0 });
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -37,6 +41,8 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
   const scoresRef = useRef<LiveScores>(scores);
   const elapsedSecondsRef = useRef(0);
   const startedRef = useRef(false);
+  // Guards against overlapping analyses when one outlasts the interval.
+  const analyzingRef = useRef(false);
 
   const overallScore = scores.speech + scores.timing + scores.flow + scores.linguistic;
 
@@ -52,14 +58,18 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
   }, [startedRef.current]);
 
   const sendChunkForAnalysis = useCallback(async () => {
+    // A previous chunk is still being analyzed: skip this tick. Its text stays
+    // unconsumed until that call succeeds, so nothing is lost or re-sent.
+    if (analyzingRef.current) return;
     const fullTranscript = transcriptRef.current;
     const newText = fullTranscript.slice(lastChunkEndRef.current);
     const wordCount = newText.trim().split(/\s+/).filter(Boolean).length;
     if (wordCount < MIN_WORDS_PER_CHUNK) return;
 
-    lastChunkEndRef.current = fullTranscript.length;
-    const chunkIndex = chunkIndexRef.current++;
+    const chunkEnd = fullTranscript.length;
+    const chunkIndex = chunkIndexRef.current;
 
+    analyzingRef.current = true;
     try {
       const result = await analyzeChunk({
         interviewId,
@@ -69,6 +79,11 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
         previousScores: scoresRef.current,
         mode: mode || "interview",
       });
+
+      // Only consume the chunk once analysis succeeded, so a transient failure
+      // retries the same text on the next interval instead of dropping it.
+      lastChunkEndRef.current = chunkEnd;
+      chunkIndexRef.current = chunkIndex + 1;
 
       if (result?.scores) {
         setScores({
@@ -80,6 +95,8 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
       }
     } catch (err) {
       console.error("[videoInterview] Analysis error:", err);
+    } finally {
+      analyzingRef.current = false;
     }
   }, [interviewId, analyzeChunk, mode]);
 
@@ -89,7 +106,7 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
 
     try {
       const language = localStorage.getItem("interview_language") || "en";
-      await deepgram.connect(language, interviewId);
+      await deepgram.connect(language, interviewId, candidateToken);
 
       setTimeout(() => sendChunkForAnalysis(), 5000);
       chunkTimerRef.current = setInterval(() => sendChunkForAnalysis(), CHUNK_INTERVAL_MS);
@@ -97,7 +114,7 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
       console.error("[videoInterview] Failed to start:", error);
       startedRef.current = false;
     }
-  }, [deepgram, sendChunkForAnalysis, interviewId]);
+  }, [deepgram, sendChunkForAnalysis, interviewId, candidateToken]);
 
   const stopTranscription = useCallback(() => {
     startedRef.current = false;
