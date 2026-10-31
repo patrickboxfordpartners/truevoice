@@ -41,6 +41,8 @@ export function useVideoInterview(
   const scoresRef = useRef<LiveScores>(scores);
   const elapsedSecondsRef = useRef(0);
   const startedRef = useRef(false);
+  // Guards against overlapping analyses when one outlasts the interval.
+  const analyzingRef = useRef(false);
 
   const overallScore = scores.speech + scores.timing + scores.flow + scores.linguistic;
 
@@ -56,6 +58,9 @@ export function useVideoInterview(
   }, [startedRef.current]);
 
   const sendChunkForAnalysis = useCallback(async () => {
+    // A previous chunk is still being analyzed: skip this tick. Its text stays
+    // unconsumed until that call succeeds, so nothing is lost or re-sent.
+    if (analyzingRef.current) return;
     const fullTranscript = transcriptRef.current;
     const newText = fullTranscript.slice(lastChunkEndRef.current);
     const wordCount = newText.trim().split(/\s+/).filter(Boolean).length;
@@ -64,6 +69,7 @@ export function useVideoInterview(
     const chunkEnd = fullTranscript.length;
     const chunkIndex = chunkIndexRef.current;
 
+    analyzingRef.current = true;
     try {
       const result = await analyzeChunk({
         interviewId,
@@ -89,6 +95,8 @@ export function useVideoInterview(
       }
     } catch (err) {
       console.error("[videoInterview] Analysis error:", err);
+    } finally {
+      analyzingRef.current = false;
     }
   }, [interviewId, analyzeChunk, mode]);
 

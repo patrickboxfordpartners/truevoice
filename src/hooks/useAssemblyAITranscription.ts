@@ -27,6 +27,10 @@ interface UseAssemblyAIReturn {
 
 export function useAssemblyAITranscription(): UseAssemblyAIReturn {
   const authToken = useAuthToken();
+  // connect() is memoized once, so read the token through a ref to always get
+  // the current value instead of the first-render (often null) one.
+  const authTokenRef = useRef<string | null | undefined>(authToken);
+  authTokenRef.current = authToken;
   const [isConnected, setIsConnected] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [interimText, setInterimText] = useState("");
@@ -49,12 +53,17 @@ export function useAssemblyAITranscription(): UseAssemblyAIReturn {
       throw new Error("Missing interviewId for AssemblyAI token generation");
     }
 
+    const memberToken = candidateToken ? null : authTokenRef.current;
+    if (!candidateToken && !memberToken) {
+      throw new Error("Still signing you in. Please try again in a moment.");
+    }
+
     // Mint a temp token via Convex HTTP endpoint
     const tokenResponse = await fetch(`${convexSiteUrl}/assemblyai/token`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(!candidateToken && authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        ...(memberToken ? { Authorization: `Bearer ${memberToken}` } : {}),
       },
       body: JSON.stringify({
         interview_id: interviewId,
