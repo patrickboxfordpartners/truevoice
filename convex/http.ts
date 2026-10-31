@@ -1,8 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
-import { api } from "./_generated/api";
+import { api, internal, components } from "./_generated/api";
 import { registerStaticRoutes } from "@convex-dev/static-hosting";
-import { components } from "./_generated/api";
 
 const http = httpRouter();
 
@@ -446,6 +445,97 @@ http.route({
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
+  }),
+});
+
+const assemblyAiCors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Content-Type": "application/json",
+};
+
+function assemblyAiJson(body: unknown, status: number) {
+  return new Response(JSON.stringify(body), { status, headers: assemblyAiCors });
+}
+
+/**
+ * Short-lived AssemblyAI streaming token.
+ * The interview room calls this before opening the websocket. The interview
+ * must exist and still be scheduled or in progress. A candidate token, when
+ * sent, has to match the interview.
+ */
+http.route({
+  path: "/assemblyai/token",
+  method: "OPTIONS",
+  handler: httpAction(async () => {
+    return new Response(null, { status: 204, headers: assemblyAiCors });
+  }),
+});
+
+http.route({
+  path: "/assemblyai/token",
+  method: "POST",
+  handler: httpAction(async (ctx, request) => {
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return assemblyAiJson({ error: "Invalid JSON body" }, 400);
+    }
+
+    const interviewId =
+      body && typeof body === "object" && "interview_id" in body
+        ? (body as { interview_id?: unknown }).interview_id
+        : undefined;
+    const candidateToken =
+      body && typeof body === "object" && "candidate_token" in body
+        ? (body as { candidate_token?: unknown }).candidate_token
+        : undefined;
+
+    if (typeof interviewId !== "string" || interviewId.length === 0) {
+      return assemblyAiJson({ error: "Missing required field: interview_id" }, 400);
+    }
+    if (candidateToken !== undefined && typeof candidateToken !== "string") {
+      return assemblyAiJson({ error: "Invalid candidate_token" }, 400);
+    }
+
+    const interview = await ctx.runQuery(internal.interviews.getForTranscription, {
+      interviewId,
+    });
+    if (!interview) {
+      return assemblyAiJson({ error: "Interview not found" }, 404);
+    }
+    if (interview.status !== "scheduled" && interview.status !== "in_progress") {
+      return assemblyAiJson({ error: "Interview is not active" }, 403);
+    }
+    if (candidateToken && candidateToken !== interview.candidateToken) {
+      return assemblyAiJson({ error: "Unauthorized" }, 401);
+    }
+
+    const assemblyaiKey = process.env.ASSEMBLYAI_API_KEY;
+    if (!assemblyaiKey) {
+      return assemblyAiJson({ error: "AssemblyAI not configured" }, 500);
+    }
+
+    const tokenResponse = await fetch(
+      "https://streaming.assemblyai.com/v3/token?expires_in_seconds=60",
+      { headers: { authorization: assemblyaiKey } }
+    );
+    if (!tokenResponse.ok) {
+      console.error("[assemblyai-token] Error status:", tokenResponse.status);
+      return assemblyAiJson({ error: "Failed to generate AssemblyAI token" }, 502);
+    }
+
+    const tokenData = await tokenResponse.json();
+    if (!tokenData || typeof tokenData.token !== "string") {
+      return assemblyAiJson({ error: "Failed to generate AssemblyAI token" }, 502);
+    }
+
+    return assemblyAiJson(
+      { token: tokenData.token, expires_in_seconds: 60 },
+      200
+    );
   }),
 });
 

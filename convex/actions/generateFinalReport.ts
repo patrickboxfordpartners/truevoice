@@ -2,6 +2,7 @@
 import { v } from "convex/values";
 import { action } from "../_generated/server";
 import { api } from "../_generated/api";
+import { XAI_MAX_TOKENS, xaiChatCompletion } from "../lib/xai";
 
 function extractJson(raw: string): string | null {
   const stripped = raw.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
@@ -48,16 +49,11 @@ Flags detected (${(existingFlags || []).length}): ${JSON.stringify(
     )}
 Full transcript: "${fullTranscript.slice(0, 8000)}"`;
 
-    const xaiKey = process.env.AI_PROXY_KEY || process.env.XAI_API_KEY;
-    if (!xaiKey) throw new Error("AI API key not configured");
-    const baseUrl = process.env.AI_PROXY_URL || "https://api.x.ai";
-
     const assemblyaiKey = process.env.ASSEMBLYAI_API_KEY;
 
-    const grokPromise = fetch(`${baseUrl}/v1/chat/completions`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${xaiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const grokPromise = xaiChatCompletion({
+      maxTokens: XAI_MAX_TOKENS.report,
+      body: {
         model: "grok-3-fast",
         messages: [
           {
@@ -83,8 +79,8 @@ You MUST return ONLY valid JSON with no explanation, no markdown, no code fences
           { role: "user", content: interviewContext },
         ],
         temperature: 0.3,
-      }),
-    });
+      },
+    }).then(async (res) => (res.ok ? res.json() : null)).catch(() => null);
 
     const gatewayPromise = assemblyaiKey
       ? fetch("https://llm-gateway.assemblyai.com/v1/chat/completions", {
@@ -106,8 +102,7 @@ Return ONLY valid JSON:
         }).then(async (res) => res.ok ? res.json() : null).catch(() => null)
       : Promise.resolve(null);
 
-    const [grokResponse, gatewayData] = await Promise.all([grokPromise, gatewayPromise]);
-    const grokData = await grokResponse.json();
+    const [grokData, gatewayData] = await Promise.all([grokPromise, gatewayPromise]);
 
     let gatewaySummary: any = null;
     if (gatewayData) {

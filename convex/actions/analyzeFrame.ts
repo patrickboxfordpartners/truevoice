@@ -1,6 +1,7 @@
 "use node";
 import { action } from "../_generated/server";
 import { v } from "convex/values";
+import { XAI_MAX_TOKENS, xaiChatCompletion } from "../lib/xai";
 
 export const analyzeFrame = action({
   args: {
@@ -10,16 +11,18 @@ export const analyzeFrame = action({
   },
   returns: v.any(),
   handler: async (ctx, args) => {
-    const xaiKey = process.env.AI_PROXY_KEY || process.env.XAI_API_KEY;
-    if (!xaiKey) throw new Error("XAI_API_KEY not set");
-    const xaiBaseUrl = process.env.AI_PROXY_URL || "https://api.x.ai";
+    const unavailable = {
+      looking_away: false, reading_detected: false, multiple_faces: false,
+      no_face: false, phone_visible: false, description: "Analysis unavailable",
+    };
 
-    const grokResponse = await fetch(`${xaiBaseUrl}/v1/chat/completions`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${xaiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "grok-2-vision-latest",
-        messages: [
+    let grokResponse: Response;
+    try {
+      grokResponse = await xaiChatCompletion({
+        maxTokens: XAI_MAX_TOKENS.frame,
+        body: {
+          model: "grok-2-vision-latest",
+          messages: [
           {
             role: "system",
             content: `You are a visual interview monitor. Analyze this webcam frame from a live interview and check for suspicious behavior.
@@ -50,20 +53,20 @@ Be conservative: only flag something if clearly visible.`,
             ],
           },
         ],
-        temperature: 0.1,
-        max_tokens: 200,
-      }),
-    });
-
-    const grokData = await grokResponse.json();
+          temperature: 0.1,
+        },
+      });
+    } catch {
+      console.error("[analyzeFrame] Grok error: request failed");
+      return unavailable;
+    }
 
     if (!grokResponse.ok) {
       console.error("[analyzeFrame] Grok error:", grokResponse.status);
-      return {
-        looking_away: false, reading_detected: false, multiple_faces: false,
-        no_face: false, phone_visible: false, description: "Analysis unavailable",
-      };
+      return unavailable;
     }
+
+    const grokData = await grokResponse.json();
 
     const content = grokData.choices?.[0]?.message?.content || "{}";
     try {

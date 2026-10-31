@@ -1,5 +1,7 @@
 # TrueVoice HQ - Complete Installation Guide
 
+> The running app uses Convex, not Supabase. The steps below that create a Supabase project, apply `supabase-schema.sql`, or deploy edge functions are historical. Use `.env.example` and `convex/README.md` for the current setup. Supabase functions that have no Convex replacement are listed in the root README.
+
 **Version:** 2.0 (August 2026 - Security Hardened)  
 **Estimated Setup Time:** 45-60 minutes  
 **Skill Level:** Intermediate developer with cloud service experience

@@ -1,6 +1,13 @@
 "use node";
 import { v } from "convex/values";
 import { action } from "../_generated/server";
+import { internal } from "../_generated/api";
+import { getAuthUserId } from "@convex-dev/auth/server";
+import {
+  LIVEKIT_TOKEN_LIMIT,
+  LIVEKIT_TOKEN_TTL_SECONDS,
+  LIVEKIT_WINDOW_MS,
+} from "../lib/tokenWindow";
 
 export const generate = action({
   args: {
@@ -8,29 +15,84 @@ export const generate = action({
     participantName: v.string(),
     participantIdentity: v.string(),
     isHost: v.optional(v.boolean()),
+    interviewId: v.optional(v.string()),
+    candidateToken: v.optional(v.string()),
   },
   returns: v.object({
     token: v.string(),
     url: v.string(),
     room_name: v.string(),
   }),
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
+    if (!args.roomName || args.roomName.length > 128) {
+      throw new Error("Invalid room");
+    }
+    if (args.participantName.length > 80 || args.participantIdentity.length > 128) {
+      throw new Error("Invalid participant");
+    }
+
     const apiKey = process.env.LIVEKIT_API_KEY;
     const apiSecret = process.env.LIVEKIT_API_SECRET;
     const livekitUrl = process.env.LIVEKIT_URL;
-
     if (!apiKey || !apiSecret || !livekitUrl) {
       throw new Error("LiveKit credentials not configured");
     }
 
-    const isHost = args.isHost ?? false;
-    const now = Math.floor(Date.now() / 1000);
-    const exp = now + 86400;
+    let allowHost = false;
+    let bucket: string;
 
+    if (args.candidateToken) {
+      const interview = await ctx.runQuery(internal.interviews.getForMediaAccess, {
+        interviewId: args.interviewId,
+        candidateToken: args.candidateToken,
+      });
+      if (!interview) throw new Error("Unauthorized");
+      if (args.roomName !== interview.roomName && args.roomName !== interview.storedRoomName) {
+        throw new Error("Unauthorized");
+      }
+      bucket = `livekit:${interview.interviewId}`;
+    } else {
+      const userId = await getAuthUserId(ctx);
+      if (!userId) throw new Error("Unauthorized");
+
+      if (args.interviewId) {
+        const interview = await ctx.runQuery(internal.interviews.getForMediaAccess, {
+          interviewId: args.interviewId,
+        });
+        if (!interview) throw new Error("Unauthorized");
+        const companyId = await ctx.runQuery(internal.interviews.getCompanyIdForUser, {
+          userId,
+        });
+        if (!companyId || companyId !== interview.companyId) {
+          throw new Error("Unauthorized");
+        }
+        if (args.roomName !== interview.roomName && args.roomName !== interview.storedRoomName) {
+          throw new Error("Unauthorized");
+        }
+        allowHost = args.isHost === true;
+        bucket = `livekit:${interview.interviewId}`;
+      } else if (args.roomName.startsWith("test-room-")) {
+        allowHost = args.isHost === true;
+        bucket = `livekit:user:${userId}`;
+      } else {
+        throw new Error("Unauthorized");
+      }
+    }
+
+    const slot = await ctx.runMutation(internal.mediaTokens.consume, {
+      bucket,
+      windowMs: LIVEKIT_WINDOW_MS,
+      limit: LIVEKIT_TOKEN_LIMIT,
+    });
+    if (!slot.allowed) {
+      throw new Error("Too many token requests. Try again shortly.");
+    }
+
+    const now = Math.floor(Date.now() / 1000);
     const payload = {
       iss: apiKey,
       sub: args.participantIdentity,
-      exp,
+      exp: now + LIVEKIT_TOKEN_TTL_SECONDS,
       nbf: now,
       name: args.participantName,
       video: {
@@ -40,7 +102,7 @@ export const generate = action({
         canSubscribe: true,
         canPublishData: true,
         canUpdateOwnMetadata: true,
-        ...(isHost && {
+        ...(allowHost && {
           roomAdmin: true,
           roomCreate: true,
           roomRecord: true,

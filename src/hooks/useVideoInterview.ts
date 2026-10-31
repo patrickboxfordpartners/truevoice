@@ -32,14 +32,17 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
   const chunkTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const chunkIndexRef = useRef(0);
+  const lastChunkEndRef = useRef(0);
   const transcriptRef = useRef("");
   const scoresRef = useRef<LiveScores>(scores);
+  const elapsedSecondsRef = useRef(0);
   const startedRef = useRef(false);
 
   const overallScore = scores.speech + scores.timing + scores.flow + scores.linguistic;
 
   useEffect(() => { transcriptRef.current = deepgram.transcript; }, [deepgram.transcript]);
   useEffect(() => { scoresRef.current = scores; }, [scores]);
+  useEffect(() => { elapsedSecondsRef.current = elapsedSeconds; }, [elapsedSeconds]);
 
   useEffect(() => {
     if (startedRef.current) {
@@ -50,20 +53,20 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
 
   const sendChunkForAnalysis = useCallback(async () => {
     const fullTranscript = transcriptRef.current;
-    const currentScores = scoresRef.current;
-    const currentElapsed = elapsedSeconds;
-
-    if (!fullTranscript) return;
-    const wordCount = fullTranscript.split(/\s+/).filter(Boolean).length;
+    const newText = fullTranscript.slice(lastChunkEndRef.current);
+    const wordCount = newText.trim().split(/\s+/).filter(Boolean).length;
     if (wordCount < MIN_WORDS_PER_CHUNK) return;
+
+    lastChunkEndRef.current = fullTranscript.length;
+    const chunkIndex = chunkIndexRef.current++;
 
     try {
       const result = await analyzeChunk({
         interviewId,
-        chunkText: fullTranscript,
-        chunkIndex: chunkIndexRef.current,
-        elapsedSeconds: currentElapsed,
-        previousScores: currentScores,
+        chunkText: newText,
+        chunkIndex,
+        elapsedSeconds: elapsedSecondsRef.current,
+        previousScores: scoresRef.current,
         mode: mode || "interview",
       });
 
@@ -74,12 +77,11 @@ export function useVideoInterview(interviewId: string, mode?: string): UseVideoI
           flow: result.scores.flow ?? 0,
           linguistic: result.scores.linguistic ?? 0,
         });
-        chunkIndexRef.current++;
       }
     } catch (err) {
       console.error("[videoInterview] Analysis error:", err);
     }
-  }, [interviewId, elapsedSeconds, analyzeChunk, mode]);
+  }, [interviewId, analyzeChunk, mode]);
 
   const startTranscription = useCallback(async () => {
     if (startedRef.current) return;

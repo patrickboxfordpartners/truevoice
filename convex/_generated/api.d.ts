@@ -42,6 +42,7 @@ import type * as interviews from "../interviews.js";
 import type * as lib_emailService from "../lib/emailService.js";
 import type * as lib_emailTemplates from "../lib/emailTemplates.js";
 import type * as lib_requireAuth from "../lib/requireAuth.js";
+import type * as mediaTokens from "../mediaTokens.js";
 import type * as mutations from "../mutations.js";
 import type * as peerReviews from "../peerReviews.js";
 import type * as queries from "../queries.js";
@@ -90,6 +91,7 @@ declare const fullApi: ApiFromModules<{
   "lib/emailService": typeof lib_emailService;
   "lib/emailTemplates": typeof lib_emailTemplates;
   "lib/requireAuth": typeof lib_requireAuth;
+  mediaTokens: typeof mediaTokens;
   mutations: typeof mutations;
   peerReviews: typeof peerReviews;
   queries: typeof queries;
