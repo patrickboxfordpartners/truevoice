@@ -9,7 +9,6 @@
 - [Demo](https://truevoicehq.com/demo): Product demo
 - [Sign up](https://truevoicehq.com/signup): Create an account
 - [Log in](https://truevoicehq.com/login): Sign in
-- [Blog](https://truevoicehq.com/blog): Articles
 - [About](https://truevoicehq.com/about): About TrueVoice HQ
 - [Contact](https://truevoicehq.com/contact): How to reach us
 - [Privacy](https://truevoicehq.com/privacy): Privacy policy
