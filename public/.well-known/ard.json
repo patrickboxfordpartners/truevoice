@@ -1,0 +1,52 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "TrueVoice HQ",
+    "documentationUrl": "https://truevoicehq.com/llms.txt"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:truevoicehq.com:site:home",
+      "displayName": "TrueVoice HQ website",
+      "type": "text/html",
+      "url": "https://truevoicehq.com/",
+      "description": "Real-time speech, visual, and behavioral analysis that detects scripted and AI-assisted interview responses.",
+      "tags": [
+        "website"
+      ],
+      "trustManifest": {
+        "identity": "https://truevoicehq.com",
+        "identityType": "https"
+      }
+    },
+    {
+      "identifier": "urn:air:truevoicehq.com:doc:llms",
+      "displayName": "TrueVoice HQ llms.txt",
+      "type": "text/plain",
+      "url": "https://truevoicehq.com/llms.txt",
+      "description": "Plain-text guide to TrueVoice HQ for AI agents.",
+      "tags": [
+        "llms.txt",
+        "docs"
+      ],
+      "trustManifest": {
+        "identity": "https://truevoicehq.com",
+        "identityType": "https"
+      }
+    },
+    {
+      "identifier": "urn:air:truevoicehq.com:doc:pricing",
+      "displayName": "TrueVoice HQ pricing",
+      "type": "text/markdown",
+      "url": "https://truevoicehq.com/pricing.md",
+      "description": "Machine-readable pricing for TrueVoice HQ.",
+      "tags": [
+        "pricing"
+      ],
+      "trustManifest": {
+        "identity": "https://truevoicehq.com",
+        "identityType": "https"
+      }
+    }
+  ]
+}

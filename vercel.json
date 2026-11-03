@@ -1,8 +1,178 @@
 {
   "rewrites": [
-    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+    {
+      "source": "/about",
+      "destination": "/about.html"
+    },
+    {
+      "source": "/contact",
+      "destination": "/contact.html"
+    },
+    {
+      "source": "/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/login",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/signup",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/pricing",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/interview/:token",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/async-interview/:token",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/feedback/:token",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/demo",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/video-test",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/r/:token",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/brief/:token",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/joan-pipeline",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/joan-candidate/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/joan-demo",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/question-bank",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/joan-compare",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/joan-orbit",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/joan-dashboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/joan-digest",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/onboarding",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/report/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/field-report/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/candidates/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/analytics",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/compare",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/room/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/interviewer/:id",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/blog",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/blog/:slug",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Link",
+          "value": "<https://truevoicehq.com/index.md>; rel=\"alternate\"; type=\"text/markdown\", <https://truevoicehq.com/llms.txt>; rel=\"describedby\""
+        }
+      ]
+    },
+    {
+      "source": "/llms.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)\\.md",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/markdown; charset=utf-8"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [
