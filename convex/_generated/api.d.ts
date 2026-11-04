@@ -24,6 +24,7 @@ import type * as actions_generateQuestions from "../actions/generateQuestions.js
 import type * as actions_intelligencePipeline from "../actions/intelligencePipeline.js";
 import type * as actions_joanChat from "../actions/joanChat.js";
 import type * as actions_livekitToken from "../actions/livekitToken.js";
+import type * as actions_notifySignup from "../actions/notifySignup.js";
 import type * as actions_parseResumeEmail from "../actions/parseResumeEmail.js";
 import type * as actions_processAsyncResponse from "../actions/processAsyncResponse.js";
 import type * as actions_sendDeadlineReminders from "../actions/sendDeadlineReminders.js";
@@ -41,7 +42,10 @@ import type * as interviewData from "../interviewData.js";
 import type * as interviews from "../interviews.js";
 import type * as lib_emailService from "../lib/emailService.js";
 import type * as lib_emailTemplates from "../lib/emailTemplates.js";
+import type * as lib_notifySignup from "../lib/notifySignup.js";
 import type * as lib_requireAuth from "../lib/requireAuth.js";
+import type * as lib_tokenWindow from "../lib/tokenWindow.js";
+import type * as lib_xai from "../lib/xai.js";
 import type * as mediaTokens from "../mediaTokens.js";
 import type * as mutations from "../mutations.js";
 import type * as peerReviews from "../peerReviews.js";
@@ -73,6 +77,7 @@ declare const fullApi: ApiFromModules<{
   "actions/intelligencePipeline": typeof actions_intelligencePipeline;
   "actions/joanChat": typeof actions_joanChat;
   "actions/livekitToken": typeof actions_livekitToken;
+  "actions/notifySignup": typeof actions_notifySignup;
   "actions/parseResumeEmail": typeof actions_parseResumeEmail;
   "actions/processAsyncResponse": typeof actions_processAsyncResponse;
   "actions/sendDeadlineReminders": typeof actions_sendDeadlineReminders;
@@ -90,7 +95,10 @@ declare const fullApi: ApiFromModules<{
   interviews: typeof interviews;
   "lib/emailService": typeof lib_emailService;
   "lib/emailTemplates": typeof lib_emailTemplates;
+  "lib/notifySignup": typeof lib_notifySignup;
   "lib/requireAuth": typeof lib_requireAuth;
+  "lib/tokenWindow": typeof lib_tokenWindow;
+  "lib/xai": typeof lib_xai;
   mediaTokens: typeof mediaTokens;
   mutations: typeof mutations;
   peerReviews: typeof peerReviews;
