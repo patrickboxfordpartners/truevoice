@@ -22,3 +22,6 @@ export const LIVEKIT_TOKEN_LIMIT = 8;
 export const LIVEKIT_TOKEN_TTL_SECONDS = 4 * 60 * 60;
 export const DEEPGRAM_WINDOW_MS = 15 * 60 * 1000;
 export const DEEPGRAM_TOKEN_LIMIT = 4;
+
+export const ASSEMBLYAI_WINDOW_MS = 60 * 1000;
+export const ASSEMBLYAI_TOKEN_LIMIT = 10;

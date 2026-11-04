@@ -88,7 +88,6 @@ Return ONLY valid JSON: {"speech":20,"timing":18,"flow":15,"linguistic":22,"flag
       `Transcript chunk to analyze: "${chunkTextSafe}"`,
     ].filter(Boolean).join("\n");
 
-    const fallback = { scores: { speech: 15, timing: 15, flow: 15, linguistic: 15 }, overall: 60, flags: [] };
     let grokResponse: Response;
     try {
       grokResponse = await xaiChatCompletion({
@@ -104,12 +103,12 @@ Return ONLY valid JSON: {"speech":20,"timing":18,"flow":15,"linguistic":22,"flag
       });
     } catch {
       console.error("[analyzeChunk] Grok error: request failed");
-      return fallback;
+      throw new Error("Chunk analysis unavailable");
     }
 
     if (!grokResponse.ok) {
       console.error("[analyzeChunk] Grok error:", grokResponse.status);
-      return fallback;
+      throw new Error("Chunk analysis unavailable");
     }
     const grokData = await grokResponse.json();
 
@@ -120,7 +119,9 @@ Return ONLY valid JSON: {"speech":20,"timing":18,"flow":15,"linguistic":22,"flag
       if (!jsonStr) throw new Error("No JSON found");
       analysis = JSON.parse(jsonStr);
     } catch {
-      analysis = { speech: 15, timing: 15, flow: 15, linguistic: 15, flags: [] };
+      // Don't persist made-up neutral scores as if they were real analysis.
+      console.error("[analyzeChunk] Unparseable model response");
+      throw new Error("Chunk analysis unavailable");
     }
 
     const clamp = (n: number) => Math.min(25, Math.max(0, n ?? 15));

@@ -75,7 +75,7 @@ const CandidateInterview = () => {
   const interviewId = interview?._id || interview?.id || "";
 
   // Video interview analysis hook
-  const videoInterview = useVideoInterview(interviewId);
+  const videoInterview = useVideoInterview(interviewId, undefined, token);
 
   // Monitoring is active once the candidate passes the consent step
   const monitoringActive = ["systemcheck", "tips", "waiting"].includes(step);
