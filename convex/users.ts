@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation, internalMutation } from "./_generated/server";
+import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 export const viewer = query({
@@ -70,6 +71,15 @@ export const createProfile = mutation({
       has_completed_onboarding: false,
       createdAt: now,
       updatedAt: now,
+    });
+
+    // Fire the signup alert without blocking or failing the signup itself.
+    // Mutations cannot fetch, so schedule the internal action.
+    await ctx.scheduler.runAfter(0, internal.actions.notifySignup.send, {
+      kind: "signup",
+      email,
+      name: args.full_name,
+      company: `${args.full_name}'s Company`,
     });
 
     return profileId;
