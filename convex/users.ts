@@ -1,5 +1,6 @@
 import { v } from "convex/values";
-import { query, mutation, internalMutation } from "./_generated/server";
+import { query, mutation, internalMutation, type MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -33,12 +34,79 @@ export const viewer = query({
   },
 });
 
+// Shared profile-creation logic. Idempotent: returns the existing profile
+// id when one is already present. Both the signup flow (which passes the
+// form value) and the login self-heal path (which has no form) use it.
+async function insertProfileWithCompany(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+  email: string,
+  full_name: string,
+): Promise<Id<"profiles">> {
+  const existing = await ctx.db
+    .query("profiles")
+    .withIndex("by_userId", (q) => q.eq("userId", userId))
+    .first();
+
+  if (existing) return existing._id;
+
+  const now = Date.now();
+
+  const companyId = await ctx.db.insert("companies", {
+    name: `${full_name}'s Company`,
+    subscription_tier: "free",
+    max_interviews_per_month: 3,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  const profileId = await ctx.db.insert("profiles", {
+    userId,
+    email,
+    full_name,
+    role: "admin",
+    company_id: companyId,
+    has_completed_onboarding: false,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  // Fire the signup alert without blocking or failing the signup itself.
+  // Mutations cannot fetch, so schedule the internal action.
+  await ctx.scheduler.runAfter(0, internal.actions.notifySignup.send, {
+    kind: "signup",
+    email,
+    name: full_name,
+    company: `${full_name}'s Company`,
+  });
+
+  return profileId;
+}
+
 export const createProfile = mutation({
   args: {
     full_name: v.string(),
   },
   returns: v.any(),
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) throw new Error("Not authenticated");
+
+    const user = await ctx.db.get(userId);
+    const email = user?.email ?? "";
+
+    return insertProfileWithCompany(ctx, userId, email, args.full_name);
+  },
+});
+
+// Self-heal for accounts whose signup hit the session-propagation race and
+// left an auth record without a profile. Reached from the Login page: the
+// signup form can no longer be used because the email is already registered.
+// Name is derived from the email when no form value exists.
+export const ensureProfile = mutation({
+  args: {},
+  returns: v.any(),
+  handler: async (ctx) => {
     const userId = await getAuthUserId(ctx);
     if (!userId) throw new Error("Not authenticated");
 
@@ -51,38 +119,10 @@ export const createProfile = mutation({
 
     const user = await ctx.db.get(userId);
     const email = user?.email ?? "";
+    const fallbackName =
+      email ? email.split("@")[0].replace(/[._-]+/g, " ") : "New user";
 
-    const now = Date.now();
-
-    const companyId = await ctx.db.insert("companies", {
-      name: `${args.full_name}'s Company`,
-      subscription_tier: "free",
-      max_interviews_per_month: 3,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    const profileId = await ctx.db.insert("profiles", {
-      userId,
-      email,
-      full_name: args.full_name,
-      role: "admin",
-      company_id: companyId,
-      has_completed_onboarding: false,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    // Fire the signup alert without blocking or failing the signup itself.
-    // Mutations cannot fetch, so schedule the internal action.
-    await ctx.scheduler.runAfter(0, internal.actions.notifySignup.send, {
-      kind: "signup",
-      email,
-      name: args.full_name,
-      company: `${args.full_name}'s Company`,
-    });
-
-    return profileId;
+    return insertProfileWithCompany(ctx, userId, email, fallbackName);
   },
 });
 

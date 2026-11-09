@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
@@ -7,12 +7,14 @@ import { Input } from "@/components/ui/input";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useConvexAuth, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useUnsplashPhoto } from "@/hooks/useUnsplashPhoto";
 
 const Signup = () => {
   const { signIn } = useAuthActions();
   const { isAuthenticated } = useConvexAuth();
+  const { profile } = useAuth();
   const createProfile = useMutation(api.users.createProfile);
   const { toast } = useToast();
   const { setTheme } = useTheme();
@@ -24,24 +26,23 @@ const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const fullNameRef = useRef("");
+  fullNameRef.current = fullName;
   const photo = useUnsplashPhoto();
 
-  useEffect(() => {
-    if (isAuthenticated && !loading) {
-      navigate(plan ? `/onboarding?plan=${plan}` : "/onboarding", { replace: true });
-    }
-  }, [isAuthenticated, loading, navigate, plan]);
+  // Profile creation is deferred to the isAuthenticated effect below.
+  // Calling createProfile inline after signIn() races the session token
+  // propagation and fails with "Not authenticated" (convex/users.ts:43),
+  // leaving the user permanently stuck with an auth record but no profile.
+  const profileCreated = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       await signIn("password", { email, password, flow: "signUp" });
-      await createProfile({ full_name: fullName });
-      toast({
-        title: "Account created",
-        description: "Welcome to TrueVoice HQ.",
-      });
+      // On success the isAuthenticated effect creates the profile and
+      // navigates to onboarding. Keep loading state until then.
     } catch (err: any) {
       toast({
         title: "Signup failed",
@@ -51,6 +52,25 @@ const Signup = () => {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (profile) {
+      // Profile exists (just created, or resumed signup): go to onboarding.
+      navigate(plan ? `/onboarding?plan=${plan}` : "/onboarding", { replace: true });
+      return;
+    }
+    if (profileCreated.current) return; // creation already in flight
+    // Authenticated but no profile yet: create it now that the session is
+    // actually established, and let the viewer query re-run to unblock nav.
+    profileCreated.current = true;
+    createProfile({ full_name: fullNameRef.current || "New user" }).catch(() => {
+      // viewer will stay null and the form stays up; the Login path
+      // self-heals this case, so the user is never permanently stuck.
+      profileCreated.current = false;
+      setLoading(false);
+    });
+  }, [isAuthenticated, profile, createProfile, navigate, plan]);
 
   return (
     <div className="min-h-screen flex">

@@ -1,17 +1,21 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { Link, useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { useConvexAuth } from "convex/react";
+import { useConvexAuth, useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useUnsplashPhoto } from "@/hooks/useUnsplashPhoto";
 
 const Login = () => {
   const { signIn } = useAuthActions();
   const { isAuthenticated } = useConvexAuth();
+  const { user } = useAuth();
+  const ensureProfile = useMutation(api.users.ensureProfile);
   const { toast } = useToast();
   const { setTheme } = useTheme();
   useEffect(() => { setTheme("light"); }, [setTheme]);
@@ -19,11 +23,27 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const healedRef = useRef(false);
   const photo = useUnsplashPhoto();
 
   useEffect(() => {
-    if (isAuthenticated) navigate("/dashboard", { replace: true });
-  }, [isAuthenticated, navigate]);
+    if (!isAuthenticated) return;
+    if (!user) {
+      // Authenticated but no profile: a prior signup hit the session-
+      // propagation race and left an auth record without a profile row
+      // (AuthContext then treats the account as signed out, which bounces
+      // /dashboard back here). Backfill it once; the viewer query picks up
+      // the new row reactively and user flips non-null on the next run.
+      if (!healedRef.current) {
+        healedRef.current = true;
+        ensureProfile().catch(() => {
+          healedRef.current = false; // allow retry on a later run/remount
+        });
+      }
+      return;
+    }
+    navigate("/dashboard", { replace: true });
+  }, [isAuthenticated, user, ensureProfile, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
